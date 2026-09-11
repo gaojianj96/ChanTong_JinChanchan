@@ -3,7 +3,7 @@
 ## 1. 任务背景与目标
 - **目标 Issue**: `Issue #1: [Core] 搭建 C# (.NET 8/9) 多工程解决方案与基础框架 (ChanSight.sln)`
 - **所属阶段**: `Milestone 1: 屏幕捕获与对局录制采样工具`
-- **核心目的**: 建立低耦合、高内聚的多工程分层骨架，为后续 WGC 屏幕截取、异步录制与数据集采样奠定工程与依赖底座。
+- **核心目的**: 建立低耦合、面向接口、支持依赖注入的多工程分层骨架，为后续 WGC 屏幕截取、异步无锁录制管道与数据集采样提供坚实底座。
 
 ---
 
@@ -12,26 +12,29 @@
 ```
 ChanSight/
 ├── ChanSight.sln                         # 根解决方案
-├── Directory.Build.props                 # 全局属性配置 (Nullable, C# 12, 统一版本)
+├── Directory.Build.props                 # 全局属性配置 (Nullable, C# 12/13, 性能优化)
 ├── src/
-│   ├── ChanSight.Core/                   # 核心领域实体、通用接口与公共常量
-│   │   ├── Models/                       # FrameData, SessionMeta, WindowInfo
-│   │   ├── Interfaces/                   # ICaptureService, IVideoRecorder, IDatasetSampler
+│   ├── ChanSight.Core/                   # 纯抽象与领域实体 (零重依赖)
+│   │   ├── Models/                       # CapturedFrame, WindowTarget, SessionMeta
+│   │   ├── Interfaces/                   # IFrameSource, IScreenCaptureService, IVideoRecorder, IDatasetSampler
+│   │   ├── Memory/                       # IFramePool (帧缓冲区复用接口)
 │   │   └── ChanSight.Core.csproj
-│   ├── ChanSight.Capture/                # 屏幕捕获驱动 (WGC / DXGI 适配器)
-│   │   ├── Win32/                        # P/Invoke 声明 (CsWin32 / DwmApi / User32)
+│   ├── ChanSight.Capture/                # 屏幕捕获驱动 (WGC / DXGI 实现)
+│   │   ├── Win32/                        # P/Invoke 声明 (DwmApi, User32, CsWin32)
 │   │   ├── Services/                     # WindowFinder, WgcCaptureService
 │   │   └── ChanSight.Capture.csproj
-│   ├── ChanSight.Recorder/               # 对局录制与数据集采样服务
+│   ├── ChanSight.Recorder/               # 异步视频录制与数据集采样服务
 │   │   ├── Services/                     # VideoRecorderService, DatasetSamplerService
-│   │   ├── Pipelines/                    # FrameQueue (System.Threading.Channels)
+│   │   ├── Pipelines/                    # BoundedFrameChannel (System.Threading.Channels)
 │   │   └── ChanSight.Recorder.csproj
-│   └── ChanSight.Cli/                    # 命令行交互与仪表盘
+│   └── ChanSight.Cli/                    # 命令行交互、DI 容器与实时仪表盘
 │       ├── Commands/                     # RecordCommand, ListWindowsCommand
-│       ├── Program.cs                    # 启动入口与 DI 容器配置
+│       ├── Dashboard/                    # Spectre.Console 状态仪表盘
+│       ├── Program.cs                    # 启动入口与 HostBuilder DI 配置
 │       └── ChanSight.Cli.csproj
 ├── tests/
-│   └── ChanSight.Tests/                  # 单元测试与集成测试
+│   └── ChanSight.Tests/                  # 单元测试与 MockFrameSource 模拟测试
+│       ├── Mocks/                        # MockFrameSource
 │       └── ChanSight.Tests.csproj
 └── docs/                                 # 架构与开发规范文档
 ```
@@ -55,21 +58,27 @@ ChanSight/
 </Project>
 ```
 
-### 3.2 各工程 NuGet 依赖清单
+### 3.2 各工程 NuGet 依赖与职责划分
 1. **`ChanSight.Core`**:
-   - `OpenCvSharp4` (4.10.0+)
+   - `Microsoft.Extensions.Logging.Abstractions` (8.0.0+)
    - `System.Threading.Channels` (8.0.0+)
+   - `OpenCvSharp4` (4.10.0+) (仅定义 Mat 基础元数据与图像模型)
 2. **`ChanSight.Capture`**:
    - `ChanSight.Core` (ProjectRef)
    - `OpenCvSharp4.runtime.win`
-   - `Microsoft.Windows.SDK.Contracts` / `CsWin32` (用于 WGC 与 D3D11 互操作)
+   - `Microsoft.Windows.SDK.NET.Ref` / `CsWin32` (用于 WGC/DXGI/WinRT 底层直采)
 3. **`ChanSight.Recorder`**:
    - `ChanSight.Core` (ProjectRef)
    - `ChanSight.Capture` (ProjectRef)
 4. **`ChanSight.Cli`**:
    - `ChanSight.Recorder` (ProjectRef)
-   - `Spectre.Console` (0.49.0+) (终端仪表盘)
-   - `Microsoft.Extensions.Hosting` (8.0.0+) (DI与生命周期)
+   - `Microsoft.Extensions.Hosting` (8.0.0+) (DI 容器与生命周期)
+   - `Microsoft.Extensions.Logging.Console` (8.0.0+)
+   - `Spectre.Console` (0.49.0+) (交互式仪表盘)
+5. **`ChanSight.Tests`**:
+   - `Microsoft.NET.Test.Sdk`
+   - `xunit` / `xunit.runner.visualstudio`
+   - `FluentAssertions`
 
 ---
 
@@ -83,11 +92,12 @@ ChanSight/
    - 编写根目录 `Directory.Build.props`
    - 分别为各项目添加对应的 NuGet PackageReference
 3. **Step 3: 编写核心基础接口与领域实体**
-   - 定义 `IWindowFinder`、`ICaptureService`、`IVideoRecorder` 接口骨架
-   - 定义 `CapturedFrame`（包含 `Mat`、时间戳、分辨率、帧序号）
+   - 定义 `IFrameSource`、`IWindowFinder`、`IScreenCaptureService`、`IVideoRecorder` 接口骨架
+   - 定义 `CapturedFrame`（包含 `Mat`、时间戳、分辨率、帧序号、`IDisposable` 资源管理）
+   - 编写依赖注入扩展方法 `AddChanSightCore()`
 4. **Step 4: 编译验证与基础单元测试**
    - 运行 `dotnet build` 验证 0 错误 0 警告
-   - 编写 `ChanSight.Tests` 中的基础验证用例并运行 `dotnet test`
+   - 在 `ChanSight.Tests` 中编写 `MockFrameSource` 验证用例并运行 `dotnet test`
 
 ---
 
@@ -96,5 +106,5 @@ ChanSight/
 | 潜在风险 / 难点 | 影响评估 | 应对策略 |
 | :--- | :--- | :--- |
 | **OpenCvSharp 原生 Runtime 加载失败** | 无法正常处理 Mat 内存 | 显式引入 `OpenCvSharp4.runtime.win` 并在测试中验证 `Cv2.GetVersionString()` |
-| **WinRT 依赖与 .NET 8 兼容性** | 捕获 API 无法实例化 | 确保采用标准 `CsWin32` 或最新 `Microsoft.Windows.SDK.NET.Ref` 绑定 |
-| **多项目依赖循环** | 编译阻断 | 严格遵循 `Core -> Capture -> Recorder -> Cli` 单向依赖链路 |
+| **高频大分辨率帧内存暴涨** | 触发频繁 GC 导致掉帧 | `CapturedFrame` 实现 `IDisposable`，结合 `Channels` 采用 `DropOldest` 背压丢帧策略 |
+| **多项目依赖循环** | 编译阻断 | 严格遵循 `Core -> Capture -> Recorder -> Cli` 单向依赖链路，所有服务面向接口注入 |
