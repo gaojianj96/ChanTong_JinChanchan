@@ -1,0 +1,32 @@
+name: Feature Issue
+description: ChanSight 任务开发模版
+title: "[Module] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "感谢提交 ChanSight 开发任务！"
+  - type: textarea
+    id: target
+    attributes:
+      label: 目标 (Target)
+      description: 简要描述该 Issue 的实现目标
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 任务清单 (Tasks)
+      description: 具体的子任务拆解
+      value: |
+        - [ ] 任务 1
+        - [ ] 任务 2
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 验收标准 (Acceptance Criteria)
+      description: 交付验收的硬性指标
+    validations:
+      required: true
