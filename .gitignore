@@ -1,0 +1,46 @@
+# .NET & Build outputs
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+.vscode/
+
+# Build artifacts
+dist/
+build/
+*.exe
+*.dll
+*.pdb
+*.nupkg
+
+# Development / Orchestration helper scripts & tooling (严禁提交)
+scripts/
+*.ps1
+.codex_sessions/
+.temp_logs/
+docs/raw_responses/
+
+# Logs & temp data
+logs/
+*.log
+screenshots/
+debug_output/
+*.tmp
+temp_*
+
+# Model weights
+assets/models/*.onnx
+assets/models/*.pt
+data/weights/*.onnx
+data/weights/*.pt
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store

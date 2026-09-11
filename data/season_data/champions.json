@@ -1,0 +1,12 @@
+[
+  {"id": "yasuo", "name": "亚索", "cost": 1, "traits": ["灵魂莲华", "决斗大师"]},
+  {"id": "ahri", "name": "阿狸", "cost": 1, "traits": ["灵魂莲华", "法师"]},
+  {"id": "darius", "name": "德莱厄斯", "cost": 1, "traits": ["夜幽", "决斗大师"]},
+  {"id": "kindred", "name": "千珏", "cost": 2, "traits": ["灵魂莲华", "死神", "永恒之森"]},
+  {"id": "riven", "name": "锐雯", "cost": 2, "traits": ["剪纸仙灵", "斗士", "武仙子"]},
+  {"id": "thresh", "name": "锤石", "cost": 3, "traits": ["灵魂莲华", "擎天卫"]},
+  {"id": "aphelios", "name": "厄斐琉斯", "cost": 3, "traits": ["灵魂莲华", "狙神"]},
+  {"id": "syndra", "name": "辛德拉", "cost": 4, "traits": ["灵魂莲华", "法师"]},
+  {"id": "kayn", "name": "凯隐", "cost": 4, "traits": ["幽魂", "死神"]},
+  {"id": "sett", "name": "瑟提", "cost": 5, "traits": ["灵魂莲华", "夜幽", "护卫"]}
+]

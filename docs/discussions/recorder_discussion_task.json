@@ -1,0 +1,20 @@
+{
+  "prompt": "【铲瞳 (ChanSight)】用户提出了非常务实的关键调整：\n1. 之前的 5 阶段路线图过于宽泛，且要等到第 5 阶段才能实际运行尝试。\n2. 用户希望【第一优先级先实现屏幕读取、高速捕获与对局录制/帧快照保存工具 (Screen Reader & Match Recorder)】，这样用户现在就能直接运行工具在游戏中录制真实对局画面与帧序列，为后续模型训练与算法分析积累第一手数据集。\n3. 请根据 C# (.NET 8/9 + Avalonia/Console + WGC/DXGI + OpenCvSharp4) 技术栈，重新设计以【对局数据录制与实时捕获验证】为首要交付物的前期精细化 GitHub Issues 列表（拆解为小步快跑、可快速运行验证的粒度）。",
+  "models": [
+    {
+      "name": "DeepSeek V4 Flash",
+      "id": "deepseek/deepseek-v4-flash",
+      "outFile": "docs/out_recorder_ds.json"
+    },
+    {
+      "name": "MiniMax M3",
+      "id": "minimax/minimax-m3",
+      "outFile": "docs/out_recorder_mm.json"
+    },
+    {
+      "name": "Qwen 3.7 Flash",
+      "id": "qwen/qwen3.7-flash",
+      "outFile": "docs/out_recorder_qw.json"
+    }
+  ]
+}

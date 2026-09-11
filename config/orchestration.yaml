@@ -1,0 +1,49 @@
+# OpenRouter 模型与多代理协作编排配置
+
+openrouter:
+  api_key_env: "OPENROUTER_API_KEY"
+  base_url: "https://openrouter.ai/api/v1"
+  site_url: "https://github.com/JianChanChan"
+  site_name: "JianChanChan-AI"
+
+# 讨论组模型映射配置
+models:
+  # 基础讨论组 (概念、文档、架构方案)
+  basic_discussion_group:
+    deepseek_v4_flash:
+      model_id: "deepseek/deepseek-v4-flash"
+      role_description: "架构与算法逻辑分析"
+      temperature: 0.7
+    minimax_m3:
+      model_id: "minimax/minimax-m3"
+      role_description: "工程实践与系统鲁棒性评估"
+      temperature: 0.7
+    qwen_3_7_flash:
+      model_id: "qwen/qwen-3.7-flash"
+      role_description: "性能优化与细节落地补充"
+      temperature: 0.7
+
+  # 高级评审组 (代码审查，独立 Session)
+  advanced_review_group:
+    deepseek_v4_flash_review:
+      model_id: "deepseek/deepseek-v4-flash"
+      role_description: "代码边界条件与潜在缺陷审查"
+      temperature: 0.2
+    claude_sonnet_5:
+      model_id: "anthropic/claude-sonnet-5"
+      role_description: "代码重构、规范与架构一致性评审"
+      temperature: 0.2
+
+  # 仲裁裁决模型 (解决死锁与争议)
+  arbitrator:
+    claude_fable_5:
+      model_id: "anthropic/claude-fable-5"
+      role_description: "多方案争议终审与权衡决策"
+      temperature: 0.3
+
+# Codex CLI 执行器配置
+codex_cli:
+  executable: "codex"
+  timeout_seconds: 180
+  session_dir: ".codex_sessions"
+  max_context_tokens: 32000
