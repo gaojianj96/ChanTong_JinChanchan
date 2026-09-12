@@ -15,6 +15,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYoloDatasetExporter, YoloDatasetExporter>();
         services.AddSingleton<IRoiMapperService, RoiMapperService>();
         services.AddSingleton<IGridSlicerService, GridSlicerService>();
+        services.AddSingleton<IOnnxInferenceEngine, OnnxInferenceEngine>();
+        services.AddSingleton<IYoloDetectorService, YoloDetectorService>();
+        services.AddSingleton<IPaddleOcrService, PaddleOcrService>();
 
         return services;
     }
