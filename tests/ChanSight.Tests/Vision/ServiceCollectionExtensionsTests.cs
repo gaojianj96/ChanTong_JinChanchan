@@ -75,6 +75,49 @@ public sealed class ServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public void AddChanSightVision_RegistersRoiMapperService()
+    {
+        var services = new ServiceCollection();
+
+        services.AddChanSightVision();
+        var provider = services.BuildServiceProvider();
+
+        var service = provider.GetService<IRoiMapperService>();
+        service.Should().NotBeNull();
+        service.Should().BeOfType<RoiMapperService>();
+    }
+
+    [Fact]
+    public void AddChanSightVision_RegistersGridSlicerService()
+    {
+        var services = new ServiceCollection();
+
+        services.AddChanSightVision();
+        var provider = services.BuildServiceProvider();
+
+        var service = provider.GetService<IGridSlicerService>();
+        service.Should().NotBeNull();
+        service.Should().BeOfType<GridSlicerService>();
+    }
+
+    [Fact]
+    public void AddChanSightVision_NewServicesAreSingletons()
+    {
+        var services = new ServiceCollection();
+
+        services.AddChanSightVision();
+        var provider = services.BuildServiceProvider();
+
+        var mapper1 = provider.GetRequiredService<IRoiMapperService>();
+        var mapper2 = provider.GetRequiredService<IRoiMapperService>();
+        mapper1.Should().BeSameAs(mapper2);
+
+        var slicer1 = provider.GetRequiredService<IGridSlicerService>();
+        var slicer2 = provider.GetRequiredService<IGridSlicerService>();
+        slicer1.Should().BeSameAs(slicer2);
+    }
+
+    [Fact]
     public void AddChanSightVision_NullServices_ThrowsArgumentNullException()
     {
         var act = () => ServiceCollectionExtensions.AddChanSightVision(null!);

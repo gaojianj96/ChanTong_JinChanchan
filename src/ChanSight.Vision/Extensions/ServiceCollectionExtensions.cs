@@ -13,6 +13,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPerceptualHashService, PerceptualHashService>();
         services.AddSingleton<IDatasetCleanerService, DatasetCleanerService>();
         services.AddSingleton<IYoloDatasetExporter, YoloDatasetExporter>();
+        services.AddSingleton<IRoiMapperService, RoiMapperService>();
+        services.AddSingleton<IGridSlicerService, GridSlicerService>();
 
         return services;
     }
