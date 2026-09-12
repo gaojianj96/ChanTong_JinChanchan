@@ -212,13 +212,13 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
             public nint hIconSm;
         }
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern ushort RegisterClassEx(ref WNDCLASSEX lpwcx);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool UnregisterClass(string lpClassName, nint hInstance);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern nint CreateWindowEx(
             uint dwExStyle, string lpClassName, string lpWindowName, uint dwStyle,
             int x, int y, int nWidth, int nHeight,

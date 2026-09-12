@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\src\ChanSight.Capture\ChanSight.Capture.csproj" />
     <ProjectReference Include="..\..\src\ChanSight.Recorder\ChanSight.Recorder.csproj" />
     <ProjectReference Include="..\..\src\ChanSight.Cli\ChanSight.Cli.csproj" />
+    <ProjectReference Include="..\..\src\ChanSight.Vision\ChanSight.Vision.csproj" />
   </ItemGroup>
 
   <ItemGroup>

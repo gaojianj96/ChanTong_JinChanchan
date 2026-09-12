@@ -70,6 +70,9 @@ public sealed class InteractiveDashboard
             await _captureService.StartAsync(_selectedWindow, cancellationToken);
             _logger.LogInformation("Capture started for window: {Title}", _selectedWindow.Title);
 
+            await StartRecordingAsync();
+            _logger.LogInformation("Auto-recording started.");
+
             await RegisterHotKeysAsync(cancellationToken);
 
             var dashboardCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -80,51 +83,19 @@ public sealed class InteractiveDashboard
                 dashboardCts.Cancel();
             };
 
-            await AnsiConsole.Live(CreateStatusPanel())
-                .AutoClear(false)
-                .StartAsync(async ctx =>
-                {
-                    var inputTask = Task.Run(async () =>
+            if (Console.IsOutputRedirected || !AnsiConsole.Profile.Capabilities.Interactive)
+            {
+                await RunSimpleConsoleLoop(dashboardCts, dashboardCts.Token);
+            }
+            else
+            {
+                await AnsiConsole.Live(CreateStatusPanel())
+                    .AutoClear(false)
+                    .StartAsync(async ctx =>
                     {
-                        while (!dashboardCts.Token.IsCancellationRequested)
-                        {
-                            if (Console.KeyAvailable)
-                            {
-                                var key = Console.ReadKey(intercept: true);
-                                if (key.Key == ConsoleKey.Q)
-                                {
-                                    dashboardCts.Cancel();
-                                    break;
-                                }
-                            }
-
-                            try
-                            {
-                                await Task.Delay(100, dashboardCts.Token);
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                break;
-                            }
-                        }
-                    }, dashboardCts.Token);
-
-                    while (!dashboardCts.Token.IsCancellationRequested)
-                    {
-                        ctx.UpdateTarget(CreateStatusPanel());
-
-                        try
-                        {
-                            await Task.Delay(200, dashboardCts.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            break;
-                        }
-                    }
-
-                    await inputTask;
-                });
+                        await RunLiveConsoleLoop(ctx, dashboardCts, dashboardCts.Token);
+                    });
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -134,6 +105,88 @@ public sealed class InteractiveDashboard
         {
             await ShutdownAsync();
         }
+    }
+
+    private async Task RunLiveConsoleLoop(LiveDisplayContext ctx, CancellationTokenSource dashboardCts, CancellationToken cancellationToken)
+    {
+        var inputTask = RunConsoleInputTask(dashboardCts, cancellationToken);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            ctx.UpdateTarget(CreateStatusPanel());
+
+            try
+            {
+                await Task.Delay(200, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+        }
+
+        await inputTask;
+    }
+
+    private async Task RunSimpleConsoleLoop(CancellationTokenSource dashboardCts, CancellationToken cancellationToken)
+    {
+        AnsiConsole.Write(CreateStatusPanel());
+        AnsiConsole.MarkupLine("[grey]Press R to start/stop recording, S for snapshot, Q to exit.[/]");
+
+        var inputTask = RunConsoleInputTask(dashboardCts, cancellationToken);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(1000, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+        }
+
+        await inputTask;
+    }
+
+    private Task RunConsoleInputTask(CancellationTokenSource dashboardCts, CancellationToken cancellationToken)
+    {
+        return Task.Run(async () =>
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(intercept: true);
+                    switch (key.Key)
+                    {
+                        case ConsoleKey.Q:
+                            dashboardCts.Cancel();
+                            return;
+                        case ConsoleKey.R:
+                            _ = ToggleRecordingAsync();
+                            break;
+                        case ConsoleKey.S:
+                            _ = Task.Run(async () =>
+                            {
+                                try { await _datasetSampler.TakeManualSnapshotAsync(); }
+                                catch (InvalidOperationException) { }
+                            });
+                            break;
+                    }
+                }
+
+                try
+                {
+                    await Task.Delay(100, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }, cancellationToken);
     }
 
     private async Task<WindowTarget?> SelectWindowAsync(IReadOnlyList<WindowTarget> windows)
@@ -200,6 +253,21 @@ public sealed class InteractiveDashboard
         }
     }
 
+    private async Task ToggleRecordingAsync()
+    {
+        try
+        {
+            if (_isRecording)
+                await StopRecordingAsync();
+            else
+                await StartRecordingAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling recording");
+        }
+    }
+
     private async Task StartRecordingAsync()
     {
         if (_selectedWindow is null)
@@ -210,7 +278,7 @@ public sealed class InteractiveDashboard
         var outputDir = Path.Combine(
             AppContext.BaseDirectory,
             "datasets", "recordings",
-            $"{now:yyyyMMdd_HHmmss}_{sessionId:N[..8]}");
+            $"{now:yyyyMMdd_HHmmss}_{sessionId.ToString("N")[..8]}");
 
         _currentSession = new SessionMeta(
             sessionId,
@@ -286,7 +354,7 @@ public sealed class InteractiveDashboard
         grid.AddRow(new Markup("[grey]Target FPS:[/]"), new Markup($"{_targetFps}"));
         grid.AddRow(new Markup("[grey]Duration:[/]"), new Markup(durationStr));
         grid.AddRow(new Text(""), new Text(""));
-        grid.AddRow(new Markup("[yellow]Hotkeys:[/]"), new Markup("[bold]F6[/] Start/Stop  [bold]F7[/] Snapshot  [bold]Q[/] Exit"));
+        grid.AddRow(new Markup("[yellow]Keys:[/]"), new Markup("[bold]R[/] Start/Stop  [bold]S[/] Snapshot  [bold]Q[/] Exit  [bold]F6/F7[/] Hotkeys"));
 
         if (_currentSession is not null)
         {
