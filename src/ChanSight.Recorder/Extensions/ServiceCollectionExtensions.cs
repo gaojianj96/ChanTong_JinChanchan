@@ -15,7 +15,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<INativeHotKeyApi, NativeHotKeyApi>();
 
         services.AddSingleton<DatasetSamplerOptions>(_ => DatasetSamplerOptions.Default);
-        services.AddTransient<IDatasetSampler, DatasetSamplerService>();
+        services.AddSingleton<DatasetSamplerService>();
+        services.AddSingleton<IDatasetSampler>(sp => sp.GetRequiredService<DatasetSamplerService>());
         services.AddTransient<IVideoRecorder, VideoRecorderService>();
         services.AddTransient<IGlobalHotKeyService, GlobalHotKeyService>();
 
