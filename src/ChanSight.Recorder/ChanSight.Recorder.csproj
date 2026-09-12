@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\ChanSight.Core\ChanSight.Core.csproj" />
+    <ProjectReference Include="..\ChanSight.Capture\ChanSight.Capture.csproj" />
+  </ItemGroup>
+</Project>
