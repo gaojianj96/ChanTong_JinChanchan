@@ -1,4 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\ChanSight.Core\ChanSight.Core.csproj" />
     <ProjectReference Include="..\ChanSight.Capture\ChanSight.Capture.csproj" />

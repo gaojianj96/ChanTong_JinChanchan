@@ -17,5 +17,6 @@ public sealed class CaptureServiceCollectionExtensionsTests
 
         provider.GetRequiredService<IWindowFinder>().Should().NotBeNull();
         provider.GetRequiredService<IWindowStateMonitor>().Should().NotBeNull();
+        provider.GetRequiredService<IScreenCaptureService>().Should().NotBeNull();
     }
 }

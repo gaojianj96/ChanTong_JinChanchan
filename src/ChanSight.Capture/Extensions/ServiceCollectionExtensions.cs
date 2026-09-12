@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<INativeWindowApi, NativeWindowApi>();
         services.AddSingleton<IWindowFinder, WindowFinder>();
         services.AddTransient<IWindowStateMonitor, WindowStateMonitor>();
+        services.AddTransient<IScreenCaptureService, WgcCaptureService>();
 
         return services;
     }
