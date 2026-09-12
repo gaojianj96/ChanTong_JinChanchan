@@ -61,7 +61,28 @@ flowchart TD
 
 ---
 
-## 4. 目录结构规范
+## 4. Milestone 1 交付物：对局录制与采样工具快速上手 (Quick Start)
+
+当前 **Milestone 1** 已构建完毕，您可以在本地直接运行 `ChanSight.Cli` 绑定金铲铲游戏窗口开始实机录制与数据集采集：
+
+```powershell
+# 1. 编译并运行 CLI 交互工具
+dotnet run --project src/ChanSight.Cli
+```
+
+### 快捷键与操作说明
+- **`F6`**：全局【开始 / 停止】录制对局视频（自动保存为 MP4 格式）；
+- **`F7`**：手动抓取单帧高清快照（存入 `snapshots/` 目录）；
+- **`Q` 或 `Ctrl+C`**：安全退出并完成视频和 `meta.json` 封包。
+
+输出产物将自动规范归档于：
+- `datasets/recordings/{session_id}/match_video.mp4`
+- `datasets/recordings/{session_id}/meta.json`
+- `datasets/recordings/{session_id}/frames/` 与 `snapshots/`
+
+---
+
+## 5. 目录结构规范
 
 ```
 JianChanChan/
