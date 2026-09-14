@@ -27,7 +27,7 @@ public sealed class WgcCaptureServiceTests
     }
 
     [Fact]
-    public async Task Frames_UsesBoundedDropOldestChannel()
+    public async Task Frames_UsesBoundedDropWriteChannel()
     {
         var provider = new TestWgcFrameProvider();
         var options = WgcCaptureOptions.Default with
@@ -49,8 +49,8 @@ public sealed class WgcCaptureServiceTests
         using (first)
         using (second)
         {
-            first!.SequenceNumber.Should().Be(2);
-            second!.SequenceNumber.Should().Be(3);
+            first!.SequenceNumber.Should().Be(1);
+            second!.SequenceNumber.Should().Be(2);
         }
     }
 
@@ -105,6 +105,57 @@ public sealed class WgcCaptureServiceTests
         provider.DisposeCount.Should().Be(1);
     }
 
+    [Fact]
+    public async Task ProviderRaisingCaptureEnded_StopsServiceAndRaisesEvent()
+    {
+        var provider = new TestWgcFrameProvider();
+        await using var service = new WgcCaptureService(WgcCaptureOptions.Default, () => provider);
+
+        var captureEndedCount = 0;
+        service.CaptureEnded += (_, _) => Interlocked.Increment(ref captureEndedCount);
+
+        await service.StartAsync(CreateTarget());
+        provider.RaiseCaptureEnded();
+
+        await WaitForAsync(() => !service.IsRunning);
+        await WaitForAsync(() => provider.Disposed);
+
+        service.IsRunning.Should().BeFalse();
+        captureEndedCount.Should().Be(1);
+        provider.Disposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CaptureEnded_EventHandlerNeverThrows_SwallowsProviderDisposeFailure()
+    {
+        var provider = new TestWgcFrameProvider { ThrowOnDispose = true };
+        await using var service = new WgcCaptureService(WgcCaptureOptions.Default, () => provider);
+
+        await service.StartAsync(CreateTarget());
+        provider.RaiseCaptureEnded();
+
+        await WaitForAsync(() => !service.IsRunning);
+        await WaitForAsync(() => provider.DisposeAttempted);
+
+        service.IsRunning.Should().BeFalse();
+        provider.DisposeAttempted.Should().BeTrue();
+    }
+
+    private static async Task WaitForAsync(Func<bool> condition)
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            if (condition())
+            {
+                return;
+            }
+
+            await Task.Delay(10);
+        }
+
+        condition().Should().BeTrue();
+    }
+
     private static WindowTarget CreateTarget()
     {
         return new WindowTarget(
@@ -126,11 +177,19 @@ public sealed class WgcCaptureServiceTests
     {
         public event EventHandler<CapturedFrame>? FrameReady;
 
+        public event EventHandler? CaptureEnded;
+
         public int StartCount { get; private set; }
 
         public int StopCount { get; private set; }
 
         public int DisposeCount { get; private set; }
+
+        public bool Disposed { get; private set; }
+
+        public bool DisposeAttempted { get; private set; }
+
+        public bool ThrowOnDispose { get; init; }
 
         public ValueTask StartAsync(WindowTarget target, CancellationToken cancellationToken)
         {
@@ -146,7 +205,14 @@ public sealed class WgcCaptureServiceTests
 
         public ValueTask DisposeAsync()
         {
+            DisposeAttempted = true;
+            if (ThrowOnDispose)
+            {
+                throw new InvalidOperationException("dispose failed");
+            }
+
             DisposeCount++;
+            Disposed = true;
             return ValueTask.CompletedTask;
         }
 
@@ -154,5 +220,48 @@ public sealed class WgcCaptureServiceTests
         {
             FrameReady?.Invoke(this, frame);
         }
+
+        public void RaiseCaptureEnded() => CaptureEnded?.Invoke(this, EventArgs.Empty);
+    }
+
+    [Fact]
+    public async Task ThrottledFrames_RaiseFrameDroppedEvent()
+    {
+        var provider = new TestWgcFrameProvider();
+        var options = WgcCaptureOptions.Default with { TargetFramesPerSecond = 10 };
+        await using var service = new WgcCaptureService(options, () => provider);
+
+        var dropped = new List<FrameDroppedEventArgs>();
+        service.FrameDropped += (_, e) => dropped.Add(e);
+
+        await service.StartAsync(CreateTarget());
+        provider.Publish(CreateFrame(1, TimeSpan.Zero));
+        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(50)));
+
+        dropped.Should().HaveCount(1);
+        dropped[0].Reason.Should().Be(FrameDropReason.Throttled);
+    }
+
+    [Fact]
+    public async Task ChannelFull_TryWriteRejected_RaisesFrameDropped()
+    {
+        var provider = new TestWgcFrameProvider();
+        var options = WgcCaptureOptions.Default with
+        {
+            TargetFramesPerSecond = 60,
+            ChannelCapacity = 2
+        };
+        await using var service = new WgcCaptureService(options, () => provider);
+
+        var dropped = new List<FrameDroppedEventArgs>();
+        service.FrameDropped += (_, e) => dropped.Add(e);
+
+        await service.StartAsync(CreateTarget());
+        provider.Publish(CreateFrame(1, TimeSpan.Zero));
+        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(20)));
+        provider.Publish(CreateFrame(3, TimeSpan.FromMilliseconds(40)));
+
+        dropped.Should().HaveCount(1);
+        dropped[0].Reason.Should().Be(FrameDropReason.ChannelFull);
     }
 }

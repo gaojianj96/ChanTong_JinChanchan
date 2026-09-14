@@ -13,4 +13,13 @@ internal sealed class FileSystem : IFileSystem
 
     public Task WriteAllBytesAsync(string path, byte[] bytes, CancellationToken cancellationToken = default)
         => File.WriteAllBytesAsync(path, bytes, cancellationToken);
+
+    public Task<string?> ReadAllTextAsync(string path, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return File.Exists(path) ? Task.FromResult<string?>(File.ReadAllText(path)) : Task.FromResult<string?>(null);
+    }
+
+    public IReadOnlyList<string> EnumerateFiles(string directory, string searchPattern)
+        => Directory.Exists(directory) ? Directory.EnumerateFiles(directory, searchPattern).ToList() : new List<string>();
 }

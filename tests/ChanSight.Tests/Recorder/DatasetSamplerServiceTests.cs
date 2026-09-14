@@ -274,6 +274,15 @@ public sealed class DatasetSamplerServiceTests
 
         public bool FileExists(string path) => WrittenFiles.ContainsKey(path);
 
+        public Task<string?> ReadAllTextAsync(string path, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(WrittenFiles.TryGetValue(path, out var text) ? (string?)text : null);
+        }
+
+        public IReadOnlyList<string> EnumerateFiles(string directory, string searchPattern)
+            => new List<string>();
+
         public Task WriteAllTextAsync(string path, string contents, CancellationToken cancellationToken = default)
         {
             WrittenFiles[path] = contents;

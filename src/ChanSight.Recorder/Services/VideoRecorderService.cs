@@ -13,7 +13,8 @@ public sealed class VideoRecorderService : IVideoRecorder
     private IFrameSource? _frameSource;
     private CancellationTokenSource? _cts;
     private Task? _recordingTask;
-    private bool _paused;
+    private volatile bool _paused;
+    private long _framesWritten;
     private bool _disposed;
 
     public bool IsRecording => _session is not null && _recordingTask is not null && !_recordingTask.IsCompleted;
@@ -33,7 +34,7 @@ public sealed class VideoRecorderService : IVideoRecorder
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public ValueTask StartAsync(SessionMeta session, IFrameSource frameSource, CancellationToken cancellationToken = default)
+    public async ValueTask StartAsync(SessionMeta session, IFrameSource frameSource, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -46,11 +47,16 @@ public sealed class VideoRecorderService : IVideoRecorder
 
         _fileSystem.CreateDirectory(session.OutputDirectory);
 
+        await CleanOrphanProvisionalMetaAsync(session, cancellationToken).ConfigureAwait(false);
+
+        _framesWritten = 0;
+        await WriteMetaAsync(cancellationToken, provisional: true).ConfigureAwait(false);
+
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _recordingTask = RecordFramesAsync(_cts.Token);
 
         _logger.LogInformation("Recording started: {Name} -> {Dir}", session.Name, session.OutputDirectory);
-        return ValueTask.CompletedTask;
+        return;
     }
 
     public ValueTask PauseAsync(CancellationToken cancellationToken = default)
@@ -86,19 +92,34 @@ public sealed class VideoRecorderService : IVideoRecorder
 
         _cts?.Cancel();
 
-        if (_recordingTask is not null)
+        try
         {
-            try { await _recordingTask.ConfigureAwait(false); }
-            catch (OperationCanceledException) { }
+            if (_recordingTask is not null)
+            {
+                await _recordingTask.ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Recording task faulted during stop; finalizing metadata anyway.");
         }
 
-        await WriteMetaAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await WriteMetaAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write meta.json");
+        }
 
-        _logger.LogInformation("Recording stopped: {Name}", _session.Name);
+        _logger.LogInformation("Recording stopped: {Name}", _session?.Name);
         _session = null;
         _frameSource = null;
         _recordingTask = null;
         _paused = false;
+        _cts?.Dispose();
+        _cts = null;
     }
 
     private async Task RecordFramesAsync(CancellationToken cancellationToken)
@@ -117,21 +138,62 @@ public sealed class VideoRecorderService : IVideoRecorder
                         continue;
                     }
 
-                    frameCount++;
-                    var fileName = $"frame_{frameCount:D8}.png";
+                    var fileName = $"frame_{frameCount + 1:D8}.png";
                     var filePath = Path.Combine(_session!.OutputDirectory, fileName);
                     var bytes = frame.Image.ImEncode(".png");
                     await _fileSystem.WriteAllBytesAsync(filePath, bytes, CancellationToken.None).ConfigureAwait(false);
+                    frameCount++;
+                    Interlocked.Increment(ref _framesWritten);
                     frame.Dispose();
                 }
             }
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Frame recording loop terminated: {Written} frames written", frameCount);
         }
     }
 
-    private async Task WriteMetaAsync(CancellationToken cancellationToken)
+    private async Task CleanOrphanProvisionalMetaAsync(SessionMeta session, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var metaPath = Path.Combine(session.OutputDirectory, "meta.json");
+            var metaText = await _fileSystem.ReadAllTextAsync(metaPath, cancellationToken).ConfigureAwait(false);
+            if (metaText is null)
+            {
+                return;
+            }
+
+            var provisional = TryGetProvisionalFlag(metaText);
+            var hasFrames = _fileSystem.EnumerateFiles(session.OutputDirectory, "frame_*.png").Count > 0;
+            if (provisional && !hasFrames)
+            {
+                _logger.LogWarning("Archiving orphaned provisional meta without frames: {Dir}", session.OutputDirectory);
+                await _fileSystem.WriteAllTextAsync(metaPath + ".orphan", metaText, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Orphan meta sweep skipped for {Dir}", session.OutputDirectory);
+        }
+    }
+
+    private static bool TryGetProvisionalFlag(string metaJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(metaJson);
+            return doc.RootElement.TryGetProperty("provisional", out var prop) &&
+                   prop.ValueKind == JsonValueKind.True;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private async Task WriteMetaAsync(CancellationToken cancellationToken, bool provisional = false)
     {
         if (_session is null)
             return;
@@ -147,7 +209,11 @@ public sealed class VideoRecorderService : IVideoRecorder
                 title = _session.Target.Title
             },
             startedAt = _session.StartedAt.ToString("O"),
+            endedAt = provisional ? null : DateTimeOffset.UtcNow.ToString("O"),
+            durationSeconds = provisional ? null : (DateTimeOffset.UtcNow - _session.StartedAt).TotalSeconds.ToString("F2"),
             targetFps = _session.TargetFps,
+            frameCount = provisional ? 0 : Interlocked.Read(ref _framesWritten),
+            provisional = provisional,
             resolution = new
             {
                 width = _session.Resolution.Width,

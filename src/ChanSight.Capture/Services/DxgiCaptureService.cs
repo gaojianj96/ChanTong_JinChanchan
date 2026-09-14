@@ -24,6 +24,7 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
     private DateTimeOffset lastAcceptedFrameTimestamp = DateTimeOffset.MinValue;
     private long sequenceNumber;
     private bool disposed;
+    private bool failureFinalized;
 
     public DxgiCaptureService()
         : this(WgcCaptureOptions.Default)
@@ -37,7 +38,7 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
         channel = Channel.CreateBounded<CapturedFrame>(new BoundedChannelOptions(options.ChannelCapacity)
         {
-            FullMode = BoundedChannelFullMode.DropOldest,
+            FullMode = BoundedChannelFullMode.DropWrite, // DropWrite: rejected frames are disposed by caller; DropOldest would leak evicted frames
             SingleReader = true,
             SingleWriter = false
         });
@@ -48,6 +49,10 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
     public IFrameSource FrameSource => this;
 
     public ChannelReader<CapturedFrame> Frames => channel.Reader;
+
+    public event EventHandler? CaptureEnded;
+
+    public event EventHandler<FrameDroppedEventArgs>? FrameDropped;
 
     public ValueTask StartAsync(WindowTarget target, CancellationToken cancellationToken = default)
     {
@@ -66,6 +71,7 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
             CreateDevice();
             duplication = CreateDuplication(target.PhysicalBounds, out outputBounds);
             captureCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            failureFinalized = false;
             captureTask = Task.Run(() => CaptureLoopAsync(captureCancellation.Token), CancellationToken.None);
             lastAcceptedFrameTimestamp = DateTimeOffset.MinValue;
             IsRunning = true;
@@ -90,7 +96,14 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
         if (cancellation is not null)
         {
-            await cancellation.CancelAsync().ConfigureAwait(false);
+            try
+            {
+                await cancellation.CancelAsync().ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                // already disposed by failure path
+            }
             cancellation.Dispose();
         }
 
@@ -194,6 +207,8 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
     private async Task CaptureLoopAsync(CancellationToken cancellationToken)
     {
+        var failed = false;
+
         while (!cancellationToken.IsCancellationRequested)
         {
             IDXGIResource? desktopResource = null;
@@ -209,7 +224,8 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
                 if (result == Vortice.DXGI.ResultCode.AccessLost)
                 {
-                    return;
+                    failed = true;
+                    break;
                 }
 
                 result.CheckError();
@@ -219,15 +235,27 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
                 var capturedFrame = CopyTextureToFrame(desktopTexture);
                 if (ShouldAccept(capturedFrame.Timestamp))
                 {
-                    if (!channel.Writer.TryWrite(capturedFrame))
+                    if (channel.Reader.Count >= options.ChannelCapacity ||
+                        !channel.Writer.TryWrite(capturedFrame))
                     {
+                        var seq = capturedFrame.SequenceNumber;
+                        var ts = capturedFrame.Timestamp;
                         capturedFrame.Dispose();
+                        RaiseFrameDropped(FrameDropReason.ChannelFull, seq, ts);
                     }
                 }
                 else
                 {
+                    var seq = capturedFrame.SequenceNumber;
+                    var ts = capturedFrame.Timestamp;
                     capturedFrame.Dispose();
+                    RaiseFrameDropped(FrameDropReason.Throttled, seq, ts);
                 }
+            }
+            catch (Exception)
+            {
+                failed = true;
+                break;
             }
             finally
             {
@@ -240,6 +268,39 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
             await Task.Yield();
         }
+
+        if (failed && !cancellationToken.IsCancellationRequested)
+        {
+            FinalizeCaptureFailure();
+        }
+    }
+
+    private void FinalizeCaptureFailure()
+    {
+        CancellationTokenSource? staleCancellation;
+
+        lock (syncRoot)
+        {
+            if (failureFinalized)
+            {
+                return;
+            }
+
+            failureFinalized = true;
+
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            IsRunning = false;
+            ReleaseDxgiResources();
+            staleCancellation = captureCancellation;
+            captureCancellation = null;
+        }
+
+        staleCancellation?.Dispose();
+        CaptureEnded?.Invoke(this, EventArgs.Empty);
     }
 
     private CapturedFrame CopyTextureToFrame(ID3D11Texture2D sourceTexture)
@@ -319,6 +380,18 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
         context = null;
         device?.Dispose();
         device = null;
+    }
+
+    private void RaiseFrameDropped(FrameDropReason reason, long sequenceNumber, DateTimeOffset timestamp)
+    {
+        try
+        {
+            FrameDropped?.Invoke(this, new FrameDroppedEventArgs(sequenceNumber, reason, timestamp));
+        }
+        catch
+        {
+            // subscriber exceptions must not break the frame pipeline
+        }
     }
 
     private void ThrowIfDisposed()

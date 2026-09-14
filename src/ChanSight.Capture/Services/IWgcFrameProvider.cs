@@ -6,6 +6,8 @@ internal interface IWgcFrameProvider : IAsyncDisposable
 {
     event EventHandler<CapturedFrame>? FrameReady;
 
+    event EventHandler? CaptureEnded;
+
     ValueTask StartAsync(WindowTarget target, CancellationToken cancellationToken);
 
     ValueTask StopAsync(CancellationToken cancellationToken);

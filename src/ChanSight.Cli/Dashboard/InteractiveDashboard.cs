@@ -1,3 +1,4 @@
+using ChanSight.Capture.Services;
 using ChanSight.Core.Interfaces;
 using ChanSight.Core.Models;
 using ChanSight.Recorder.Services;
@@ -21,6 +22,8 @@ public sealed class InteractiveDashboard
     private SessionMeta? _currentSession;
     private CancellationTokenSource? _recordingCts;
     private int _targetFps = 30;
+    private int _toggleGuard;
+    private volatile bool _captureLost;
 
     public InteractiveDashboard(
         IWindowFinder windowFinder,
@@ -74,6 +77,11 @@ public sealed class InteractiveDashboard
             _logger.LogInformation("Auto-recording started.");
 
             await RegisterHotKeysAsync(cancellationToken);
+
+            if (_captureService is WgcCaptureService wgcCapture)
+            {
+                wgcCapture.CaptureEnded += OnCaptureEnded;
+            }
 
             var dashboardCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -225,16 +233,40 @@ public sealed class InteractiveDashboard
         }
     }
 
+    private void OnCaptureEnded(object? sender, EventArgs e)
+    {
+        _captureLost = true;
+        _status = "CAPTURE_LOST";
+        _logger.LogError("Screen capture ended unexpectedly (window closed or device lost).");
+
+        _ = SafeStopAfterCaptureLossAsync();
+    }
+
+    private async Task SafeStopAfterCaptureLossAsync()
+    {
+        try
+        {
+            if (_isRecording)
+            {
+                _recordingCts?.Cancel();
+                await _videoRecorder.StopAsync();
+                await _datasetSampler.StopAsync();
+                _isRecording = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error stopping pipeline after capture loss");
+        }
+    }
+
     private async void OnHotKeyPressed(object? sender, HotKeyPressedEventArgs e)
     {
         try
         {
             if (e.HotKey.Key == VirtualKeyCode.F6)
             {
-                if (_isRecording)
-                    await StopRecordingAsync();
-                else
-                    await StartRecordingAsync();
+                await ToggleRecordingAsync();
             }
             else if (e.HotKey.Key == VirtualKeyCode.F7)
             {
@@ -255,6 +287,11 @@ public sealed class InteractiveDashboard
 
     private async Task ToggleRecordingAsync()
     {
+        if (Interlocked.Exchange(ref _toggleGuard, 1) == 1)
+        {
+            return;
+        }
+
         try
         {
             if (_isRecording)
@@ -265,6 +302,10 @@ public sealed class InteractiveDashboard
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error toggling recording");
+        }
+        finally
+        {
+            Volatile.Write(ref _toggleGuard, 0);
         }
     }
 
@@ -323,6 +364,7 @@ public sealed class InteractiveDashboard
     {
         var statusColor = _status switch
         {
+            "CAPTURE_LOST" => "red",
             "RECORDING" => "red",
             "PAUSED" => "yellow",
             "STOPPING" => "yellow",
@@ -352,6 +394,12 @@ public sealed class InteractiveDashboard
         grid.AddRow(new Markup("[grey]Window:[/]"), new Markup(_selectedWindow?.Title ?? "N/A"));
         grid.AddRow(new Markup("[grey]Resolution:[/]"), new Markup(resolution));
         grid.AddRow(new Markup("[grey]Target FPS:[/]"), new Markup($"{_targetFps}"));
+        var callbackMs = _captureService is WgcCaptureService wgc ? wgc.MaxFrameCallbackMilliseconds.ToString("F2") + " ms" : "N/A (capture)";
+        grid.AddRow(new Markup("[grey]Capture callback max:[/]"), new Markup($"{callbackMs}"));
+        if (_captureLost)
+        {
+            grid.AddRow(new Markup("[red]Capture lost:[/]"), new Markup("[red bold]window closed or device lost - press Q to exit and restart[/]"));
+        }
         grid.AddRow(new Markup("[grey]Duration:[/]"), new Markup(durationStr));
         grid.AddRow(new Text(""), new Text(""));
         grid.AddRow(new Markup("[yellow]Keys:[/]"), new Markup("[bold]R[/] Start/Stop  [bold]S[/] Snapshot  [bold]Q[/] Exit  [bold]F6/F7[/] Hotkeys"));
@@ -399,6 +447,10 @@ public sealed class InteractiveDashboard
         }
 
         _hotKeyService.HotKeyPressed -= OnHotKeyPressed;
+        if (_captureService is WgcCaptureService wgcShutdown)
+        {
+            wgcShutdown.CaptureEnded -= OnCaptureEnded;
+        }
 
         try
         {

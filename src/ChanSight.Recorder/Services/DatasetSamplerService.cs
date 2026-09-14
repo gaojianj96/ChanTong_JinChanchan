@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading.Channels;
 using ChanSight.Core.Interfaces;
 using ChanSight.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,8 @@ public sealed class DatasetSamplerService : IDatasetSampler
     private CapturedFrame? _latestFrame;
     private readonly object _latestFrameLock = new();
     private bool _disposed;
+    private Channel<(CapturedFrame Frame, bool IsManual)>? _writeQueue;
+    private Task? _writerTask;
 
     public DatasetSamplerService(DatasetSamplerOptions options, ILogger<DatasetSamplerService> logger)
         : this(options, new FileSystem(), logger)
@@ -54,6 +57,13 @@ public sealed class DatasetSamplerService : IDatasetSampler
         _sampledImages.Clear();
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _writeQueue = Channel.CreateBounded<(CapturedFrame, bool)>(new BoundedChannelOptions(16)
+        {
+            FullMode = BoundedChannelFullMode.DropWrite, // DropWrite: rejected samples are disposed by caller
+            SingleReader = true,
+            SingleWriter = false
+        });
+        _writerTask = RunWriterAsync();
         _samplingTask = SampleFramesAsync(_cts.Token);
 
         _logger.LogInformation("Dataset sampling started: {Name} -> {Dir}", session.Name, outputDir);
@@ -74,6 +84,24 @@ public sealed class DatasetSamplerService : IDatasetSampler
             frame = channelFrame;
         }
         else
+        {
+            using var waitCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            waitCts.CancelAfter(TimeSpan.FromMilliseconds(200));
+
+            try
+            {
+                await _frameSource.Frames.WaitToReadAsync(waitCts.Token).ConfigureAwait(false);
+                if (_frameSource.Frames.TryRead(out channelFrame))
+                {
+                    frame = channelFrame;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        if (frame is null)
         {
             lock (_latestFrameLock)
             {
@@ -100,13 +128,43 @@ public sealed class DatasetSamplerService : IDatasetSampler
 
         _cts?.Cancel();
 
-        if (_samplingTask is not null)
+        try
         {
-            try { await _samplingTask.ConfigureAwait(false); }
-            catch (OperationCanceledException) { }
+            if (_samplingTask is not null)
+            {
+                await _samplingTask.ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Sampling task faulted during stop.");
         }
 
-        await WriteDatasetIndexAsync(cancellationToken).ConfigureAwait(false);
+        _writeQueue?.Writer.TryComplete();
+
+        try
+        {
+            if (_writerTask is not null)
+            {
+                await _writerTask.ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Writer task faulted during stop.");
+        }
+
+        _writeQueue = null;
+        _writerTask = null;
+
+        try
+        {
+            await WriteDatasetIndexAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write dataset_index.json");
+        }
 
         _logger.LogInformation("Dataset sampling stopped: {Name}", _session.Name);
         _session = null;
@@ -142,9 +200,11 @@ public sealed class DatasetSamplerService : IDatasetSampler
                     if (now - lastSampleTime >= interval)
                     {
                         lastSampleTime = now;
-                        using (frame)
+                        var clone = new CapturedFrame(frame.Image.Clone(), frame.Timestamp, frame.SequenceNumber);
+                        frame.Dispose();
+                        if (!_writeQueue!.Writer.TryWrite((clone, false)))
                         {
-                            await SaveFrameAsync(frame, isManual: false, CancellationToken.None).ConfigureAwait(false);
+                            clone.Dispose();
                         }
                     }
                     else
@@ -156,6 +216,35 @@ public sealed class DatasetSamplerService : IDatasetSampler
         }
         catch (OperationCanceledException)
         {
+        }
+    }
+
+    private async Task RunWriterAsync()
+    {
+        try
+        {
+            var reader = _writeQueue!.Reader;
+            while (await reader.WaitToReadAsync(CancellationToken.None).ConfigureAwait(false))
+            {
+                while (reader.TryRead(out var item))
+                {
+                    using (item.Frame)
+                    {
+                        try
+                        {
+                            await SaveFrameAsync(item.Frame, item.IsManual, CancellationToken.None).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to write sample {Seq}", item.Frame.SequenceNumber);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Sample writer loop terminated.");
         }
     }
 

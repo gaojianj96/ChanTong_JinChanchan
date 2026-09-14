@@ -26,6 +26,8 @@ internal sealed class WindowsGraphicsCaptureFrameProvider : IWgcFrameProvider
 
     public event EventHandler<CapturedFrame>? FrameReady;
 
+    public event EventHandler? CaptureEnded;
+
     public ValueTask StartAsync(WindowTarget target, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(target);
@@ -45,6 +47,7 @@ internal sealed class WindowsGraphicsCaptureFrameProvider : IWgcFrameProvider
 
             CreateDevice();
             item = GraphicsCaptureItemInterop.CreateForWindow(target.Hwnd);
+            item.Closed += OnItemClosed;
             framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
                 winRtDevice,
                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
@@ -134,10 +137,54 @@ internal sealed class WindowsGraphicsCaptureFrameProvider : IWgcFrameProvider
         catch
         {
             capturedFrame?.Dispose();
+            if (DetectDeviceRemoved())
+            {
+                OnItemClosed(this, EventArgs.Empty);
+            }
+
             return;
         }
 
-        FrameReady?.Invoke(this, capturedFrame);
+        var handler = FrameReady;
+        if (handler is null)
+        {
+            capturedFrame!.Dispose();
+            return;
+        }
+
+        handler(this, capturedFrame);
+    }
+
+    private void OnItemClosed(object? sender, object e)
+    {
+        var shouldRaise = false;
+
+        lock (syncRoot)
+        {
+            if (running)
+            {
+                StopAndRelease();
+                shouldRaise = true;
+            }
+        }
+
+        if (shouldRaise)
+        {
+            CaptureEnded?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private bool DetectDeviceRemoved()
+    {
+        try
+        {
+            var reasonCode = device is null ? -1 : device.DeviceRemovedReason.Code;
+            return reasonCode != 0;
+        }
+        catch
+        {
+            return true;
+        }
     }
 
     private CapturedFrame CopyTextureToMat(ID3D11Texture2D sourceTexture, int width, int height)
@@ -184,6 +231,11 @@ internal sealed class WindowsGraphicsCaptureFrameProvider : IWgcFrameProvider
 
     private void StopAndRelease()
     {
+        if (item is not null)
+        {
+            item.Closed -= OnItemClosed;
+        }
+
         if (framePool is not null)
         {
             framePool.FrameArrived -= OnFrameArrived;

@@ -11,6 +11,8 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
     private Thread? _messageThread;
     private CancellationTokenSource? _messageLoopCts;
     private volatile bool _disposed;
+    private int _nextId;
+    private Exception? _initError;
     private NativeMethods.WndProcDelegate? _keptAliveWndProc;
     private static readonly string WindowClassName = $"ChanSight_HotKeyMessageWindow_{Guid.NewGuid():N}";
 
@@ -29,7 +31,7 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
             if (_hwnd == IntPtr.Zero)
                 InitializeMessageWindow();
 
-            var id = _registered.Count + 1;
+            var id = Interlocked.Increment(ref _nextId);
             var result = NativeMethods.RegisterHotKey(_hwnd, id, (uint)hotKey.Modifiers, (uint)hotKey.Key);
             if (result)
                 _registered[hotKey] = id;
@@ -44,7 +46,7 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
             if (!_registered.Remove(hotKey, out var id))
                 return false;
 
-            return NativeMethods.UnregisterHotKey(IntPtr.Zero, id);
+            return NativeMethods.UnregisterHotKey(_hwnd, id);
         }
     }
 
@@ -56,7 +58,7 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
         lock (_syncLock)
         {
             foreach (var kv in _registered)
-                NativeMethods.UnregisterHotKey(IntPtr.Zero, kv.Value);
+                NativeMethods.UnregisterHotKey(_hwnd, kv.Value);
             _registered.Clear();
 
             if (_hwnd != IntPtr.Zero)
@@ -87,61 +89,15 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
         {
             _messageThread = new Thread(() =>
             {
-                var hInstance = NativeMethods.GetModuleHandle(null!);
-
-                var wndProc = new NativeMethods.WndProcDelegate(WndProc);
-                _keptAliveWndProc = wndProc;
-
-                var wndClass = new NativeMethods.WNDCLASSEX
+                try
                 {
-                    cbSize = Marshal.SizeOf<NativeMethods.WNDCLASSEX>(),
-                    lpfnWndProc = wndProc,
-                    hInstance = hInstance,
-                    lpszClassName = WindowClassName
-                };
-
-                var atom = NativeMethods.RegisterClassEx(ref wndClass);
-                if (atom == 0)
-                    throw new InvalidOperationException($"RegisterClassEx failed: {Marshal.GetLastWin32Error()}");
-
-                _hwnd = NativeMethods.CreateWindowEx(
-                    0, WindowClassName, string.Empty, 0,
-                    0, 0, 0, 0,
-                    new IntPtr(-3), // HWND_MESSAGE
-                    IntPtr.Zero, hInstance, IntPtr.Zero);
-
-                if (_hwnd == IntPtr.Zero)
-                    throw new InvalidOperationException($"CreateWindowEx failed: {Marshal.GetLastWin32Error()}");
-
-                readyEvent.Set();
-
-                _messageLoopCts = new CancellationTokenSource();
-                var cts = _messageLoopCts;
-
-                while (!cts.Token.IsCancellationRequested)
-                {
-                    var waitResult = NativeMethods.MsgWaitForMultipleObjectsEx(
-                        0, IntPtr.Zero, 100, 0x04FF, 0x0001);
-
-                    while (NativeMethods.PeekMessage(out var msg, IntPtr.Zero, 0, 0, 1))
-                    {
-                        if (msg.message == 0x0012) // WM_QUIT
-                            break;
-                        NativeMethods.TranslateMessage(ref msg);
-                        NativeMethods.DispatchMessage(ref msg);
-                    }
-
-                    if (cts.Token.IsCancellationRequested)
-                        break;
+                    RunMessageLoop(readyEvent);
                 }
-
-                if (_hwnd != IntPtr.Zero)
+                catch (Exception ex)
                 {
-                    NativeMethods.DestroyWindow(_hwnd);
-                    _hwnd = IntPtr.Zero;
+                    _initError = ex;
+                    readyEvent.Set();
                 }
-
-                NativeMethods.UnregisterClass(WindowClassName, hInstance);
             })
             {
                 Name = "ChanSight HotKey Message Thread",
@@ -154,7 +110,71 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
             {
                 throw new TimeoutException("Timed out waiting for hotkey message window to be created.");
             }
+
+            if (_initError is not null)
+            {
+                throw new InvalidOperationException("Hotkey message window initialization failed.", _initError);
+            }
         }
+    }
+
+    private void RunMessageLoop(ManualResetEventSlim readyEvent)
+    {
+        var hInstance = NativeMethods.GetModuleHandle(null!);
+
+        var wndProc = new NativeMethods.WndProcDelegate(WndProc);
+        _keptAliveWndProc = wndProc;
+
+        var wndClass = new NativeMethods.WNDCLASSEX
+        {
+            cbSize = Marshal.SizeOf<NativeMethods.WNDCLASSEX>(),
+            lpfnWndProc = wndProc,
+            hInstance = hInstance,
+            lpszClassName = WindowClassName
+        };
+
+        var atom = NativeMethods.RegisterClassEx(ref wndClass);
+        if (atom == 0)
+            throw new InvalidOperationException($"RegisterClassEx failed: {Marshal.GetLastWin32Error()}");
+
+        _hwnd = NativeMethods.CreateWindowEx(
+            0, WindowClassName, string.Empty, 0,
+            0, 0, 0, 0,
+            new IntPtr(-3), // HWND_MESSAGE
+            IntPtr.Zero, hInstance, IntPtr.Zero);
+
+        if (_hwnd == IntPtr.Zero)
+            throw new InvalidOperationException($"CreateWindowEx failed: {Marshal.GetLastWin32Error()}");
+
+        readyEvent.Set();
+
+        _messageLoopCts = new CancellationTokenSource();
+        var cts = _messageLoopCts;
+
+        while (!cts.Token.IsCancellationRequested)
+        {
+            var waitResult = NativeMethods.MsgWaitForMultipleObjectsEx(
+                0, IntPtr.Zero, 100, 0x04FF, 0x0001);
+
+            while (NativeMethods.PeekMessage(out var msg, IntPtr.Zero, 0, 0, 1))
+            {
+                if (msg.message == 0x0012) // WM_QUIT
+                    break;
+                NativeMethods.TranslateMessage(ref msg);
+                NativeMethods.DispatchMessage(ref msg);
+            }
+
+            if (cts.Token.IsCancellationRequested)
+                break;
+        }
+
+        if (_hwnd != IntPtr.Zero)
+        {
+            NativeMethods.DestroyWindow(_hwnd);
+            _hwnd = IntPtr.Zero;
+        }
+
+        NativeMethods.UnregisterClass(WindowClassName, hInstance);
     }
 
     private nint WndProc(nint hWnd, uint msg, nint wParam, nint lParam)
@@ -180,7 +200,14 @@ internal sealed class NativeHotKeyApi : INativeHotKeyApi
             {
                 ThreadPool.QueueUserWorkItem(_ =>
                 {
-                    HotKeyPressed?.Invoke(this, new HotKeyPressedEventArgs(hotKey, DateTimeOffset.UtcNow));
+                    try
+                    {
+                        HotKeyPressed?.Invoke(this, new HotKeyPressedEventArgs(hotKey, DateTimeOffset.UtcNow));
+                    }
+                    catch
+                    {
+                        // subscriber exceptions must not crash the process
+                    }
                 });
             }
 
