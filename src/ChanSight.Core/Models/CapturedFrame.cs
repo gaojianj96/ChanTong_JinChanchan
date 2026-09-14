@@ -4,7 +4,7 @@ namespace ChanSight.Core.Models;
 
 public sealed class CapturedFrame : IDisposable
 {
-    private readonly Mat _image;
+    private Mat _image;
     private bool _disposed;
 
     public CapturedFrame(Mat image, DateTimeOffset timestamp, long sequenceNumber)
@@ -24,13 +24,39 @@ public sealed class CapturedFrame : IDisposable
         }
     }
 
-    public DateTimeOffset Timestamp { get; }
+    public DateTimeOffset Timestamp { get; private set; }
 
-    public long SequenceNumber { get; }
+    public long SequenceNumber { get; private set; }
 
-    public FrameResolution Resolution { get; }
+    public FrameResolution Resolution { get; private set; }
+
+    public object? Tag { get; set; }
 
     public bool IsDisposed => _disposed;
+
+    internal void Reset(Mat image, DateTimeOffset timestamp, long sequenceNumber)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+
+        var wasDisposed = _disposed;
+        _disposed = false;
+
+        if (wasDisposed || _image.Size() != image.Size() || _image.Type() != image.Type())
+        {
+            if (!wasDisposed)
+            {
+                _image.Dispose();
+            }
+
+            _image = new Mat();
+        }
+
+        image.CopyTo(_image);
+        Timestamp = timestamp;
+        SequenceNumber = sequenceNumber;
+        Resolution = new FrameResolution(image.Width, image.Height);
+        Tag = null;
+    }
 
     public void Dispose()
     {

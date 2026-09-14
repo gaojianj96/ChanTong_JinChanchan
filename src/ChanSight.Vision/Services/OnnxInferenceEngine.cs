@@ -7,6 +7,7 @@ namespace ChanSight.Vision.Services;
 public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
 {
     private InferenceSession? _session;
+    private readonly InferenceDeviceType _preferredDevice;
     private InferenceDeviceType _currentDevice;
     private readonly object _lock = new();
     private bool _disposed;
@@ -22,6 +23,7 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
 
     public OnnxInferenceEngine(InferenceDeviceType preferredDevice = InferenceDeviceType.DirectML)
     {
+        _preferredDevice = preferredDevice;
         _currentDevice = preferredDevice;
     }
 
@@ -34,38 +36,169 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         {
             DisposeSession();
 
-            if (_currentDevice == InferenceDeviceType.DirectML)
+            var device = _preferredDevice;
+            try
             {
-                try
+                if (device == InferenceDeviceType.DirectML)
                 {
-                    var options = CreateDirectMLOptions();
-                    _session = new InferenceSession(modelPath, options);
-                    return;
+                    try
+                    {
+                        _session = new InferenceSession(modelPath, CreateDirectMLOptions());
+                        _currentDevice = InferenceDeviceType.DirectML;
+                        return;
+                    }
+                    catch
+                    {
+                    }
                 }
-                catch (Exception)
+
+                if (device == InferenceDeviceType.Cuda)
                 {
-                    _currentDevice = InferenceDeviceType.Cpu;
+                    try
+                    {
+                        _session = new InferenceSession(modelPath, CreateCudaOptions());
+                        _currentDevice = InferenceDeviceType.Cuda;
+                        return;
+                    }
+                    catch
+                    {
+                    }
                 }
             }
-
-            if (_currentDevice == InferenceDeviceType.Cuda)
+            catch
             {
-                try
-                {
-                    var options = CreateCudaOptions();
-                    _session = new InferenceSession(modelPath, options);
-                    return;
-                }
-                catch (Exception)
-                {
-                    _currentDevice = InferenceDeviceType.Cpu;
-                }
             }
 
             var cpuOptions = new SessionOptions();
             cpuOptions.AppendExecutionProvider_CPU();
             _session = new InferenceSession(modelPath, cpuOptions);
+            _currentDevice = InferenceDeviceType.Cpu;
         }
+    }
+
+    public InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentException.ThrowIfNullOrWhiteSpace(modelPath);
+        if (warmup < 0)
+            throw new ArgumentOutOfRangeException(nameof(warmup));
+        if (iterations < 1)
+            throw new ArgumentOutOfRangeException(nameof(iterations));
+
+        InferenceSession session;
+        lock (_lock)
+        {
+            session = CreateSessionForProbe(modelPath);
+        }
+
+        using (session)
+        {
+            var inputName = session.InputNames[0];
+            var dims = session.InputMetadata[inputName].Dimensions;
+            var shape = new long[dims.Length];
+            var elementCount = 1L;
+            for (var i = 0; i < dims.Length; i++)
+            {
+                shape[i] = dims[i] <= 0 ? 1 : dims[i];
+                elementCount *= shape[i];
+            }
+
+            var inputData = new float[elementCount];
+            var inputTensor = OrtValue.CreateTensorValueFromMemory(
+                OrtMemoryInfo.DefaultInstance, inputData.AsMemory(), shape);
+            var inputs = new Dictionary<string, OrtValue> { [inputName] = inputTensor };
+
+            for (var w = 0; w < warmup; w++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                using var runOptions = new RunOptions();
+                using var _ = session.Run(runOptions, inputs, session.OutputNames);
+            }
+
+            var samples = new List<double>(iterations);
+            for (var i = 0; i < iterations; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                using var runOptions = new RunOptions();
+                using var _ = session.Run(runOptions, inputs, session.OutputNames);
+                sw.Stop();
+                samples.Add(sw.Elapsed.TotalMilliseconds);
+            }
+
+            samples.Sort();
+            var p95Index = Math.Min(samples.Count - 1, (int)Math.Ceiling(samples.Count * 0.95) - 1);
+            return new InferenceLatencyStats
+            {
+                Warmup = warmup,
+                Iterations = iterations,
+                MeanMs = Math.Round(samples.Average(), 3),
+                MinMs = Math.Round(samples[0], 3),
+                MaxMs = Math.Round(samples[^1], 3),
+                P95Ms = Math.Round(samples[p95Index], 3),
+                Device = _currentDevice.ToString()
+            };
+        }
+    }
+
+    private InferenceSession CreateSessionForProbe(string modelPath)
+    {
+        var device = _preferredDevice;
+
+        if (device == InferenceDeviceType.DirectML)
+        {
+            try
+            {
+                return new InferenceSession(modelPath, CreateDirectMLOptions());
+            }
+            catch
+            {
+            }
+        }
+
+        if (device == InferenceDeviceType.Cuda)
+        {
+            try
+            {
+                return new InferenceSession(modelPath, CreateCudaOptions());
+            }
+            catch
+            {
+            }
+        }
+
+        var cpuOptions = new SessionOptions();
+        cpuOptions.AppendExecutionProvider_CPU();
+        return new InferenceSession(modelPath, cpuOptions);
+    }
+
+    public static GoNoGoResult EvaluateLatencyGate(InferenceLatencyStats stats, double thresholdMs = 16.0)
+    {
+        ArgumentNullException.ThrowIfNull(stats);
+
+        var passed = stats.MeanMs <= thresholdMs;
+        double factor;
+        string note;
+
+        if (passed)
+        {
+            factor = 1.0;
+            note = "Within latency budget.";
+        }
+        else
+        {
+            factor = Math.Clamp(Math.Sqrt(thresholdMs / Math.Max(stats.MeanMs, 1e-6)), 0.25, 1.0);
+            note = $"Over budget; recommend downscaling inputs by factor {factor:F2} (1080p-class ROI fallback).";
+        }
+
+        return new GoNoGoResult
+        {
+            Passed = passed,
+            ThresholdMs = thresholdMs,
+            ObservedMs = stats.MeanMs,
+            RecommendedDownscaleFactor = Math.Round(factor, 2),
+            Note = note
+        };
     }
 
     public OrtValueTensor RunInference(string inputName, ReadOnlySpan<float> inputData, long[] inputShape)

@@ -14,6 +14,11 @@ public sealed class YoloDetectorServiceTests
 
         public void LoadModel(string modelPath) { }
 
+        public InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("Probe not supported on fake engine.");
+        }
+
         public OrtValueTensor RunInference(string inputName, ReadOnlySpan<float> inputData, long[] inputShape)
         {
             return new OrtValueTensor("output", new float[] { 0f }, new long[] { 1 });

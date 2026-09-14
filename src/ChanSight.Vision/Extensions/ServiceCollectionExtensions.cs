@@ -18,6 +18,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IOnnxInferenceEngine, OnnxInferenceEngine>();
         services.AddSingleton<IYoloDetectorService, YoloDetectorService>();
         services.AddSingleton<IPaddleOcrService, PaddleOcrService>();
+        services.AddSingleton<IAnchorCalibrator, ClassicAnchorCalibrator>();
+        services.AddSingleton(typeof(IPostProcessor<>), typeof(ClassicPostProcessor<>));
 
         return services;
     }
