@@ -1,0 +1,335 @@
+{
+  "board_rows": [
+    {
+      "canonical_y": 444.75,
+      "c": 0,
+      "canonical_x": 547.5,
+      "r": 0,
+      "nx": 0.285155,
+      "ny": 0.41181
+    },
+    {
+      "canonical_y": 444.75,
+      "c": 1,
+      "canonical_x": 664.5,
+      "r": 0,
+      "nx": 0.346095,
+      "ny": 0.41181
+    },
+    {
+      "canonical_y": 448.5,
+      "c": 2,
+      "canonical_x": 781.5,
+      "r": 0,
+      "nx": 0.40703,
+      "ny": 0.41528
+    },
+    {
+      "canonical_y": 446.25,
+      "c": 3,
+      "canonical_x": 893.25,
+      "r": 0,
+      "nx": 0.465235,
+      "ny": 0.41319
+    },
+    {
+      "canonical_y": 445.5,
+      "c": 4,
+      "canonical_x": 1011.0,
+      "r": 0,
+      "nx": 0.526565,
+      "ny": 0.4125
+    },
+    {
+      "canonical_y": 442.5,
+      "c": 5,
+      "canonical_x": 1126.5,
+      "r": 0,
+      "nx": 0.58672,
+      "ny": 0.40972
+    },
+    {
+      "canonical_y": 442.5,
+      "c": 6,
+      "canonical_x": 1241.25,
+      "r": 0,
+      "nx": 0.646485,
+      "ny": 0.40972
+    },
+    {
+      "canonical_y": 519.75,
+      "c": 0,
+      "canonical_x": 592.5,
+      "r": 1,
+      "nx": 0.308595,
+      "ny": 0.48125
+    },
+    {
+      "canonical_y": 518.25,
+      "c": 1,
+      "canonical_x": 712.5,
+      "r": 1,
+      "nx": 0.371095,
+      "ny": 0.47986
+    },
+    {
+      "canonical_y": 519.0,
+      "c": 2,
+      "canonical_x": 832.5,
+      "r": 1,
+      "nx": 0.433595,
+      "ny": 0.48056
+    },
+    {
+      "canonical_y": 519.0,
+      "c": 3,
+      "canonical_x": 951.75,
+      "r": 1,
+      "nx": 0.495705,
+      "ny": 0.48056
+    },
+    {
+      "canonical_y": 516.75,
+      "c": 4,
+      "canonical_x": 1069.5,
+      "r": 1,
+      "nx": 0.55703,
+      "ny": 0.47847
+    },
+    {
+      "canonical_y": 517.5,
+      "c": 5,
+      "canonical_x": 1192.5,
+      "r": 1,
+      "nx": 0.621095,
+      "ny": 0.47917
+    },
+    {
+      "canonical_y": 513.75,
+      "c": 6,
+      "canonical_x": 1308.75,
+      "r": 1,
+      "nx": 0.68164,
+      "ny": 0.47569
+    },
+    {
+      "canonical_y": 592.5,
+      "c": 0,
+      "canonical_x": 519.75,
+      "r": 2,
+      "nx": 0.270705,
+      "ny": 0.54861
+    },
+    {
+      "canonical_y": 594.0,
+      "c": 1,
+      "canonical_x": 643.5,
+      "r": 2,
+      "nx": 0.335155,
+      "ny": 0.55
+    },
+    {
+      "canonical_y": 591.75,
+      "c": 2,
+      "canonical_x": 767.25,
+      "r": 2,
+      "nx": 0.39961,
+      "ny": 0.54792
+    },
+    {
+      "canonical_y": 591.0,
+      "c": 3,
+      "canonical_x": 891.0,
+      "r": 2,
+      "nx": 0.46406,
+      "ny": 0.54722
+    },
+    {
+      "canonical_y": 591.75,
+      "c": 4,
+      "canonical_x": 1013.25,
+      "r": 2,
+      "nx": 0.527735,
+      "ny": 0.54792
+    },
+    {
+      "canonical_y": 591.75,
+      "c": 5,
+      "canonical_x": 1140.75,
+      "r": 2,
+      "nx": 0.59414,
+      "ny": 0.54792
+    },
+    {
+      "canonical_y": 591.75,
+      "c": 6,
+      "canonical_x": 1260.0,
+      "r": 2,
+      "nx": 0.65625,
+      "ny": 0.54792
+    },
+    {
+      "canonical_y": 672.0,
+      "c": 0,
+      "canonical_x": 567.75,
+      "r": 3,
+      "nx": 0.295705,
+      "ny": 0.62222
+    },
+    {
+      "canonical_y": 675.75,
+      "c": 1,
+      "canonical_x": 697.5,
+      "r": 3,
+      "nx": 0.36328,
+      "ny": 0.62569
+    },
+    {
+      "canonical_y": 675.75,
+      "c": 2,
+      "canonical_x": 825.75,
+      "r": 3,
+      "nx": 0.43008,
+      "ny": 0.62569
+    },
+    {
+      "canonical_y": 675.75,
+      "c": 3,
+      "canonical_x": 954.0,
+      "r": 3,
+      "nx": 0.496875,
+      "ny": 0.62569
+    },
+    {
+      "canonical_y": 672.75,
+      "c": 4,
+      "canonical_x": 1083.0,
+      "r": 3,
+      "nx": 0.564065,
+      "ny": 0.62292
+    },
+    {
+      "canonical_y": 674.25,
+      "c": 5,
+      "canonical_x": 1206.0,
+      "r": 3,
+      "nx": 0.628125,
+      "ny": 0.62431
+    },
+    {
+      "canonical_y": 675.0,
+      "c": 6,
+      "canonical_x": 1334.25,
+      "r": 3,
+      "nx": 0.69492,
+      "ny": 0.625
+    }
+  ],
+  "bench": [
+    {
+      "ny": 0.72431,
+      "canonical_x": 410.25,
+      "i": 0,
+      "nx": 0.21367,
+      "canonical_y": 782.25
+    },
+    {
+      "ny": 0.72361,
+      "canonical_x": 527.25,
+      "i": 1,
+      "nx": 0.27461,
+      "canonical_y": 781.5
+    },
+    {
+      "ny": 0.72361,
+      "canonical_x": 647.25,
+      "i": 2,
+      "nx": 0.33711,
+      "canonical_y": 781.5
+    },
+    {
+      "ny": 0.725,
+      "canonical_x": 762.0,
+      "i": 3,
+      "nx": 0.396875,
+      "canonical_y": 783.0
+    },
+    {
+      "ny": 0.725,
+      "canonical_x": 878.25,
+      "i": 4,
+      "nx": 0.45742,
+      "canonical_y": 783.0
+    },
+    {
+      "ny": 0.72431,
+      "canonical_x": 996.0,
+      "i": 5,
+      "nx": 0.51875,
+      "canonical_y": 782.25
+    },
+    {
+      "ny": 0.72569,
+      "canonical_x": 1113.75,
+      "i": 6,
+      "nx": 0.58008,
+      "canonical_y": 783.75
+    },
+    {
+      "ny": 0.72431,
+      "canonical_x": 1230.75,
+      "i": 7,
+      "nx": 0.641015,
+      "canonical_y": 782.25
+    },
+    {
+      "ny": 0.725,
+      "canonical_x": 1351.5,
+      "i": 8,
+      "nx": 0.703905,
+      "canonical_y": 783.0
+    }
+  ],
+  "attribution": "board+bench prior: github.com/how-do-youeven/Computer-Vision-for-TeamFight-Tactics data/friendly_boxes.json (no license, reference-only); verified on 4 real JinChanChan frames by vision QA (scores 7-9, residual <4px @3840x2088); shop: verified existing ChanSight canonical (score 8)",
+  "shop": [
+    {
+      "ny": 0.847222,
+      "canonical_x": 350.0,
+      "i": 0,
+      "nx": 0.182292,
+      "canonical_y": 915.0
+    },
+    {
+      "ny": 0.847222,
+      "canonical_x": 480.0,
+      "i": 1,
+      "nx": 0.25,
+      "canonical_y": 915.0
+    },
+    {
+      "ny": 0.847222,
+      "canonical_x": 610.0,
+      "i": 2,
+      "nx": 0.317708,
+      "canonical_y": 915.0
+    },
+    {
+      "ny": 0.847222,
+      "canonical_x": 740.0,
+      "i": 3,
+      "nx": 0.385417,
+      "canonical_y": 915.0
+    },
+    {
+      "ny": 0.847222,
+      "canonical_x": 870.0,
+      "i": 4,
+      "nx": 0.453125,
+      "canonical_y": 915.0
+    }
+  ],
+  "canonical": {
+    "width": 1920,
+    "height": 1080
+  }
+}

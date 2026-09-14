@@ -1,0 +1,13 @@
+﻿[
+{"i":664,"scene":"combat","bad":[],"border":"none","dup_prev":false,"u":8,"e":false,"n":"Early combat, units on board, shop open, damage panel visible."},
+{"i":665,"scene":"combat","bad":[],"border":"none","dup_prev":true,"u":8,"e":false,"n":"Identical to previous frame."},
+{"i":666,"scene":"combat","bad":[],"border":"none","dup_prev":true,"u":8,"e":false,"n":"Identical to previous frame."},
+{"i":667,"scene":"combat","bad":[],"border":"none","dup_prev":true,"u":8,"e":false,"n":"Identical to previous frame."},
+{"i":668,"scene":"combat","bad":[],"border":"none","dup_prev":false,"u":8,"e":false,"n":"Right panel changes to player list, combat ongoing."},
+{"i":669,"scene":"combat","bad":[],"border":"none","dup_prev":false,"u":8,"e":false,"n":"A blue circle appears on the board, likely a carousel item indicator."},
+{"i":670,"scene":"combat","bad":[],"border":"none","dup_prev":true,"u":8,"e":false,"n":"Identical to previous frame."},
+{"i":671,"scene":"combat","bad":[],"border":"none","dup_prev":true,"u":8,"e":false,"n":"Identical to previous frame."},
+{"i":672,"scene":"combat","bad":[],"border":"none","dup_prev":false,"u":8,"e":false,"n":"Top counter changes to 1, blue circle still present."},
+{"i":673,"scene":"combat","bad":[],"border":"none","dup_prev":false,"u":8,"e":false,"n":"Minor visual changes, combat continues."},
+{"i":674,"scene":"combat","bad":[],"border":"none","dup_prev":false,"u":8,"e":false,"n":"Top counter changes to 1, blue circle still present."}
+]

@@ -1,0 +1,10 @@
+{
+  "prompt": "你是 Executor (DeepSeek V4.1 Flash)。按以下 Function Contract 只写一个 PowerShell 脚本,不写任何其他内容。\n\n# Contract A2T: 金铲铲标注打点器 (WinForms Point-Click Annotator)\n\n## Context\n用户在 Windows 笔记本上为 TFT 截图做 Golden Dataset 标注: 对每张 3840x2088 的游戏截图标注 42 个中心点(28 棋盘格 + 9 备战席 + 5 商店槽)。用户用鼠标在图上点击即为记录一个点。产物为 JSON,供 C# 视觉管线消费。\n\n## Inputs\n- 运行方式: pwsh -NoProfile -File clicker.ps1 -Image \"完整图片路径\" [-Existing \"已存在的 json 路径\"]\n- 可用依赖: 仅 Windows PowerShell 7 WinForms (Add-Type -AssemblyName System.Windows.Forms / System.Drawing)。无第三方包。\n\n## Outputs\n- JSON 文件写到图片同目录下 {图片名}.points.json,UTF8 无 BOM,与下方 Schema 兼容。\n\n## JSON Schema (必须严格一致)\n{\n  \"src\": \"<绝对路径>\",\n  \"resolution\": [宽, 高],\n  \"board\": [ {\"r\":0,\"c\":0,\"x\":NUMBER,\"y\":NUMBER} ... 共 28 项,顺序 r 0..3 每行 c 0..6 ],\n  \"bench\": [ {\"i\":0,\"x\":NUMBER,\"y\":NUMBER} ... 共 9 项 i 0..8 ],\n  \"shop\": [ {\"i\":0,\"x\":NUMBER,\"y\":NUMBER} ... 共 5 项 i 0..4 ],\n  \"note\": \"string\"\n}\n- 用户跳过(看不清)的点: 该对象中 x 与 y 为 null。\n\n## 交互约束\n1. 固定顺序打点: board 28 点(r0c0 → r3c6, 先行后列) → bench 9 点 → shop 5 点。\n2. 左键点击 = 记录当前点(图片物理像素坐标,非缩放像素)并自动前进到下一个点。\n3. 右键点击 = 当前点记 null 并前进。\n4. Backspace 键 = 撤销上一个点回退。\n5. 键 N = 提前完成(剩余全 null)。键 Esc = 取消不保存。\n6. 窗口标题实时显示当前点: \"board 5/28 (r0,c4)\" 等; 已点位置画黄色小十字(直径 ~14px)。\n7. 图片自适应窗口(等比 fit,支持窗口拉伸),记录坐标必须换算回原始图片像素。\n8. AllowDrop 支持拖入图片文件。\n9. -Existing 参数: 读取已有 json,已有点显示为绿色十字,继续从第一个 null 点开始。\n\n## Invariants\n- 坐标换算: round(点击点 / scale + offset),scale = min(clientW/srcW, clientH/srcH),图片居中显示。\n- 写入时所有 42 项都完整(允许 x/y 为 null), board 始终 28 项、bench 9、shop 5。\n- 脚本无外部依赖,单文件,≤ 250 行,中文注释极少、无 emoji。\n\n## Test Requirements\n- 脚本本身需通过 pwsh 语法解析; 写完后自查: 顺序机、坐标换算、null 跳过、撤销、继续(-Existing)逻辑。\n\n现在只输出完整 PowerShell 脚本代码,不要解释。",
+  "models": [
+    {
+      "name": "Executor (DeepSeek V4.1 Flash)",
+      "id": "deepseek/deepseek-v4.1-flash",
+      "outFile": "docs/raw_responses/out_contract_a2t_exec.json"
+    }
+  ]
+}

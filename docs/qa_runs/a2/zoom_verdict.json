@@ -1,0 +1,82 @@
+[
+  {
+    "img": 1,
+    "board": {
+      "row0_dy": 2,
+      "row1_dy": 1,
+      "row2_dy": 0.5,
+      "row3_dy": 0.5,
+      "dx_col0": 1,
+      "dx_col6": 2,
+      "pitch_ok": true,
+      "per_row1_stagger": "ok",
+      "score": 7
+    },
+    "bench": {
+      "dy": 3,
+      "dx": 0,
+      "score": 6
+    },
+    "notes": "Board rows high; bench needs down adjustment"
+  },
+  {
+    "img": 2,
+    "board": {
+      "row0_dy": 1,
+      "row1_dy": 0.5,
+      "row2_dy": 0.5,
+      "row3_dy": 0.5,
+      "dx_col0": 0.5,
+      "dx_col6": 1,
+      "pitch_ok": true,
+      "per_row1_stagger": "ok",
+      "score": 8
+    },
+    "bench": {
+      "dy": 2,
+      "dx": 0,
+      "score": 7
+    },
+    "notes": "Board alignment better; bench slightly high"
+  },
+  {
+    "img": 3,
+    "board": {
+      "row0_dy": 0.5,
+      "row1_dy": 0.5,
+      "row2_dy": 0.5,
+      "row3_dy": 0.5,
+      "dx_col0": 0.5,
+      "dx_col6": 0.5,
+      "pitch_ok": true,
+      "per_row1_stagger": "needs_less",
+      "score": 9
+    },
+    "bench": {
+      "dy": 1,
+      "dx": 0,
+      "score": 8
+    },
+    "notes": "Stagger too large; bench alignment good"
+  },
+  {
+    "img": 4,
+    "board": {
+      "row0_dy": 1,
+      "row1_dy": 0.5,
+      "row2_dy": 0.5,
+      "row3_dy": 0.5,
+      "dx_col0": 1,
+      "dx_col6": 1,
+      "pitch_ok": true,
+      "per_row1_stagger": "ok",
+      "score": 8
+    },
+    "bench": {
+      "dy": 2,
+      "dx": 0,
+      "score": 7
+    },
+    "notes": "Board good; bench adjustment needed"
+  }
+]

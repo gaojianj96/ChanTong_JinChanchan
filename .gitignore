@@ -44,3 +44,8 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
+
+# Vision QA binary assets (jpeg/png work copies) & review temp payloads
+docs/qa_runs/**/*.jpg
+docs/qa_runs/**/*.png
+docs/reviews/_*.json.out

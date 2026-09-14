@@ -1,0 +1,23 @@
+{
+  "prompt": "你是【铲瞳 (ChanSight)】多模型开发团队的需求与设计委员会成员。项目背景:基于计算机视觉 + 多LLM 协同的金铲铲之战(TFT)屏幕识别与辅助决策系统,C# .NET 8 五工程(Core/Capture/Vision/Recorder/Cli)。当前状态:M1 实机录制工具与 M2 数据集清洗/ROI映射/网格切片已完成,但两次验收均为\"有条件通过\":M1 遗留 H1-H5(热键消息泵线程、异常退出 MP4 完整性、WGC/D3D 资源生命周期、Spectre UI 与捕获线程耦合、采样落盘阻塞捕获管线);M2 遗留 P0 三项(无 Golden Dataset 几何验证、无 Anchor 运行时校准、M3 输入契约未定义)。\n\n重要新事实:用户已实机录制两个会话共 676 帧真实数据,分辨率 3840x2088(宽 2.0x 基准 1920 高 1.933x,宽高比 1.839 非 16:9),印证了非等比缩放风险。团队新增双层视觉核验员角色(DeepSeek V4 Flash Vision Exp 全量粗筛 + Qwen3-VL-30B-A3B-Thinking 关键帧/随机抽校)。授权采用 5 分钟窗口 + Opus 代判(安全/成本事项除外)。\n\nProject Planner 已产出任务 DAG 草案(docs/plans/plan_cleanup_m3_dag_draft.md),分三个冲刺:\n【Sprint A 视觉数据资产】A1 双层视觉核验676帧(→QA报告+坏帧清单);A2 Golden Dataset 标注50~100帧中心点(依赖A1);A3 网格切片几何验证(叠加可视化+误差<3px@1080p,依赖A2)。\n【Sprint B 代码清债】B1 热键生命周期修复; B2 异常退出文件完整性; B3 WGC/D3D 资源生命周期; B4 UI/捕获线程解耦; B5 采样异步落盘 —— 五项均无相互依赖,可并行。\n【Sprint C M3起步】C1 M3输入契约Schema v1(依赖A3); C2 Anchor运行时校准骨架(依赖A3,C1); C3 代码缺口补齐(IFramePool实现+DI注册+Vision接入CLI,依赖C1); C4 ONNX真实模型接入验证(依赖C3); C5 YOLO后处理真实实现(依赖C1,C4); C6 PaddleOCR单帧验证(依赖C1,C4)。\n\n你本次的视角与任务是:{perspective}\n\n要求:输出结构化评审意见(结论+问题清单+改进建议),聚焦你所在视角,发现歧义、遗漏与潜在问题务必指出。回答控制在 800 字以内。",
+  "models": [
+    {
+      "name": "DeepSeek V4.1 Flash (需求分析视角)",
+      "id": "deepseek/deepseek-v4.1-flash",
+      "perspective": "从需求分析视角审查:(1) DAG 任务是否忠实覆盖了 M1/M2 评审遗留债与裸缺口,有无需求遗漏;(2) 验收标准是否可量化、可验证、口径无歧义;(3) 用户的实际诉求(以最小代价进入 M3、实机数据可用)是否被满足,有无过度或不足。",
+      "outFile": "docs/raw_responses/out_committee_cleanup_m3_ds.json"
+    },
+    {
+      "name": "MiniMax M3 (架构设计视角)",
+      "id": "minimax/minimax-m3",
+      "perspective": "从架构设计视角审查:(1) 依赖划分是否合理(C1 是否应拆成\"几何元数据 Schema\"与\"服务契约\"两层;A3->C1->C2->C3->C4->C5/C6 拓扑是否最优);(2) Sprint A/B 并行是否会产生共享文件冲突;(3) Anchor 校准与 GridSlicer 的模块边界在哪一层(Vision 内?);(4) DI 接入 CLI 的时机是否有架构风险。",
+      "outFile": "docs/raw_responses/out_committee_cleanup_m3_mm.json"
+    },
+    {
+      "name": "Qwen 3.8 Flash (反方风险视角)",
+      "id": "qwen/qwen3.8-flash",
+      "perspective": "从反方/风险视角做攻击性审查:(1) 找出整个计划最大的 3 个失败反例(如:676 帧可能全是同一场景导致 Golden Set 覆盖不足;3840x2088 下 3px 误差标尺是否可行;Executor 并行 B1-B5 是否会有热键锁定/文件句柄冲突);(2) 哪一步最可能把 M3 拖入返工;(3) 给出风险应对策略。",
+      "outFile": "docs/raw_responses/out_committee_cleanup_m3_qw.json"
+    }
+  ]
+}

@@ -17,47 +17,59 @@
 ## 2. 团队多模型协同开发规范 (Multi-Model Orchestration)
 
 ### 2.1 权限控制与执行铁律
-1. **非文档修改授权铁律**：在进行除文档之外的任何文件修改、重构或代码变更前，**必须先明确向用户申请并取得授权**。
+1. **非文档修改授权铁律**：在进行除文档之外的任何文件修改、重构或代码变更前，**必须先向用户申请授权**；用户 5 分钟未响应时，非安全、非成本相关事项由 Supreme Arbiter（Claude Opus 5）代为判定（详见 [docs/team_roles_and_workflow.md](docs/team_roles_and_workflow.md) §2.8），安全与成本相关事项必须等用户本人回复。
 2. **唯一代码生成执行端**：
-   - **Codex CLI** 是本项目中**唯一**允许直接生成和修改源代码的工具。
-   - 所有参与讨论、评审的模型（包括总体统筹、基础讨论组、高级评审组、仲裁模型）**仅拥有方案构思、文档修改和评审意见输出的权限**，严禁直接修改源码。
+   - **Executor（DeepSeek V4.1 Flash）** 是本项目中**唯一**允许直接生成和修改源代码的角色（运行于具备代码读写与测试执行能力的编码会话中）。
+   - 其余所有角色（Project Planner、需求与设计委员会、Tech Lead、独立评审组、Supreme Arbiter）**仅拥有方案构思、文档撰写与评审意见输出的权限**，严禁直接修改源码。
 3. **工具调用安全规范 (Tool Invocation Governance)**：
-   - 所有 OpenRouter 模型及 Codex CLI 的工具调用接口必须严格受限（详见 [docs/tool_governance_policy.md](docs/tool_governance_policy.md)）。
-   - 非 Codex CLI 模型发起的文件写入工具仅允许操作文档类路径 (`*.md`, `docs/`)，任何越界写操作都会被拦截。
-   - Codex CLI 发起任何源码生成/修改操作前，必须具备用户授予的明确授权标志。
+   - 所有模型角色发起的工具调用必须严格受限（详见 [docs/tool_governance_policy.md](docs/tool_governance_policy.md)）。
+   - 非 Executor 角色发起的文件写入仅允许操作文档类路径 (`docs/**`, 根目录 `*.md`)，任何越界写操作都会被拦截。
+   - Executor 发起任何源码生成/修改操作前，必须具备用户授予的明确授权标志。
 
-### 2.2 角色分工
-| 角色名称 | 模型/工具 | 职责范围 | 权限边界 |
-| :--- | :--- | :--- | :--- |
-| **总体统筹** | GitHub Copilot (Gemini 3.7 Flash) | 流程调度、发言顺序控制、方案去重与提炼、向用户汇报与申请授权 | 文档修改、流程调度 |
-| **基础讨论组** | DeepSeek V4 Flash<br>MiniMax M3<br>Qwen 3.7 Flash | 架构设计、算法方案分析、概念探讨、Plan 难点初审 | 仅限文档与讨论 |
-| **执行端** | Codex CLI | 接收确定方案，生成 Plan，在用户授权后生成与修改代码 | 唯一代码修改权限 |
-| **高级评审组** | DeepSeek V4 Flash (独立Session)<br>Claude Sonnet 5 | 对生成的代码进行边界条件、安全性、规范性及一致性 Review | 仅限文档与审查意见 |
-| **仲裁与终审** | Claude Fable 5 / 用户 | 解决多模型评审分歧或复杂死锁 | 仲裁与裁决 |
+### 2.2 分层角色分工
+
+整体采用 **分层规划 + 廉价执行 + 多模型独立审查 + 高级仲裁**：Pro（DeepSeek V4 Pro 0813）负责"想清楚、管清楚"，Flash 负责"便宜地做出来"，Kimi 与 Sonnet 负责"独立地挑错"，三个中国 Flash 模型负责"低成本扩大前期思考面"，Opus 只处理极端复杂或无法解决的争议 —— 把昂贵模型的 token 尽可能集中在高价值决策上。
+
+| 层级 | 角色 | 模型/实例 | 职责范围 | 权限边界 |
+| :--- | :--- | :--- | :--- | :--- |
+| 规划层 | **Project Planner**（项目总规划 / 全局统筹） | DeepSeek V4 Pro 0813 | 理解最终目标、整理需求、确定技术方向、制定里程碑，把项目组织成具有依赖关系的任务 DAG；汇总委员会意见形成正式计划；对独立评审结果做最终仲裁 | 文档修改、流程调度 |
+| 发散层 | **需求与设计委员会** | DeepSeek V4.1 Flash<br>MiniMax M3<br>Qwen 3.8 Flash（独立实例） | 分别从**需求分析、架构设计、反方/风险分析**角度研讨方案，发现歧义、遗漏与潜在问题 | 仅限讨论文档 |
+| 执行管理 | **Tech Lead** | DeepSeek V4 Pro 0813（独立于 Planner 的第二实例） | 为每个待执行任务编写 Function Contract（上下文/输入/输出/依赖/约束/不变量/验收标准/测试要求），把复杂任务拆成 Flash 可独立完成的小功能；执行后内部 Review 并生成 Fix Task | 契约与内部评审文档 |
+| 执行层 | **Executor / Coder** | DeepSeek V4.1 Flash | 严格按 Contract 修改代码、实现 Function、编写测试并运行测试；失败时多轮廉价迭代 | 唯一代码修改权限（须经用户授权） |
+| 评审层 | **独立评审组** | Moonshot Kimi K3<br>Claude Sonnet 5（双盲隔离） | 对同一份需求、设计、代码 Diff、测试结果独立进行 Full Review，互不可见对方意见，以双模型判断互相抵消 Bias | 只读 + 各自评审档案 |
+| 视觉核验 | **视觉核验员**（双层） | 全量: DeepSeek V4 Flash Vision Exp<br>抽校: Qwen3-VL-30B-A3B-Thinking | 文本类模型无图像能力时的专项"眼睛":Flash 对全部图片廉价粗筛(场景/坏帧/黑边),VL-Thinking 对关键帧与随机抽样精校,输出 Vision QA 报告 | 只读图像/文档 + QA 报告 |
+| 终审层 | **Final Arbitration** | Project Planner（DeepSeek V4 Pro 0813） | 综合两份 Review 分级裁定：Blocker / 重要问题 / 可选优化 / 错误意见；需修复的再次拆任务下发重走审查循环 | 仲裁记录文档 |
+| 兜底层 | **Supreme Arbiter** | Claude Opus 5 | 仅处理重大架构冲突、多模型无法达成一致、系统连续修复失败等极端情况；只重审整体目标与架构，不参与普通任务 | 只读 + 裁决文档 |
+| — | **用户** | 人类 | 最终决策、计划批准、代码授权、验收 | 全部 |
+
+> 同名模型角色均使用**独立会话/实例**，互不共享上下文（如两个 DeepSeek V4 Pro 0813 分别担任 Planner 与 Tech Lead），避免自我背书。
 
 ---
 
-## 3. 标准开发流转闭环
+### 2.3 标准开发流转闭环
 
 ```mermaid
 flowchart TD
-    A[概念 / 需求提出] --> B[统筹调度基础讨论组]
-    B --> B1[DeepSeek V4 Flash 发言]
-    B1 --> B2[MiniMax M3 发言]
-    B2 --> B3[Qwen 3.7 Flash 发言]
-    B3 --> C[统筹去重与提炼]
-    C --> D{用户决策选定方案}
-    D --> E[Codex CLI 生成 Plan & 识别难点]
-    E --> F[基础讨论组 Plan 二次可行性审核]
-    F --> G{向用户申请代码生成授权}
-    G -- 用户同意 --> H[Codex CLI 生成代码]
-    G -- 用户拒绝/需调整 --> E
-    H --> I[高级评审组 Review<br>DeepSeek V4 Flash + Claude Sonnet 5]
-    I --> J{是否存在分歧?}
-    J -- 是 --> K[Claude Fable 5 仲裁 / 请求用户介入]
-    J -- 否 --> L[归档文档 & 流程结束]
-    K --> L
+    A[用户提出需求] --> B[Project Planner: DeepSeek V4 Pro 0813<br>理解目标 / 整理需求 / 定方向 / 定里程碑]
+    B --> C[需求与设计委员会: 3 个中国 Flash 独立研讨<br>需求分析 / 架构设计 / 反方风险分析]
+    C --> D[Planner 综合去重与提炼<br>正式计划 + 具有依赖关系的任务 DAG]
+    D --> E{用户确认计划}
+    E -- 否 --> B
+    E -- 是 --> F[Tech Lead: DeepSeek V4 Pro 0813 #2<br>为待执行任务编写 Function Contract]
+    F --> G[Executor: DeepSeek V4.1 Flash<br>严格按 Contract 实现 + 编写测试 + 运行测试<br>失败时多轮廉价迭代]
+    G --> H[Tech Lead 内部 Review<br>是否忠实符合 Contract / 需求 / 接口 / 上下游依赖]
+    H -- 不通过 --> I[生成 Fix Task] --> G
+    H -- 通过 --> J[Moonshot Kimi K3 与 Claude Sonnet 5<br>双盲独立 Full Review（互不可见）]
+    J --> K[Project Planner 终审仲裁<br>Blocker / 重要问题 / 可选优化 / 错误意见]
+    K -- 需修复 --> L[拆解成修复任务] --> F
+    K -- 通过 --> M[合并进入最终结果]
+    M --> N{里程碑任务是否全部完成?}
+    N -- 否 --> F
+    N -- 是 --> O[归档文档 & 流程结束]
+    K -. 重大架构冲突 / 多模型僵持 / 连续修复失败 .-> P[Supreme Arbiter: Claude Opus 5<br>重新审视整体目标与架构] --> B
 ```
+
+详细流程阶段门、工件模板（Function Contract / Fix Task / Review Report / Arbitration Record）与升级规则见 [docs/team_roles_and_workflow.md](docs/team_roles_and_workflow.md)。
 
 ---
 

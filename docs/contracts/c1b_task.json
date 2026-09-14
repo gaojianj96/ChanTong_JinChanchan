@@ -1,0 +1,10 @@
+{
+  "prompt": "你是【铲瞳 (ChanSight)】团队的 Tech Lead (第二个 DeepSeek V4 Pro 实例,独立会话)。请为以下任务产出 **Function Contract 设计文档 C1b:v0 服务契约**(纯设计输出,不写实现代码)。\n\n# Context\n项目:金铲铲之战(TFT)屏幕识别辅助系统 C# .NET 8,工程:Core(抽象)/Capture(WGC 捕获)/Vision(视觉)/Recorder/Cli 已运转,80+ 测试全绿。M1/M2 已验收(有条件),现进入 M3 起步。委员会已裁决 C1 拆为 C1a(几何元数据 Schema,依赖 A3 实测)与 C1b(服务契约 v0,现在做)。\n\n# 现状(经审计)\n1. Vision 已有接口(IDatasetCleanerService/IGridSlicerService/IOnnxInferenceEngine/IPaddleOcrService/IPerceptualHashService/IRoiMapperService/IYoloDatasetExporter/IYoloDetectorService),但 IOnnxInferenceEngine/IPaddleOcrService/IYoloDetectorService 未注册 DI,Vision 未接入 CLI;IYoloDetectorService 实现是空壳。\n2. Core/Memory/IFramePool 接口已定义但无实现。\n3. DAG 后续任务:C2 Anchor 运行时校准(经典 CV 角点检测,无 ML;依赖 C1a+C1b);C3 代码缺口补齐(IFramePool 实现、DI 注册含 StubInferenceEngine、CLI --vision-dry-run);C4 ONNX 真实模型接入(DirectML+CPU 回退);C4.5 PostProcessor 抽象(NMS/ConfFilter/ROICrop 基类,去重 YOLO 与 OCR 共用);C5 YOLO 后处理; C6 PaddleOCR 字典纠错单帧验证。\n\n# 输出要求(契约文档,写入 docs/contracts/contract_c1b_v0.md)\n按以下章节组织,每章简明(总长 ≤ 3000 字):\n1. 目标与范围: C1b 冻结哪些接口、哪些仅 stub、哪些留到 C4 之后冻结\n2. 接口契约(表格): 接口名 / 方法签名 / 输入输出契约 / 不变量(线程安全、资源释放、边界)/ 归属项目——重点规范: IFramePool(租还语义/容量/零分配要求)、IOnnxInferenceEngine(生命周期/张量契约 OrtValueTensor/设备枚举)、IPostProcessor(NMS 输入输出、坐标标定)、IAnchorCalibrator(输入帧->变换矩阵输出、confidence 字段)\n3. 依赖注入与注册图: AddChanSightVision() 的注册清单与生命周期选择(singleton/transient)与理由; StubInferenceEngine 占位与替换时机\n4. Acceptance Criteria: C1b 完成后如何验收(建议具体测试用例类型)\n5. 风险与不变量清单: 并发(多帧并行推理)、Mat 生命周期、异常恢复\n唯一硬约束: 契约不得引入 ChanSight.Vision 之外的跨层依赖; Core 保持零重依赖。",
+  "models": [
+    {
+      "name": "Tech Lead (DeepSeek V4 Pro 0813 #2)",
+      "id": "deepseek/deepseek-v4-pro-0813",
+      "outFile": "docs/raw_responses/out_contract_c1b_tl.json"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "models": [
+    {
+      "id": "deepseek/deepseek-v4.1-flash",
+      "name": "Executor C0 Fix1",
+      "outFile": "docs/raw_responses/out_contract_c0_fix1.json"
+    }
+  ],
+  "prompt": "# Fix Task C0-F1 (关联 Contract C0): 修复 5 处契约违反\n\n你的上一版输出存在以下缺陷,逐条修复后重新输出**完整 CanonicalRoiDefinitions.cs**(仅输出代码):\n\n[F1 严重] Regions 字典把键类型从 RoiRegionType 改成了 string,且把 Gold/Level/Hp/StageRound/OpponentsSidebar/ActiveTraits/ShopCards 全设成 (0,0,0,0)。必须恢复原类型与原始值:\n  using ChanSight.Vision.Models; 不在文件头重复(同命名空间)\n  public static readonly IReadOnlyDictionary<RoiRegionType, Rect> Regions = new Dictionary<RoiRegionType, Rect>\n  {\n      [RoiRegionType.BoardArea] = BoardArea,\n      [RoiRegionType.PlayerBench] = BenchBounds,\n      [RoiRegionType.ShopCards] = ShopBounds,\n      [RoiRegionType.Gold] = new Rect(870, 30, 80, 35),\n      [RoiRegionType.Level] = new Rect(870, 70, 80, 35),\n      [RoiRegionType.Hp] = new Rect(10, 20, 80, 35),\n      [RoiRegionType.StageRound] = new Rect(840, 5, 100, 30),\n      [RoiRegionType.OpponentsSidebar] = new Rect(1170, 110, 350, 750),\n      [RoiRegionType.ActiveTraits] = new Rect(5, 360, 150, 520),\n  };\n[F2 严重] GetCanonicalRect 签名被改为 string 参数,必须恢复: public static Rect GetCanonicalRect(RoiRegionType regionType) => Regions[regionType];\n[F3 严重] GenerateBenchCenters 用了两端插值,与契约表不一致。必须按逐点表输出(与下方值一致,误差 ≤0.01):\n  (410.25, 782.25), (527.25, 781.5), (647.25, 781.5), (762.0, 783.0), (878.25, 783.0), (996.0, 782.25), (1113.75, 783.75), (1230.75, 782.25), (1351.5, 783.0)\n[F4 中] BoardHexCenters 应保持 public static readonly IReadOnlyList<Point2d> 字段(而非属性)形状不变,生成方式可改为私有 static 表。\n[F5 轻] 命名空间保持文件现状的 file-scoped 风格(该文件原为 block 还是 file-scoped 以仓库现状为准,但不得改变其它文件的预期);其余 public 成员签名与常量名全保留。\n\n其余部分(28 点表、BoardArea/BenchBounds/ShopBounds 新值、常量 76/130/48/60、GetBoardHexIndex)保持你上一版正确实现。仅输出最终 C# 代码。"
+}

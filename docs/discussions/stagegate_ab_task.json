@@ -1,0 +1,23 @@
+{
+  "prompt": "你是【铲瞳 (ChanSight)】需求与设计委员会成员。这是阶段检查点(Stage Gate): Sprint A(视觉数据资产)与 Sprint B(代码清债)已全部完成,请按你的视角确认进度并给出放行/修正意见。\n\n# 阶段成果摘要\nSprint A: A1 双层视觉核验 1503 帧(674+829)全量粗筛 + 抽校 152 帧 + 高分辨率裁剪核验;门禁通过(选秀/结算/9人口/装备密集全部覆盖);A2 以社区模板+视觉验证替代人工标注(25 帧预标注+校准终版 calibration_final.json);成本 <$1。\nSprint B(源码,共 5 任务,全量测试 214/214×5 轮全绿,build 0 警告): B1 热键生命周期(ID 单调、_hwnd 注销、线程异常回传、事件异常吸纳); B2 录制文件完整性(provisional meta 启动即写、帧写失败仍产出 meta、cts 清理); B3 WGC/DXGI 资源生命周期(Closed 订阅、DeviceRemoved 检测、CaptureEnded 信号、DropWrite 防逐帧泄漏,双盲评审 Pass-with-Notes 全 P1 已修); B4 UI/捕获解耦(原子防抖、CAPTURE_LOST 状态、回调耗时微统计); B5 采样异步落盘(有界队列+后台写盘、手动快照 200ms 有界等待,治愈偶发 flaky D-06)。C0(canonical 几何基准重定)亦已完成。\n\n# 剩余任务\nC1a(几何 Schema)、C2(Anchor 校准)、C3(IFramePool+DI+dry-run)、C4(ONNX 真实模型)、C4.5(PostProcessor 抽象)、C5(YOLO 后处理)、C6(PaddleOCR 验证);A3(切片叠加验证,依赖 C0+预标注)。\n\n你本次视角与任务: {perspective}\n输出 ≤600 字: ①该阶段是否可放行至下一阶段(C 系列)的结论;②你视角下的遗漏/风险清单(分级);③对剩余 C 序列执行顺序的建议。",
+  "models": [
+    {
+      "name": "DeepSeek V4.1 Flash (需求符合度)",
+      "id": "deepseek/deepseek-v4.1-flash",
+      "perspective": "从需求符合度检查: M1 H1-H5 与 M2 P0 各项债务是否被本阶段成果真实销账;验收证据是否充分;是否还有原始诉求未覆盖。",
+      "outFile": "docs/raw_responses/out_stagegate_ab_ds.json"
+    },
+    {
+      "name": "MiniMax M3 (架构一致性)",
+      "id": "minimax/minimax-m3",
+      "perspective": "从架构一致性检查: B 系列改动是否破坏 Core/Capture/Recorder 分层与接口封存;DropWrite/多消费者/provisional meta 等取舍是否引入新债务;C 系列开工前有无架构性前置条件。",
+      "outFile": "docs/raw_responses/out_stagegate_ab_mm.json"
+    },
+    {
+      "name": "Qwen 3.8 Flash (风险预判)",
+      "id": "qwen/qwen3.8-flash",
+      "perspective": "从反方/风险预判: C 系列最大失败反例;A3 用预标注做 Golden 验证的弱点;Anchor 校准在 3840x2088 下的坑;给出阶段放行的条件清单。",
+      "outFile": "docs/raw_responses/out_stagegate_ab_qw.json"
+    }
+  ]
+}

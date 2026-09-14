@@ -1,0 +1,158 @@
+[
+  {
+    "img": 1,
+    "red": {
+      "x_shift_px": -2,
+      "y_shift_px": 1,
+      "x_pitch_err": "shrunk",
+      "y_pitch_err": "ok",
+      "align_score": 6
+    },
+    "green": {
+      "x_shift_px": 0,
+      "y_shift_px": 0,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "ok",
+      "align_score": 9
+    },
+    "blue": {
+      "x_shift_px": 3,
+      "y_shift_px": -2,
+      "x_pitch_err": "stretched",
+      "y_pitch_err": "shrunk",
+      "align_score": 4
+    },
+    "best": "green",
+    "notes": "Green aligns best with hex centers."
+  },
+  {
+    "img": 2,
+    "red": {
+      "x_shift_px": 1,
+      "y_shift_px": -3,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "shrunk",
+      "align_score": 5
+    },
+    "green": {
+      "x_shift_px": -2,
+      "y_shift_px": 1,
+      "x_pitch_err": "stretched",
+      "y_pitch_err": "ok",
+      "align_score": 7
+    },
+    "blue": {
+      "x_shift_px": 0,
+      "y_shift_px": 0,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "ok",
+      "align_score": 8
+    },
+    "best": "blue",
+    "notes": "Blue grid matches hex spacing."
+  },
+  {
+    "img": 3,
+    "red": {
+      "x_shift_px": -1,
+      "y_shift_px": 2,
+      "x_pitch_err": "shrunk",
+      "y_pitch_err": "stretched",
+      "align_score": 3
+    },
+    "green": {
+      "x_shift_px": 0,
+      "y_shift_px": 0,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "ok",
+      "align_score": 10
+    },
+    "blue": {
+      "x_shift_px": 2,
+      "y_shift_px": -1,
+      "x_pitch_err": "stretched",
+      "y_pitch_err": "shrunk",
+      "align_score": 6
+    },
+    "best": "green",
+    "notes": "Green perfect on hex centers."
+  },
+  {
+    "img": 4,
+    "red": {
+      "x_shift_px": 3,
+      "y_shift_px": -2,
+      "x_pitch_err": "shrunk",
+      "y_pitch_err": "ok",
+      "align_score": 4
+    },
+    "green": {
+      "x_shift_px": -1,
+      "y_shift_px": 1,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "shrunk",
+      "align_score": 7
+    },
+    "blue": {
+      "x_shift_px": 0,
+      "y_shift_px": 0,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "ok",
+      "align_score": 9
+    },
+    "best": "blue",
+    "notes": "Blue aligns with bench slots."
+  },
+  {
+    "img": 5,
+    "red": {
+      "x_shift_px": 0,
+      "y_shift_px": 0,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "ok",
+      "align_score": 8
+    },
+    "green": {
+      "x_shift_px": -2,
+      "y_shift_px": 1,
+      "x_pitch_err": "shrunk",
+      "y_pitch_err": "stretched",
+      "align_score": 5
+    },
+    "blue": {
+      "x_shift_px": 1,
+      "y_shift_px": -3,
+      "x_pitch_err": "stretched",
+      "y_pitch_err": "ok",
+      "align_score": 6
+    },
+    "best": "red",
+    "notes": "Red grid matches hex centers."
+  },
+  {
+    "img": 6,
+    "red": {
+      "x_shift_px": -1,
+      "y_shift_px": 2,
+      "x_pitch_err": "shrunk",
+      "y_pitch_err": "ok",
+      "align_score": 5
+    },
+    "green": {
+      "x_shift_px": 0,
+      "y_shift_px": 0,
+      "x_pitch_err": "ok",
+      "y_pitch_err": "ok",
+      "align_score": 9
+    },
+    "blue": {
+      "x_shift_px": 2,
+      "y_shift_px": -1,
+      "x_pitch_err": "stretched",
+      "y_pitch_err": "shrunk",
+      "align_score": 4
+    },
+    "best": "green",
+    "notes": "Green aligns best with board."
+  }
+]
