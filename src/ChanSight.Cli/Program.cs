@@ -1,9 +1,15 @@
 using ChanSight.Capture.Extensions;
+using ChanSight.Cli;
 using ChanSight.Cli.Dashboard;
 using ChanSight.Core.Extensions;
 using ChanSight.Recorder.Extensions;
+using ChanSight.Vision.Extensions;
+using ChanSight.Vision.Interfaces;
+using ChanSight.Vision.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+var cliOptions = CliVisionOptions.Parse(args);
 
 using var host = Host
     .CreateDefaultBuilder(args)
@@ -12,9 +18,28 @@ using var host = Host
         services.AddChanSightCore();
         services.AddChanSightCapture();
         services.AddChanSightRecorder();
+        services.AddChanSightVision();
+
+        if (cliOptions.VisionDryRun)
+        {
+            services.AddSingleton<IOnnxInferenceEngine, StubInferenceEngine>();
+        }
+
         services.AddSingleton<InteractiveDashboard>();
     })
     .Build();
+
+if (!string.IsNullOrWhiteSpace(cliOptions.ProbeModelPath))
+{
+    using var engine = host.Services.GetRequiredService<IOnnxInferenceEngine>();
+    var stats = engine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 3, iterations: 10);
+    var gate = OnnxInferenceEngine.EvaluateLatencyGate(stats, thresholdMs: 16.0);
+
+    Console.WriteLine($"[probe] device={stats.Device} mean={stats.MeanMs}ms p95={stats.P95Ms}ms min={stats.MinMs}ms max={stats.MaxMs}ms");
+    Console.WriteLine($"[go/nogo] passed={gate.Passed} observed={gate.ObservedMs}ms threshold={gate.ThresholdMs}ms downscale={gate.RecommendedDownscaleFactor}");
+    Console.WriteLine($"[go/nogo] {gate.Note}");
+    return;
+}
 
 var dashboard = host.Services.GetRequiredService<InteractiveDashboard>();
 await dashboard.RunAsync(CancellationToken.None);

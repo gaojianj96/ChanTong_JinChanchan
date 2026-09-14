@@ -24,6 +24,8 @@ public sealed class InteractiveDashboard
     private int _targetFps = 30;
     private int _toggleGuard;
     private volatile bool _captureLost;
+    private long _droppedThrottled;
+    private long _droppedChannelFull;
 
     public InteractiveDashboard(
         IWindowFinder windowFinder,
@@ -81,6 +83,7 @@ public sealed class InteractiveDashboard
             if (_captureService is WgcCaptureService wgcCapture)
             {
                 wgcCapture.CaptureEnded += OnCaptureEnded;
+                wgcCapture.FrameDropped += OnFrameDropped;
             }
 
             var dashboardCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -231,6 +234,14 @@ public sealed class InteractiveDashboard
         {
             _logger.LogWarning(ex, "Failed to register hotkeys. Use console keys instead.");
         }
+    }
+
+    private void OnFrameDropped(object? sender, ChanSight.Core.Models.FrameDroppedEventArgs e)
+    {
+        if (e.Reason == ChanSight.Core.Models.FrameDropReason.Throttled)
+            Interlocked.Increment(ref _droppedThrottled);
+        else if (e.Reason == ChanSight.Core.Models.FrameDropReason.ChannelFull)
+            Interlocked.Increment(ref _droppedChannelFull);
     }
 
     private void OnCaptureEnded(object? sender, EventArgs e)
@@ -396,6 +407,7 @@ public sealed class InteractiveDashboard
         grid.AddRow(new Markup("[grey]Target FPS:[/]"), new Markup($"{_targetFps}"));
         var callbackMs = _captureService is WgcCaptureService wgc ? wgc.MaxFrameCallbackMilliseconds.ToString("F2") + " ms" : "N/A (capture)";
         grid.AddRow(new Markup("[grey]Capture callback max:[/]"), new Markup($"{callbackMs}"));
+        grid.AddRow(new Markup("[grey]Dropped:[/]"), new Markup($"[grey]throttle {Interlocked.Read(ref _droppedThrottled)} / chfull {Interlocked.Read(ref _droppedChannelFull)}[/]"));
         if (_captureLost)
         {
             grid.AddRow(new Markup("[red]Capture lost:[/]"), new Markup("[red bold]window closed or device lost - press Q to exit and restart[/]"));
@@ -421,6 +433,11 @@ public sealed class InteractiveDashboard
     private async Task ShutdownAsync()
     {
         _logger.LogInformation("Shutting down...");
+
+        _logger.LogInformation(
+            "Frame drop telemetry: throttled={Throttled}, channelFull={ChannelFull}",
+            Interlocked.Read(ref _droppedThrottled),
+            Interlocked.Read(ref _droppedChannelFull));
 
         _recordingCts?.Cancel();
 
@@ -450,6 +467,7 @@ public sealed class InteractiveDashboard
         if (_captureService is WgcCaptureService wgcShutdown)
         {
             wgcShutdown.CaptureEnded -= OnCaptureEnded;
+            wgcShutdown.FrameDropped -= OnFrameDropped;
         }
 
         try
