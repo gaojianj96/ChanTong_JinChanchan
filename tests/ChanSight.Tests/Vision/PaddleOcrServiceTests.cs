@@ -13,7 +13,7 @@ public sealed class PaddleOcrServiceTests
         public InferenceDeviceType CurrentDevice => InferenceDeviceType.Cpu;
         public void LoadModel(string modelPath) { }
 
-        public InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, CancellationToken cancellationToken = default)
+        public InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, long[]? inputShapeOverride = null, CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Probe not supported on fake engine.");
         }

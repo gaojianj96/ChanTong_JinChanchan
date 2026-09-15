@@ -76,7 +76,7 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         }
     }
 
-    public InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, CancellationToken cancellationToken = default)
+    public InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, long[]? inputShapeOverride = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrWhiteSpace(modelPath);
@@ -100,7 +100,11 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
             var hasDynamic = false;
             for (var i = 0; i < dims.Length; i++)
             {
-                if (dims[i] <= 0)
+                if (inputShapeOverride is not null && i < inputShapeOverride.Length)
+                {
+                    shape[i] = Math.Max(1, inputShapeOverride[i]);
+                }
+                else if (dims[i] <= 0)
                 {
                     hasDynamic = true;
                     shape[i] = 1;

@@ -13,5 +13,5 @@ public interface IOnnxInferenceEngine : IDisposable
         long[] inputShape,
         IReadOnlyDictionary<string, long[]> outputShapes);
 
-    InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, CancellationToken cancellationToken = default);
+    InferenceLatencyStats ProbeLatency(string modelPath, int warmup = 3, int iterations = 10, long[]? inputShapeOverride = null, CancellationToken cancellationToken = default);
 }
