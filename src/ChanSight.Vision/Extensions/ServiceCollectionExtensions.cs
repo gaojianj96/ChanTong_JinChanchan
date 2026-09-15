@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPaddleOcrService, PaddleOcrService>();
         services.AddSingleton<IAnchorCalibrator, ClassicAnchorCalibrator>();
         services.AddSingleton(typeof(IPostProcessor<>), typeof(ClassicPostProcessor<>));
+        services.AddSingleton<CellChangeDetector>();
 
         return services;
     }
