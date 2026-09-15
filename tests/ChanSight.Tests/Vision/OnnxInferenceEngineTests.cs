@@ -8,11 +8,11 @@ namespace ChanSight.Tests.Vision;
 public sealed class OnnxInferenceEngineTests
 {
     [Fact]
-    public void Constructor_Default_CreatesEngineWithDirectMLPreference()
+    public void Constructor_Default_CreatesEngineWithAutoDevicePreference()
     {
         using var engine = new OnnxInferenceEngine();
 
-        engine.CurrentDevice.Should().Be(InferenceDeviceType.DirectML);
+        engine.CurrentDevice.Should().Be(InferenceDeviceType.Auto);
     }
 
     [Fact]
