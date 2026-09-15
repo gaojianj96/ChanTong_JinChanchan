@@ -1,6 +1,7 @@
 using ChanSight.Capture.Extensions;
 using ChanSight.Cli;
 using ChanSight.Cli.Dashboard;
+using ChanSight.Cli.Retrospective;
 using ChanSight.Core.Engine;
 using ChanSight.Core.Extensions;
 using ChanSight.Recorder.Extensions;
@@ -21,6 +22,7 @@ using var host = Host
         services.AddChanSightCapture();
         services.AddChanSightRecorder();
         services.AddChanSightVision();
+        services.AddChanSightRetrospective();
 
         if (cliOptions.VisionDryRun)
         {
