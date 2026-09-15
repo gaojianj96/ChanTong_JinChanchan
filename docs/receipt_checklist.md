@@ -1,0 +1,34 @@
+# 实机验收 Receipt 检查单 (M3 关闭前的用户/OPS 门)
+
+> 依据: 阶段门委员会(C 系列收官)三票「有条件 GO」+ Planner 仲裁 ｜ 状态: 待用户
+
+## 状态总览
+
+| # | 项 | 执行方 | 通过线 | 产出 |
+|---|---|---|---|---|
+| R1 | 模型权重(yolov11n.onnx / paddleocr det+rec) | 用户 | 文件就位于 `assets/models/`(来源/hash/许可留档) | 权重 receipt |
+| R2 | 实机延迟 go/no-go | 用户(1 命令) | `--probe` 输出 `passed=True`(mean≤16ms)或接受降级因子 | probe 日志 |
+| R3 | 多 DPI/多显/非独占回归 | 用户(改缩放/移屏)+我复跑 A3 | 各档几何容差 ≤2px | A3 对比报告 |
+| R4 | Golden 人工复核 ≥30 帧 | **用户目检** | 绿/粉叉对齐;例外帧记录 | 复核结论 |
+| R5 | 识别准确率 | 用户+我(依赖 R1 的弈铲专属模型) | OCR/YOLO 准确率报告 | 准确率 receipt |
+
+## 2. 立即可做(按顺序)
+
+1. **R4(最轻,已备好)**: 打开
+   `docs\qa_runs\golden_review\index.html`,
+   逐帧看 30 张叠加图,`绿叉=棋盘格中心 / 粉叉=备战席槽中心`;不对的记帧号(#1–#30)回我。约 10 分钟。
+2. **R2**: 拿到任意 [1,3,640,640] onnx 后跑
+   `dotnet run --project src/ChanSight.Cli -- --probe "assets/models/模型名.onnx"`。
+3. **R3**: Win 缩放 125%/150% + 第二屏各录少量帧。
+4. **R1**: 从 Ultralytics/PaddleOCR 下载权重(提供 hash)。
+
+## 3. 廉洁腐坏约束(委员会 Qwen,已采用)
+
+- 真实推理链路默认关闭;未 receipt 不启用默认视觉;
+- `--vision-dry-run` 为唯一低风险入口;
+- 禁止硬编码权重路径;接口已冻结(不再因权重缺失而漂移)。
+
+## 4. 待用户回复判据
+
+- 第 R4 项的帧号偏差列表(若有)→ 我归因修正 canonical;
+- R2/R3 结果贴入聊天 → 我归档 receipt 并跑最终 go/no-go 仲裁。
