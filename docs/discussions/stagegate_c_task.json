@@ -1,0 +1,23 @@
+{
+  "models": [
+    {
+      "outFile": "docs/raw_responses/out_stagegate_c_ds.json",
+      "name": "DeepSeek V4.1 Flash (需求符合度)",
+      "id": "deepseek/deepseek-v4.1-flash",
+      "perspective": "从需求符合度: M3 各 Issue(#10 ONNX/#11 YOLO/#12 OCR)的交付是否覆盖原始诉求;哪些仍缺、哪些可验收收据化。"
+    },
+    {
+      "outFile": "docs/raw_responses/out_stagegate_c_mm.json",
+      "name": "MiniMax M3 (架构一致性)",
+      "id": "minimax/minimax-m3",
+      "perspective": "从架构一致性: C 系列引入的 PostProcessor/Anchor/FramePool/探针 是否破坏分层;DI 生命周期与干燥运行模型是否自洽。"
+    },
+    {
+      "outFile": "docs/raw_responses/out_stagegate_c_qw.json",
+      "name": "Qwen 3.8 Flash (风险预判)",
+      "id": "qwen/qwen3.8-flash",
+      "perspective": "从风险预判: 实机 receipt 阶段的失败反例;权重缺失期如何不使系统腐坏;把哪些列为下一步条件。"
+    }
+  ],
+  "prompt": "你是【铲瞳 (ChanSight)】需求与设计委员会成员。阶段确认(Stage Gate): C 系列(M3 起步)已全部完成。请按你的视角给出: ①是否放行进入下一阶段(实机验收/权重 receipt)的结论;②遗漏/风险清单(分级);≤500 字。\n成果: C0 canonical 基准重定;C1a 几何 Schema+FrameDropped;C2 Anchor 校准(多分辨率回归);C4.5 PostProcessor(NMS/Conf/Roi);C4 ONNX 引擎(DirectML+CPU 回退)+延迟探针+go/no-go 判据;C3 IFramePool+DI+CLI --vision-dry-run/--probe;C5 YOLO 解码+RGB新CHW+后处理;C6 OCR 字典纠错。全量 274/274×多次全绿,build 0 警告;每任务双盲评审已并已 git commit。A3 几何 smoke: 棋盘 4/6 帧 7-9 分,bench 系统性+3px@原生下偏(已登账)。仍待: yolov11n.onnx / paddleocr.onnx 权重、实机 receipt(延迟 go/no-go、识别准确率、Golden人工复核≥30帧、多DP I 回归)。Ⓒ {perspective}"
+}

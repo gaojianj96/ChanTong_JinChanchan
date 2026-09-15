@@ -1,0 +1,98 @@
+[
+  {
+    "img": 1,
+    "board": {
+      "dy_top": 2,
+      "dy_bot": 3,
+      "dx_left": 1,
+      "dx_right": 2,
+      "pitch_ok": false,
+      "score": 3
+    },
+    "bench": {
+      "dy": 4,
+      "score": 2
+    },
+    "notes": "Board pitch distorted, bench row shifted down"
+  },
+  {
+    "img": 2,
+    "board": {
+      "dy_top": 1,
+      "dy_bot": 2,
+      "dx_left": 0,
+      "dx_right": 1,
+      "pitch_ok": true,
+      "score": 8
+    },
+    "bench": {
+      "dy": 3,
+      "score": 6
+    },
+    "notes": "Board pitch correct, bench row shifted down"
+  },
+  {
+    "img": 3,
+    "board": {
+      "dy_top": 3,
+      "dy_bot": 4,
+      "dx_left": 2,
+      "dx_right": 3,
+      "pitch_ok": false,
+      "score": 2
+    },
+    "bench": {
+      "dy": 5,
+      "score": 1
+    },
+    "notes": "Board pitch distorted, bench row shifted down"
+  },
+  {
+    "img": 4,
+    "board": {
+      "dy_top": 0,
+      "dy_bot": 1,
+      "dx_left": 2,
+      "dx_right": 3,
+      "pitch_ok": true,
+      "score": 9
+    },
+    "bench": {
+      "dy": 4,
+      "score": 7
+    },
+    "notes": "Board pitch correct, bench row shifted down"
+  },
+  {
+    "img": 5,
+    "board": {
+      "dy_top": 1,
+      "dy_bot": 2,
+      "dx_left": 0,
+      "dx_right": 1,
+      "pitch_ok": true,
+      "score": 8
+    },
+    "bench": {
+      "dy": 3,
+      "score": 6
+    },
+    "notes": "Board pitch correct, bench row shifted down"
+  },
+  {
+    "img": 6,
+    "board": {
+      "dy_top": 2,
+      "dy_bot": 3,
+      "dx_left": 1,
+      "dx_right": 2,
+      "pitch_ok": true,
+      "score": 7
+    },
+    "bench": {
+      "dy": 4,
+      "score": 5
+    },
+    "notes": "Board pitch correct, bench row shifted down"
+  }
+]
