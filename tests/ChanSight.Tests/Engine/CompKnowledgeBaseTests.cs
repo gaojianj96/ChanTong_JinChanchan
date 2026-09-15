@@ -74,4 +74,42 @@ public sealed class CompKnowledgeBaseTests
             Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    public void Load_UnknownHero_Throws()
+    {
+        var dir = Path.Combine(AppContext.BaseDirectory, "Engine", "CompTemplates", "unknown-hero");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "a.json"),
+            """{"id":"unknown-hero","name":"A","keyTraits":["法师"],"coreUnits":["不存在的英雄"],"secondaryUnits":[],"description":"x"}""");
+
+        try
+        {
+            var act = () => new CompKnowledgeBase(dir);
+            act.Should().Throw<InvalidOperationException>().WithMessage("*unknown hero*");
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Load_UnknownTrait_Throws()
+    {
+        var dir = Path.Combine(AppContext.BaseDirectory, "Engine", "CompTemplates", "unknown-trait");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "a.json"),
+            """{"id":"unknown-trait","name":"A","keyTraits":["不存在的羁绊"],"coreUnits":["拉克丝"],"secondaryUnits":[],"description":"x"}""");
+
+        try
+        {
+            var act = () => new CompKnowledgeBase(dir);
+            act.Should().Throw<InvalidOperationException>().WithMessage("*unknown key trait*");
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }

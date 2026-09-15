@@ -73,6 +73,7 @@ public sealed class CompKnowledgeBase
 
         return ranked
             .OrderByDescending(static x => x.Hits)
+            .ThenBy(static x => x.Template.Id)
             .Select(static x => x.Template)
             .ToList();
     }
@@ -139,6 +140,22 @@ public sealed class CompKnowledgeBase
         if (string.IsNullOrWhiteSpace(template.Description))
         {
             throw new InvalidOperationException($"Comp template '{template.Id}' has empty description: {file}");
+        }
+
+        foreach (var trait in template.KeyTraits)
+        {
+            if (!KnownHeroes.Traits.Contains(trait))
+            {
+                throw new InvalidOperationException($"Comp template '{template.Id}' has unknown key trait '{trait}': {file}");
+            }
+        }
+
+        foreach (var unit in template.CoreUnits.Concat(template.SecondaryUnits))
+        {
+            if (!KnownHeroes.Heroes.Contains(unit))
+            {
+                throw new InvalidOperationException($"Comp template '{template.Id}' has unknown hero '{unit}': {file}");
+            }
         }
     }
 
