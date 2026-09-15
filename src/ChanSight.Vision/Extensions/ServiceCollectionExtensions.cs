@@ -1,3 +1,4 @@
+using System.Net.Http;
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAnchorCalibrator, ClassicAnchorCalibrator>();
         services.AddSingleton(typeof(IPostProcessor<>), typeof(ClassicPostProcessor<>));
         services.AddSingleton<CellChangeDetector>();
+        services.AddSingleton<HttpClient>(static _ => new HttpClient());
+        services.AddSingleton<IVlmClient, OpenRouterVlmClient>();
+        services.AddSingleton<VlmRecognitionAdapter>();
 
         return services;
     }
