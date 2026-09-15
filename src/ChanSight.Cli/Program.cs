@@ -5,6 +5,7 @@ using ChanSight.Core.Extensions;
 using ChanSight.Recorder.Extensions;
 using ChanSight.Vision.Extensions;
 using ChanSight.Vision.Interfaces;
+using ChanSight.Vision.Models;
 using ChanSight.Vision.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,7 +36,11 @@ if (!string.IsNullOrWhiteSpace(cliOptions.ProbeModelPath))
     var stats = engine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 3, iterations: 10);
     var gate = OnnxInferenceEngine.EvaluateLatencyGate(stats, thresholdMs: 16.0);
 
-    Console.WriteLine($"[probe] device={stats.Device} mean={stats.MeanMs}ms p95={stats.P95Ms}ms min={stats.MinMs}ms max={stats.MaxMs}ms");
+    using var cpuEngine = new OnnxInferenceEngine(InferenceDeviceType.Cpu);
+    var cpuStats = cpuEngine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 2, iterations: 5);
+
+    Console.WriteLine($"[probe] device={stats.Device} input={stats.InputShape} mean={stats.MeanMs}ms p95={stats.P95Ms}ms min={stats.MinMs}ms max={stats.MaxMs}ms");
+    Console.WriteLine($"[probe/cpu-ref] device={cpuStats.Device} mean={cpuStats.MeanMs}ms p95={cpuStats.P95Ms}ms");
     Console.WriteLine($"[go/nogo] passed={gate.Passed} observed={gate.ObservedMs}ms threshold={gate.ThresholdMs}ms downscale={gate.RecommendedDownscaleFactor}");
     Console.WriteLine($"[go/nogo] {gate.Note}");
     return;

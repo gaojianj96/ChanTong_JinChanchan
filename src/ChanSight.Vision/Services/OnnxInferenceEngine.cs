@@ -97,9 +97,19 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
             var dims = session.InputMetadata[inputName].Dimensions;
             var shape = new long[dims.Length];
             var elementCount = 1L;
+            var hasDynamic = false;
             for (var i = 0; i < dims.Length; i++)
             {
-                shape[i] = dims[i] <= 0 ? 1 : dims[i];
+                if (dims[i] <= 0)
+                {
+                    hasDynamic = true;
+                    shape[i] = 1;
+                }
+                else
+                {
+                    shape[i] = dims[i];
+                }
+
                 elementCount *= shape[i];
             }
 
@@ -128,6 +138,7 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
 
             samples.Sort();
             var p95Index = Math.Min(samples.Count - 1, (int)Math.Ceiling(samples.Count * 0.95) - 1);
+            var shapeLabel = string.Join("x", dims) + (hasDynamic ? " (dynamic, benchmarked as 1)" : string.Empty);
             return new InferenceLatencyStats
             {
                 Warmup = warmup,
@@ -136,7 +147,8 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
                 MinMs = Math.Round(samples[0], 3),
                 MaxMs = Math.Round(samples[^1], 3),
                 P95Ms = Math.Round(samples[p95Index], 3),
-                Device = _currentDevice.ToString()
+                Device = _currentDevice.ToString(),
+                InputShape = shapeLabel
             };
         }
     }

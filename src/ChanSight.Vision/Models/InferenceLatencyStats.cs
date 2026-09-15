@@ -9,4 +9,5 @@ public sealed record InferenceLatencyStats
     public double MaxMs { get; init; }
     public double P95Ms { get; init; }
     public string Device { get; init; } = string.Empty;
+    public string InputShape { get; init; } = string.Empty;
 }
