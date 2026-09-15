@@ -6,6 +6,10 @@ namespace ChanSight.Vision.Services;
 /// </summary>
 public sealed class VlmUnavailableException : Exception
 {
+    public VlmUnavailableException()
+    {
+    }
+
     public VlmUnavailableException(string message)
         : base(message)
     {

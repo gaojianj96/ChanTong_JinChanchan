@@ -85,6 +85,20 @@ public sealed class GameStateManagerTests
     }
 
     [Fact]
+    public void Update_IgnoresIncomingVersion_AlwaysIncrementsCurrentVersion()
+    {
+        var manager = new GameStateManager();
+
+        manager.Update(manager.Current with { Stage = "1-2", Version = 42 });
+        manager.Update(manager.Current with { Stage = "1-3", Version = -7 });
+
+        // Version is owned by the state machine: external values are discarded and
+        // the merged snapshot's Version strictly increments by one each update.
+        manager.Current.Version.Should().Be(2);
+        manager.Current.Stage.Should().Be("1-3");
+    }
+
+    [Fact]
     public void UpdateOpponent_OnlyChangesTheTargetedSlot()
     {
         var manager = new GameStateManager();

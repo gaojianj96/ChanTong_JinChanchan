@@ -8,17 +8,16 @@ namespace ChanSight.Vision.Services;
 /// <summary>
 /// OpenRouter chat-completions client. Sends a multimodal prompt (text + base64
 /// images) with a Bearer key from the OPENROUTER_API_KEY environment variable.
-/// Retries once on transient failures and surfaces any non-2xx response as
-/// <see cref="VlmUnavailableException"/>.
+/// Performs exactly one send attempt and surfaces any failure (transport error,
+/// timeout or non-2xx response) as <see cref="VlmUnavailableException"/>.
 /// </summary>
 public sealed class OpenRouterVlmClient : IVlmClient
 {
     public const string DefaultEndpoint = "https://openrouter.ai/api/v1/chat/completions";
-    public const string DefaultModel = "deepseek-v4-flash-vision-exp";
+    public const string DefaultModel = "deepseek/deepseek-v4-flash-vision-exp";
     public const string ApiKeyEnvironmentVariable = "OPENROUTER_API_KEY";
 
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(60);
-    private const int MaxAttempts = 2;
 
     private readonly HttpClient _httpClient;
     private readonly string _model;
@@ -42,39 +41,37 @@ public sealed class OpenRouterVlmClient : IVlmClient
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeoutCts.CancelAfter(RequestTimeout);
 
-        Exception? lastError = null;
-
-        for (int attempt = 0; attempt < MaxAttempts; attempt++)
+        // Retry is intentionally centralized in VlmRecognitionAdapter (a single
+        // retry there). This client sends exactly once and never retries on its
+        // own; otherwise the two retry layers would stack to 4 requests worst
+        // case (FIX-V3-2). Every failure surface is translated into
+        // VlmUnavailableException (FIX-V3-3) so the adapter degrades uniformly.
+        try
         {
-            try
-            {
-                using var request = BuildRequest(prompt, images);
-                using var response = await _httpClient
-                    .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token)
-                    .ConfigureAwait(false);
+            using var request = BuildRequest(prompt, images);
+            using var response = await _httpClient
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeoutCts.Token)
+                .ConfigureAwait(false);
 
-                if (response.IsSuccessStatusCode)
-                    return await ReadCompletionContentAsync(response, ct).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+                return await ReadCompletionContentAsync(response, ct).ConfigureAwait(false);
 
-                lastError = new VlmUnavailableException(
-                    $"OpenRouter returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}.");
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (HttpRequestException ex)
-            {
-                lastError = ex;
-            }
-            catch (TaskCanceledException)
-            {
-                lastError = new TimeoutException(
-                    $"OpenRouter request timed out after {RequestTimeout.TotalSeconds:0} seconds.");
-            }
+            throw new VlmUnavailableException(
+                $"OpenRouter returned HTTP {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
-
-        throw new VlmUnavailableException("OpenRouter VLM request failed after retry.", lastError);
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new VlmUnavailableException("OpenRouter VLM request failed.", ex);
+        }
+        catch (TaskCanceledException)
+        {
+            throw new VlmUnavailableException(
+                $"OpenRouter request timed out after {RequestTimeout.TotalSeconds:0} seconds.");
+        }
     }
 
     private HttpRequestMessage BuildRequest(string prompt, IReadOnlyList<(string mime, byte[] data)> images)
