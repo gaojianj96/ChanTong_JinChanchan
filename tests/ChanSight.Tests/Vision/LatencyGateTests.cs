@@ -18,6 +18,17 @@ public sealed class LatencyGateTests
     }
 
     [Fact]
+    public void DefaultThreshold_Is30FpsBudget()
+    {
+        var stats = new InferenceLatencyStats { MeanMs = 27.0 };
+
+        var result = OnnxInferenceEngine.EvaluateLatencyGate(stats);
+
+        result.ThresholdMs.Should().BeApproximately(33.3, 0.01);
+        result.Passed.Should().BeTrue();
+    }
+
+    [Fact]
     public void OverBudget_FailsAndRecommendsDownscale()
     {
         var stats = new InferenceLatencyStats { MeanMs = 64.0 };

@@ -38,7 +38,7 @@ if (!string.IsNullOrWhiteSpace(cliOptions.ProbeModelPath))
     try
     {
         var stats = engine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 3, iterations: 10, inputShapeOverride: overrideShape);
-        var gate = OnnxInferenceEngine.EvaluateLatencyGate(stats, thresholdMs: 16.0);
+        var gate = OnnxInferenceEngine.EvaluateLatencyGate(stats);
 
         using var cpuEngine = new OnnxInferenceEngine(InferenceDeviceType.Cpu);
         var cpuStats = cpuEngine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 2, iterations: 5, inputShapeOverride: overrideShape);

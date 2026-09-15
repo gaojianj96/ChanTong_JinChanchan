@@ -188,7 +188,7 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         return new InferenceSession(modelPath, cpuOptions);
     }
 
-    public static GoNoGoResult EvaluateLatencyGate(InferenceLatencyStats stats, double thresholdMs = 16.0)
+    public static GoNoGoResult EvaluateLatencyGate(InferenceLatencyStats stats, double thresholdMs = 33.3)
     {
         ArgumentNullException.ThrowIfNull(stats);
 
