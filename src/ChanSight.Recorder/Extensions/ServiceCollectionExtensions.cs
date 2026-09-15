@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<INativeHotKeyApi, NativeHotKeyApi>();
 
         services.AddSingleton<MatchLogger>();
+        services.AddSingleton<ReplayLoader>();
 
         services.AddSingleton<DatasetSamplerOptions>(_ => DatasetSamplerOptions.Default);
         services.AddSingleton<DatasetSamplerService>();
