@@ -1,0 +1,105 @@
+{
+  "frames": 3,
+  "slots": [
+    {
+      "i": 0,
+      "canonical_x": 315.2,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 630.4,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 144.4260364338785,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 1,
+      "canonical_x": 393.59999999999997,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 787.1999999999999,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 120.28765522696001,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 2,
+      "canonical_x": 472.0,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 944.0,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 99.91996797437437,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 3,
+      "canonical_x": 550.4,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 1100.8,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 86.04370982239199,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 4,
+      "canonical_x": 628.8000000000001,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 1257.6000000000001,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 82.02243595504832,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 5,
+      "canonical_x": 707.1999999999999,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 1414.3999999999999,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 89.19910313450477,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 6,
+      "canonical_x": 785.6,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 1571.2,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 105.30868910018779,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 7,
+      "canonical_x": 864.0,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 1728.0,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 126.99606293110027,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    },
+    {
+      "i": 8,
+      "canonical_x": 942.4,
+      "canonical_y": 1017.3103448275862,
+      "native_x": 1884.8,
+      "native_y": 1966.8,
+      "conf": 1.0,
+      "std_x_px": 151.89048686471443,
+      "std_y_px": 571.6099369325204,
+      "samples": 3
+    }
+  ],
+  "notes": "Qwen3-VL-30B-A3B-Thinking; bottom strip crop x5%-95% y66%-100%, scale to width 1800; model coords converted crop->native->canonical(1920x1080). canonical_x = native_x * 1920/W_orig, canonical_y = native_y * 1080/H_orig. std_x_px/std_y_px are cross-frame stddev in NATIVE original pixels."
+}

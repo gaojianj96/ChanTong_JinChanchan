@@ -68,9 +68,9 @@ public static class CanonicalRoiDefinitions
     {
         return new List<Point2d>
         {
-            new Point2d(410.25, 782.25), new Point2d(527.25, 781.5), new Point2d(647.25, 781.5),
-            new Point2d(762.0, 783.0), new Point2d(878.25, 783.0), new Point2d(996.0, 782.25),
-            new Point2d(1113.75, 783.75), new Point2d(1230.75, 782.25), new Point2d(1351.5, 783.0),
+            new Point2d(527.25, 784.0), new Point2d(630.28, 784.0), new Point2d(733.31, 784.0),
+            new Point2d(836.34, 784.0), new Point2d(939.37, 784.0), new Point2d(1042.40, 784.0),
+            new Point2d(1145.43, 784.0), new Point2d(1248.47, 784.0), new Point2d(1351.50, 784.0),
         };
     }
 

@@ -27,8 +27,10 @@ public sealed class BoardGeometryTests
         r3c6.X.Should().BeApproximately(1334.25, 0.01);
         r3c6.Y.Should().BeApproximately(675.0, 0.01);
 
-        g.BenchCells[0].X.Should().BeApproximately(410.25, 0.01);
+        g.BenchCells[0].X.Should().BeApproximately(527.25, 0.01);
         g.BenchCells[8].X.Should().BeApproximately(1351.5, 0.01);
+        g.BenchCells[4].X.Should().BeApproximately(939.37, 0.01);
+        g.BenchCells[0].Y.Should().BeApproximately(784.0, 0.01);
         g.ShopCells[4].X.Should().BeApproximately(870.0, 0.01);
     }
 
