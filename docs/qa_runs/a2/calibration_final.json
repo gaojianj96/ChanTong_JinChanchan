@@ -1,228 +1,233 @@
 {
+  "canonical": {
+    "width": 1920,
+    "height": 1080
+  },
+  "attribution": "board+bench: community template (github.com/how-do-youeven/Computer-Vision-for-TeamFight-Tactics, no license, reference-only) corrected 2026-09-12 via user visual review R4 (right-anchored span ratio 0.8757 for board & bench); shop: ChanSight canonical verified",
   "board_rows": [
     {
-      "canonical_y": 444.75,
+      "r": 0,
       "c": 0,
-      "canonical_x": 547.5,
-      "r": 0,
-      "nx": 0.285155,
-      "ny": 0.41181
+      "nx": 0.330073,
+      "ny": 0.411806,
+      "canonical_x": 633.74,
+      "canonical_y": 444.75
     },
     {
-      "canonical_y": 444.75,
+      "r": 0,
       "c": 1,
-      "canonical_x": 664.5,
-      "r": 0,
-      "nx": 0.346095,
-      "ny": 0.41181
+      "nx": 0.383432,
+      "ny": 0.411806,
+      "canonical_x": 736.19,
+      "canonical_y": 444.75
     },
     {
-      "canonical_y": 448.5,
+      "r": 0,
       "c": 2,
-      "canonical_x": 781.5,
-      "r": 0,
-      "nx": 0.40703,
-      "ny": 0.41528
+      "nx": 0.436797,
+      "ny": 0.415278,
+      "canonical_x": 838.65,
+      "canonical_y": 448.5
     },
     {
-      "canonical_y": 446.25,
+      "r": 0,
       "c": 3,
-      "canonical_x": 893.25,
-      "r": 0,
-      "nx": 0.465235,
-      "ny": 0.41319
+      "nx": 0.487766,
+      "ny": 0.413194,
+      "canonical_x": 936.51,
+      "canonical_y": 446.25
     },
     {
-      "canonical_y": 445.5,
+      "r": 0,
       "c": 4,
-      "canonical_x": 1011.0,
-      "r": 0,
-      "nx": 0.526565,
-      "ny": 0.4125
+      "nx": 0.541469,
+      "ny": 0.4125,
+      "canonical_x": 1039.62,
+      "canonical_y": 445.5
     },
     {
-      "canonical_y": 442.5,
+      "r": 0,
       "c": 5,
-      "canonical_x": 1126.5,
-      "r": 0,
-      "nx": 0.58672,
-      "ny": 0.40972
+      "nx": 0.594146,
+      "ny": 0.409722,
+      "canonical_x": 1140.76,
+      "canonical_y": 442.5
     },
     {
-      "canonical_y": 442.5,
+      "r": 0,
       "c": 6,
+      "nx": 0.646484,
+      "ny": 0.409722,
       "canonical_x": 1241.25,
-      "r": 0,
-      "nx": 0.646485,
-      "ny": 0.40972
+      "canonical_y": 442.5
     },
     {
-      "canonical_y": 519.75,
+      "r": 1,
       "c": 0,
-      "canonical_x": 592.5,
-      "r": 1,
-      "nx": 0.308595,
-      "ny": 0.48125
+      "nx": 0.354964,
+      "ny": 0.48125,
+      "canonical_x": 681.53,
+      "canonical_y": 519.75
     },
     {
-      "canonical_y": 518.25,
+      "r": 1,
       "c": 1,
-      "canonical_x": 712.5,
-      "r": 1,
-      "nx": 0.371095,
-      "ny": 0.47986
+      "nx": 0.409698,
+      "ny": 0.479861,
+      "canonical_x": 786.62,
+      "canonical_y": 518.25
     },
     {
-      "canonical_y": 519.0,
+      "r": 1,
       "c": 2,
-      "canonical_x": 832.5,
-      "r": 1,
-      "nx": 0.433595,
-      "ny": 0.48056
+      "nx": 0.464427,
+      "ny": 0.480556,
+      "canonical_x": 891.7,
+      "canonical_y": 519.0
     },
     {
-      "canonical_y": 519.0,
+      "r": 1,
       "c": 3,
-      "canonical_x": 951.75,
-      "r": 1,
-      "nx": 0.495705,
-      "ny": 0.48056
+      "nx": 0.518818,
+      "ny": 0.480556,
+      "canonical_x": 996.13,
+      "canonical_y": 519.0
     },
     {
-      "canonical_y": 516.75,
+      "r": 1,
       "c": 4,
-      "canonical_x": 1069.5,
-      "r": 1,
-      "nx": 0.55703,
-      "ny": 0.47847
+      "nx": 0.572521,
+      "ny": 0.478472,
+      "canonical_x": 1099.24,
+      "canonical_y": 516.75
     },
     {
-      "canonical_y": 517.5,
+      "r": 1,
       "c": 5,
-      "canonical_x": 1192.5,
-      "r": 1,
-      "nx": 0.621095,
-      "ny": 0.47917
+      "nx": 0.62862,
+      "ny": 0.479167,
+      "canonical_x": 1206.95,
+      "canonical_y": 517.5
     },
     {
-      "canonical_y": 513.75,
+      "r": 1,
       "c": 6,
+      "nx": 0.681641,
+      "ny": 0.475694,
       "canonical_x": 1308.75,
-      "r": 1,
-      "nx": 0.68164,
-      "ny": 0.47569
+      "canonical_y": 513.75
     },
     {
-      "canonical_y": 592.5,
+      "r": 2,
       "c": 0,
-      "canonical_x": 519.75,
-      "r": 2,
-      "nx": 0.270705,
-      "ny": 0.54861
+      "nx": 0.31863,
+      "ny": 0.548611,
+      "canonical_x": 611.77,
+      "canonical_y": 592.5
     },
     {
-      "canonical_y": 594.0,
+      "r": 2,
       "c": 1,
-      "canonical_x": 643.5,
-      "r": 2,
-      "nx": 0.335155,
-      "ny": 0.55
+      "nx": 0.375068,
+      "ny": 0.55,
+      "canonical_x": 720.13,
+      "canonical_y": 594.0
     },
     {
-      "canonical_y": 591.75,
+      "r": 2,
       "c": 2,
-      "canonical_x": 767.25,
-      "r": 2,
-      "nx": 0.39961,
-      "ny": 0.54792
+      "nx": 0.43151,
+      "ny": 0.547917,
+      "canonical_x": 828.5,
+      "canonical_y": 591.75
     },
     {
-      "canonical_y": 591.0,
+      "r": 2,
       "c": 3,
-      "canonical_x": 891.0,
-      "r": 2,
-      "nx": 0.46406,
-      "ny": 0.54722
+      "nx": 0.487953,
+      "ny": 0.547222,
+      "canonical_x": 936.87,
+      "canonical_y": 591.0
     },
     {
-      "canonical_y": 591.75,
+      "r": 2,
       "c": 4,
-      "canonical_x": 1013.25,
-      "r": 2,
-      "nx": 0.527735,
-      "ny": 0.54792
+      "nx": 0.543708,
+      "ny": 0.547917,
+      "canonical_x": 1043.92,
+      "canonical_y": 591.75
     },
     {
-      "canonical_y": 591.75,
+      "r": 2,
       "c": 5,
-      "canonical_x": 1140.75,
-      "r": 2,
-      "nx": 0.59414,
-      "ny": 0.54792
+      "nx": 0.601859,
+      "ny": 0.547917,
+      "canonical_x": 1155.57,
+      "canonical_y": 591.75
     },
     {
-      "canonical_y": 591.75,
-      "c": 6,
-      "canonical_x": 1260.0,
       "r": 2,
+      "c": 6,
       "nx": 0.65625,
-      "ny": 0.54792
+      "ny": 0.547917,
+      "canonical_x": 1260.0,
+      "canonical_y": 591.75
     },
     {
-      "canonical_y": 672.0,
+      "r": 3,
       "c": 0,
-      "canonical_x": 567.75,
-      "r": 3,
-      "nx": 0.295705,
-      "ny": 0.62222
+      "nx": 0.345328,
+      "ny": 0.622222,
+      "canonical_x": 663.03,
+      "canonical_y": 672.0
     },
     {
-      "canonical_y": 675.75,
+      "r": 3,
       "c": 1,
-      "canonical_x": 697.5,
-      "r": 3,
-      "nx": 0.36328,
-      "ny": 0.62569
+      "nx": 0.404505,
+      "ny": 0.625694,
+      "canonical_x": 776.65,
+      "canonical_y": 675.75
     },
     {
-      "canonical_y": 675.75,
+      "r": 3,
       "c": 2,
-      "canonical_x": 825.75,
-      "r": 3,
-      "nx": 0.43008,
-      "ny": 0.62569
+      "nx": 0.463,
+      "ny": 0.625694,
+      "canonical_x": 888.96,
+      "canonical_y": 675.75
     },
     {
-      "canonical_y": 675.75,
+      "r": 3,
       "c": 3,
-      "canonical_x": 954.0,
-      "r": 3,
-      "nx": 0.496875,
-      "ny": 0.62569
+      "nx": 0.521495,
+      "ny": 0.625694,
+      "canonical_x": 1001.27,
+      "canonical_y": 675.75
     },
     {
-      "canonical_y": 672.75,
+      "r": 3,
       "c": 4,
-      "canonical_x": 1083.0,
-      "r": 3,
-      "nx": 0.564065,
-      "ny": 0.62292
+      "nx": 0.580328,
+      "ny": 0.622917,
+      "canonical_x": 1114.23,
+      "canonical_y": 672.75
     },
     {
-      "canonical_y": 674.25,
+      "r": 3,
       "c": 5,
-      "canonical_x": 1206.0,
-      "r": 3,
-      "nx": 0.628125,
-      "ny": 0.62431
+      "nx": 0.636427,
+      "ny": 0.624306,
+      "canonical_x": 1221.94,
+      "canonical_y": 674.25
     },
     {
-      "canonical_y": 675.0,
-      "c": 6,
-      "canonical_x": 1334.25,
       "r": 3,
-      "nx": 0.69492,
-      "ny": 0.625
+      "c": 6,
+      "nx": 0.694922,
+      "ny": 0.625,
+      "canonical_x": 1334.25,
+      "canonical_y": 675.0
     }
   ],
   "bench": [
@@ -290,46 +295,41 @@
       "canonical_y": 784.0
     }
   ],
-  "attribution": "board+bench prior: github.com/how-do-youeven/Computer-Vision-for-TeamFight-Tactics data/friendly_boxes.json (no license, reference-only); verified on 4 real JinChanChan frames by vision QA (scores 7-9, residual <4px @3840x2088); shop: verified existing ChanSight canonical (score 8)",
   "shop": [
     {
-      "ny": 0.847222,
-      "canonical_x": 350.0,
       "i": 0,
       "nx": 0.182292,
+      "ny": 0.847222,
+      "canonical_x": 350.0,
       "canonical_y": 915.0
     },
     {
-      "ny": 0.847222,
-      "canonical_x": 480.0,
       "i": 1,
       "nx": 0.25,
+      "ny": 0.847222,
+      "canonical_x": 480.0,
       "canonical_y": 915.0
     },
     {
-      "ny": 0.847222,
-      "canonical_x": 610.0,
       "i": 2,
       "nx": 0.317708,
+      "ny": 0.847222,
+      "canonical_x": 610.0,
       "canonical_y": 915.0
     },
     {
-      "ny": 0.847222,
-      "canonical_x": 740.0,
       "i": 3,
       "nx": 0.385417,
+      "ny": 0.847222,
+      "canonical_x": 740.0,
       "canonical_y": 915.0
     },
     {
-      "ny": 0.847222,
-      "canonical_x": 870.0,
       "i": 4,
       "nx": 0.453125,
+      "ny": 0.847222,
+      "canonical_x": 870.0,
       "canonical_y": 915.0
     }
-  ],
-  "canonical": {
-    "width": 1920,
-    "height": 1080
-  }
+  ]
 }

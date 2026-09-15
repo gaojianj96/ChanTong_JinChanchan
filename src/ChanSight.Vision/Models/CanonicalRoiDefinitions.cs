@@ -20,8 +20,8 @@ public static class CanonicalRoiDefinitions
     public const int BenchSlotCount = 9;
     public const int ShopSlotCount = 5;
 
-    public static readonly Rect BoardArea = new Rect(475, 445, 905, 267);
-    public static readonly Rect BenchBounds = new Rect(365, 749, 1031, 68);
+    public static readonly Rect BoardArea = new Rect(600, 435, 746, 250);
+    public static readonly Rect BenchBounds = new Rect(517, 765, 845, 38);
     public static readonly Rect ShopBounds = new Rect(285, 865, 650, 100);
 
     public static readonly IReadOnlyDictionary<RoiRegionType, Rect> Regions = new Dictionary<RoiRegionType, Rect>
@@ -39,17 +39,17 @@ public static class CanonicalRoiDefinitions
 
     private static readonly Point2d[] BoardHexCentersTable =
     {
-        new Point2d(547.5, 444.75), new Point2d(664.5, 444.75), new Point2d(781.5, 448.5),
-        new Point2d(893.25, 446.25), new Point2d(1011.0, 445.5), new Point2d(1126.5, 442.5),
+        new Point2d(633.74, 444.75), new Point2d(736.19, 444.75), new Point2d(838.65, 448.5),
+        new Point2d(936.51, 446.25), new Point2d(1039.62, 445.5), new Point2d(1140.76, 442.5),
         new Point2d(1241.25, 442.5),
-        new Point2d(592.5, 519.75), new Point2d(712.5, 518.25), new Point2d(832.5, 519.0),
-        new Point2d(951.75, 519.0), new Point2d(1069.5, 516.75), new Point2d(1192.5, 517.5),
+        new Point2d(681.53, 519.75), new Point2d(786.62, 518.25), new Point2d(891.70, 519.0),
+        new Point2d(996.13, 519.0), new Point2d(1099.24, 516.75), new Point2d(1206.95, 517.5),
         new Point2d(1308.75, 513.75),
-        new Point2d(519.75, 592.5), new Point2d(643.5, 594.0), new Point2d(767.25, 591.75),
-        new Point2d(891.0, 591.0), new Point2d(1013.25, 591.75), new Point2d(1140.75, 591.75),
-        new Point2d(1260.0, 591.75),
-        new Point2d(567.75, 672.0), new Point2d(697.5, 675.75), new Point2d(825.75, 675.75),
-        new Point2d(954.0, 675.75), new Point2d(1083.0, 672.75), new Point2d(1206.0, 674.25),
+        new Point2d(611.77, 592.5), new Point2d(720.13, 594.0), new Point2d(828.50, 591.75),
+        new Point2d(936.87, 591.0), new Point2d(1043.92, 591.75), new Point2d(1155.57, 591.75),
+        new Point2d(1260.00, 591.75),
+        new Point2d(663.03, 672.0), new Point2d(776.65, 675.75), new Point2d(888.96, 675.75),
+        new Point2d(1001.27, 675.75), new Point2d(1114.23, 672.75), new Point2d(1221.94, 674.25),
         new Point2d(1334.25, 675.0),
     };
 

@@ -18,9 +18,9 @@ public sealed class BoardGeometryTests
         var r0c0 = g.BoardCells[0];
         r0c0.Row.Should().Be(0);
         r0c0.Col.Should().Be(0);
-        r0c0.X.Should().BeApproximately(547.5, 0.01);
+        r0c0.X.Should().BeApproximately(633.74, 0.01);
         r0c0.Y.Should().BeApproximately(444.75, 0.01);
-        r0c0.Nx.Should().BeApproximately(547.5 / 1920.0, 1e-6);
+        r0c0.Nx.Should().BeApproximately(633.74 / 1920.0, 1e-6);
         r0c0.Ny.Should().BeApproximately(444.75 / 1080.0, 1e-6);
 
         var r3c6 = g.BoardCells[27];
@@ -40,7 +40,7 @@ public sealed class BoardGeometryTests
         var g = BoardGeometry.CreateCanonical();
 
         g.RowPitchY.Should().BeInRange(70.0, 85.0);
-        g.ColPitchX.Should().BeInRange(110.0, 135.0);
+        g.ColPitchX.Should().BeInRange(95.0, 130.0);
         g.StaggerX.Should().BeInRange(45.0, 70.0);
     }
 
