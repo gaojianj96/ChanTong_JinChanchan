@@ -88,9 +88,29 @@ dotnet run --project src/ChanSight.Cli
 - **`Q` 或 `Ctrl+C`**：安全退出并完成视频和 `meta.json` 封包。
 
 输出产物将自动规范归档于：
-- `datasets/recordings/{session_id}/match_video.mp4`
-- `datasets/recordings/{session_id}/meta.json`
+- `datasets/recordings/{session_id}/` 会话目录（PNG 帧序列 + `meta.json` + `dataset_index.json`）
 - `datasets/recordings/{session_id}/frames/` 与 `snapshots/`
+
+> 注：录制产物为 **PNG 帧序列**（非 MP4），`meta.json` 启动即写 provisional、停止时封包（B2 加固，异常退出不丢元数据）。
+
+---
+
+## 4.5 实机验证与视觉推理 (Receipt)
+
+M3 视觉管线已实现并每任务通过双盲评审；实机验收状态见 `docs/receipt_checklist.md`。
+
+```powershell
+# 延迟基准 (go/no-go, 默认 30fps/33.3ms 口径, 附 CPU 对照)
+dotnet run --project src/ChanSight.Cli -- --probe "assets/models/yolo26n.onnx"
+# 可选: 指定输入尺寸(静态 640 模型会拒绝其它尺寸并提示动态导出)
+dotnet run --project src/ChanSight.Cli -- --probe "assets/models/yolo26n.onnx" --probe-size 480
+# 视觉链路干跑(不加载模型, Stub 引擎, 全管道连通性验证)
+dotnet run --project src/ChanSight.Cli -- --vision-dry-run
+```
+
+- 模型权重置于 `assets/models/`（已 gitignore）；实机基准: DirectML mean≈27ms / CPU mean≈27ms；
+- 真实识别链路默认**关闭**（委员会防腐坏约定），`--vision-dry-run` 为低风险入口；
+- 几何基准: 2026-09-12 经社区模板 + 用户人工目检二次修正（右锚定跨度比 0.8757），棋盘 28 格/备战席 9 槽/商店 5 槽对齐实机。
 
 ---
 
