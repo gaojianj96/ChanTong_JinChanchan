@@ -6,21 +6,35 @@ namespace ChanSight.Recorder.Services;
 public sealed class MatchLogger
 {
     private const string BaseDirectory = "manifests";
-    private const int FlushThresholdBytes = 64 * 1024;
-    private static readonly JsonSerializerOptions SerializerOptions = new();
+    private const int DefaultFlushThresholdBytes = 64 * 1024;
+    private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNamingPolicy = null };
 
     private readonly IFileSystem _fileSystem;
+    private readonly string _baseDirectory;
+    private readonly int _flushThresholdBytes;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<string, GameLog> _logs = new(StringComparer.Ordinal);
 
     public MatchLogger()
-        : this(new FileSystem())
+        : this(new FileSystem(), BaseDirectory, DefaultFlushThresholdBytes)
     {
     }
 
-    internal MatchLogger(IFileSystem fileSystem)
+    internal MatchLogger(IFileSystem fileSystem, int flushThresholdBytes = DefaultFlushThresholdBytes)
+        : this(fileSystem, BaseDirectory, flushThresholdBytes)
+    {
+    }
+
+    internal MatchLogger(IFileSystem fileSystem, string baseDirectory, int flushThresholdBytes = DefaultFlushThresholdBytes)
     {
         _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        _baseDirectory = baseDirectory ?? throw new ArgumentNullException(nameof(baseDirectory));
+        if (flushThresholdBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(flushThresholdBytes));
+        }
+
+        _flushThresholdBytes = flushThresholdBytes;
     }
 
     public async Task AppendAsync(MatchEvent e, CancellationToken cancellationToken = default)
@@ -39,9 +53,11 @@ public sealed class MatchLogger
             }
 
             log.MaxSeq = e.Seq;
-            log.Pending.Append(JsonSerializer.Serialize(e, SerializerOptions)).Append('\n');
+            var line = JsonSerializer.Serialize(e, SerializerOptions);
+            log.Pending.Add(line);
+            log.PendingBytes += Encoding.UTF8.GetByteCount(line) + 1;
 
-            if (log.Pending.Length >= FlushThresholdBytes)
+            if (log.PendingBytes >= _flushThresholdBytes)
             {
                 await FlushGameAsync(e.GameId, log, cancellationToken).ConfigureAwait(false);
             }
@@ -98,24 +114,15 @@ public sealed class MatchLogger
 
     private async Task FlushGameAsync(string gameId, GameLog log, CancellationToken cancellationToken)
     {
-        if (log.Pending.Length == 0)
+        if (log.Pending.Count == 0)
         {
             return;
         }
 
         var path = GetPath(gameId);
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory) && !_fileSystem.DirectoryExists(directory))
-        {
-            _fileSystem.CreateDirectory(directory);
-        }
-
-        var existing = await _fileSystem.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
-        var combined = string.IsNullOrEmpty(existing)
-            ? log.Pending.ToString()
-            : existing + log.Pending.ToString();
-        await _fileSystem.WriteAllTextAsync(path, combined, cancellationToken).ConfigureAwait(false);
+        await _fileSystem.AppendAllLinesAsync(path, log.Pending, cancellationToken).ConfigureAwait(false);
         log.Pending.Clear();
+        log.PendingBytes = 0;
     }
 
     private static long ReadSeq(string line)
@@ -135,11 +142,13 @@ public sealed class MatchLogger
         return 0;
     }
 
-    private static string GetPath(string gameId) => Path.Combine(BaseDirectory, gameId, "events.jsonl");
+    private string GetPath(string gameId) => Path.Combine(_baseDirectory, gameId, "events.jsonl");
 
     private sealed class GameLog
     {
-        public StringBuilder Pending { get; } = new();
+        public List<string> Pending { get; } = new();
+
+        public long PendingBytes { get; set; }
 
         public long MaxSeq { get; set; }
     }
