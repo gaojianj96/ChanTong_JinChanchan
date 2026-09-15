@@ -49,3 +49,5 @@ $RECYCLE.BIN/
 docs/qa_runs/**/*.jpg
 docs/qa_runs/**/*.png
 docs/reviews/_*.json.out
+
+.opencode_runs/
