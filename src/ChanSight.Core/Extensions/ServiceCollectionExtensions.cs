@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IHypergeometricEngine, HypergeometricEngine>();
         services.AddSingleton<GameStateManager>();
+        services.AddSingleton<ITacticalAdvisor, TacticalAdvisor>();
 
         services.AddSingleton(static _ =>
         {
