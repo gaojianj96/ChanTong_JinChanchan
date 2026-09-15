@@ -1,6 +1,6 @@
-# M4 决策引擎立项草案 (Task DAG Draft)
+# M4 决策引擎计划(定稿): 纯算法核心 + LLM 参谋层
 
-> Planner ｜ 2026-09-12 ｜ 用户诉求: 阵容推荐 + 是否在某等级强行 D 三星(无 M4 即无决策辅助)
+> Planner ｜ 2026-09-15 定稿 ｜ 用户已采纳全部委员会建议(含 LLM 参谋 + 手动按钮)
 > 遗产: docs/plans/plan_milestone_4.md(旧计划)、docs/discussions/discussion_plan_m4_review_live.md(旧委员会评审,505 行)、归档 WIP(%TEMP%/opencode/m4_engine_wip_20260912: HypergeometricEngine/GameStateManager/TacticalAdvisor 半成品)
 
 ## 1. 需求摘要 (Phase 0)
