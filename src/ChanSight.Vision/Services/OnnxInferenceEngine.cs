@@ -21,7 +21,7 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         }
     }
 
-    public OnnxInferenceEngine(InferenceDeviceType preferredDevice = InferenceDeviceType.DirectML)
+    public OnnxInferenceEngine(InferenceDeviceType preferredDevice = InferenceDeviceType.Auto)
     {
         _preferredDevice = preferredDevice;
         _currentDevice = preferredDevice;
@@ -36,7 +36,10 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         {
             DisposeSession();
 
-            var device = _preferredDevice;
+            var device = _preferredDevice == InferenceDeviceType.Auto
+                ? ChoosePreferredDevice(modelPath)
+                : _preferredDevice;
+
             try
             {
                 if (device == InferenceDeviceType.DirectML)
@@ -86,9 +89,13 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
             throw new ArgumentOutOfRangeException(nameof(iterations));
 
         InferenceSession session;
+        var probeDevice = _preferredDevice == InferenceDeviceType.Auto
+            ? ChoosePreferredDevice(modelPath)
+            : _preferredDevice;
         lock (_lock)
         {
-            session = CreateSessionForProbe(modelPath);
+            session = CreateSessionForProbe(modelPath, probeDevice);
+            _currentDevice = probeDevice;
         }
 
         using (session)
@@ -122,23 +129,7 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
                 OrtMemoryInfo.DefaultInstance, inputData.AsMemory(), shape);
             var inputs = new Dictionary<string, OrtValue> { [inputName] = inputTensor };
 
-            for (var w = 0; w < warmup; w++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                using var runOptions = new RunOptions();
-                using var _ = session.Run(runOptions, inputs, session.OutputNames);
-            }
-
-            var samples = new List<double>(iterations);
-            for (var i = 0; i < iterations; i++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                using var runOptions = new RunOptions();
-                using var _ = session.Run(runOptions, inputs, session.OutputNames);
-                sw.Stop();
-                samples.Add(sw.Elapsed.TotalMilliseconds);
-            }
+            var samples = CollectSamples(session, inputs, warmup, iterations, cancellationToken);
 
             samples.Sort();
             var p95Index = Math.Min(samples.Count - 1, (int)Math.Ceiling(samples.Count * 0.95) - 1);
@@ -157,10 +148,8 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         }
     }
 
-    private InferenceSession CreateSessionForProbe(string modelPath)
+    private InferenceSession CreateSessionForProbe(string modelPath, InferenceDeviceType device)
     {
-        var device = _preferredDevice;
-
         if (device == InferenceDeviceType.DirectML)
         {
             try
@@ -186,6 +175,88 @@ public sealed class OnnxInferenceEngine : IOnnxInferenceEngine
         var cpuOptions = new SessionOptions();
         cpuOptions.AppendExecutionProvider_CPU();
         return new InferenceSession(modelPath, cpuOptions);
+    }
+
+    public static InferenceDeviceType ChoosePreferredDevice(string modelPath, int warmup = 5, int iterations = 5)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(modelPath);
+
+        var cpuMs = MeasureDeviceMean(modelPath, InferenceDeviceType.Cpu, warmup, iterations);
+
+        double dmlMs;
+        try
+        {
+            dmlMs = MeasureDeviceMean(modelPath, InferenceDeviceType.DirectML, warmup, iterations);
+        }
+        catch
+        {
+            dmlMs = double.PositiveInfinity;
+        }
+
+        return dmlMs < cpuMs ? InferenceDeviceType.DirectML : InferenceDeviceType.Cpu;
+    }
+
+    private static double MeasureDeviceMean(string modelPath, InferenceDeviceType device, int warmup, int iterations)
+    {
+        using var session = device switch
+        {
+            InferenceDeviceType.DirectML => new InferenceSession(modelPath, CreateDirectMLOptions()),
+            InferenceDeviceType.Cuda => new InferenceSession(modelPath, CreateCudaOptions()),
+            _ => new InferenceSession(modelPath, CreateCpuOptions())
+        };
+
+        var inputName = session.InputNames[0];
+        var dims = session.InputMetadata[inputName].Dimensions;
+        var shape = new long[dims.Length];
+        var elementCount = 1L;
+        for (var i = 0; i < dims.Length; i++)
+        {
+            shape[i] = dims[i] <= 0 ? 1 : dims[i];
+            elementCount *= shape[i];
+        }
+
+        var inputData = new float[elementCount];
+        var inputTensor = OrtValue.CreateTensorValueFromMemory(
+            OrtMemoryInfo.DefaultInstance, inputData.AsMemory(), shape);
+        var inputs = new Dictionary<string, OrtValue> { [inputName] = inputTensor };
+
+        var samples = CollectSamples(session, inputs, warmup, iterations, CancellationToken.None);
+        return samples.Average();
+    }
+
+    private static SessionOptions CreateCpuOptions()
+    {
+        var options = new SessionOptions();
+        options.AppendExecutionProvider_CPU();
+        return options;
+    }
+
+    private static List<double> CollectSamples(
+        InferenceSession session,
+        Dictionary<string, OrtValue> inputs,
+        int warmup,
+        int iterations,
+        CancellationToken cancellationToken)
+    {
+        for (var w = 0; w < warmup; w++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            using var runOptions = new RunOptions();
+            using var _ = session.Run(runOptions, inputs, session.OutputNames);
+        }
+
+        var samples = new List<double>(iterations);
+        for (var i = 0; i < iterations; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            using var runOptions = new RunOptions();
+            using var _ = session.Run(runOptions, inputs, session.OutputNames);
+            sw.Stop();
+            samples.Add(sw.Elapsed.TotalMilliseconds);
+        }
+
+        return samples;
     }
 
     public static GoNoGoResult EvaluateLatencyGate(InferenceLatencyStats stats, double thresholdMs = 33.3)

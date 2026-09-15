@@ -21,5 +21,5 @@
 | D-15 | C1a/Kimi | Staging Texture/Mat 对象池 | C3(IFramePool) | 待办 |
 | D-16 | C1a/Sonnet P2-3 | ComputeStaggerX 无符号均值掩盖错位方向 | 后置 | 待办 |
 | D-24 | A3 smoke | bench +3px@原生 下偏 + 棋盘水平跨度系统偏差 | 用户 R4 目检 | **已闭环**(两次反推修正: bench 右锚 pitch 117→103, board 右锚跨度比 0.8757;用户确认全对齐) |
-| D-29 | R2 讨论 | CPU/DML 自动选优(probe 一次选快者)与跑分波动消噪 | 用户裁量 | 待定(未采纳,已记录) |
+| D-29 | R2 讨论 | CPU/DML 自动选优(probe 一次选快者)与跑分波动消噪 | 用户裁量 | **已实现**(InferenceDeviceType.Auto + ChoosePreferredDevice,warmup=5;LoadModel/Probe 自动选路);注意: 选优对机器负载敏感(训练并发时两路皆慢),建议 receipt 重测时静载 |
 | D-30 | R2 讨论 | 动态形状导出(dynamic=True)以支持 <640 输入降级 | R5 训练会话产出 | 进行中(训练任务已含 dynamic=True 导出) |

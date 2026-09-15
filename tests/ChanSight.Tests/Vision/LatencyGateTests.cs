@@ -29,6 +29,14 @@ public sealed class LatencyGateTests
     }
 
     [Fact]
+    public void DefaultCtor_PrefersAutoDevice()
+    {
+        using var engine = new OnnxInferenceEngine();
+
+        engine.CurrentDevice.Should().Be(InferenceDeviceType.Auto);
+    }
+
+    [Fact]
     public void OverBudget_FailsAndRecommendsDownscale()
     {
         var stats = new InferenceLatencyStats { MeanMs = 64.0 };

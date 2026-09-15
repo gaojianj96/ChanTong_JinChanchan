@@ -32,19 +32,23 @@ using var host = Host
 
 if (!string.IsNullOrWhiteSpace(cliOptions.ProbeModelPath))
 {
-    using var engine = host.Services.GetRequiredService<IOnnxInferenceEngine>();
     long[]? overrideShape = cliOptions.ProbeSize is int s ? new long[] { 1, 3, s, s } : null;
 
     try
     {
-        var stats = engine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 3, iterations: 10, inputShapeOverride: overrideShape);
-        var gate = OnnxInferenceEngine.EvaluateLatencyGate(stats);
+        using var dmlEngine = new OnnxInferenceEngine(InferenceDeviceType.DirectML);
+        var dmlStats = dmlEngine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 3, iterations: 10, inputShapeOverride: overrideShape);
 
         using var cpuEngine = new OnnxInferenceEngine(InferenceDeviceType.Cpu);
         var cpuStats = cpuEngine.ProbeLatency(cliOptions.ProbeModelPath, warmup: 2, iterations: 5, inputShapeOverride: overrideShape);
 
-        Console.WriteLine($"[probe] device={stats.Device} input={stats.InputShape} mean={stats.MeanMs}ms p95={stats.P95Ms}ms min={stats.MinMs}ms max={stats.MaxMs}ms");
+        var autoPick = OnnxInferenceEngine.ChoosePreferredDevice(cliOptions.ProbeModelPath);
+
+        Console.WriteLine($"[probe/dml] device={dmlStats.Device} input={dmlStats.InputShape} mean={dmlStats.MeanMs}ms p95={dmlStats.P95Ms}ms min={dmlStats.MinMs}ms max={dmlStats.MaxMs}ms");
         Console.WriteLine($"[probe/cpu-ref] device={cpuStats.Device} mean={cpuStats.MeanMs}ms p95={cpuStats.P95Ms}ms");
+        Console.WriteLine($"[probe/auto] auto-select would pick: {autoPick}");
+
+        var gate = OnnxInferenceEngine.EvaluateLatencyGate(autoPick == InferenceDeviceType.DirectML ? dmlStats : cpuStats);
         Console.WriteLine($"[go/nogo] passed={gate.Passed} observed={gate.ObservedMs}ms threshold={gate.ThresholdMs}ms downscale={gate.RecommendedDownscaleFactor}");
         Console.WriteLine($"[go/nogo] {gate.Note}");
     }
