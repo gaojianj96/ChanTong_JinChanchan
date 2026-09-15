@@ -124,4 +124,19 @@ public sealed class ServiceCollectionExtensionsTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void AddChanSightVision_RegistersLocalDeterministicRecognizerAsSingleton()
+    {
+        var services = new ServiceCollection();
+
+        services.AddChanSightVision();
+        var provider = services.BuildServiceProvider();
+
+        var first = provider.GetRequiredService<LocalDeterministicRecognizer>();
+        var second = provider.GetRequiredService<LocalDeterministicRecognizer>();
+
+        first.Should().NotBeNull();
+        first.Should().BeSameAs(second);
+    }
 }
