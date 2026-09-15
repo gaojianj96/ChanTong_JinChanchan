@@ -277,30 +277,49 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
     private void FinalizeCaptureFailure()
     {
-        CancellationTokenSource? staleCancellation;
+        CancellationTokenSource? staleCancellation = null;
 
         lock (syncRoot)
         {
-            if (failureFinalized)
+            var transition = ComputeFailureFinalize(failureFinalized, IsRunning);
+            if (transition.ShouldTransition)
+            {
+                IsRunning = false;
+                ReleaseDxgiResources();
+                staleCancellation = captureCancellation;
+                captureCancellation = null;
+            }
+
+            if (transition.Finalized)
+            {
+                failureFinalized = true;
+            }
+
+            if (!transition.ShouldNotify)
             {
                 return;
             }
-
-            failureFinalized = true;
-
-            if (!IsRunning)
-            {
-                return;
-            }
-
-            IsRunning = false;
-            ReleaseDxgiResources();
-            staleCancellation = captureCancellation;
-            captureCancellation = null;
         }
 
         staleCancellation?.Dispose();
         CaptureEnded?.Invoke(this, EventArgs.Empty);
+    }
+
+    internal static (bool Finalized, bool ShouldTransition, bool ShouldNotify) ComputeFailureFinalize(
+        bool failureFinalized,
+        bool isRunning)
+    {
+        if (failureFinalized)
+        {
+            return (Finalized: false, ShouldTransition: false, ShouldNotify: false);
+        }
+
+        if (!isRunning)
+        {
+            return (Finalized: true, ShouldTransition: false, ShouldNotify: false);
+        }
+
+        return (Finalized: true, ShouldTransition: true, ShouldNotify: true);
     }
 
     private CapturedFrame CopyTextureToFrame(ID3D11Texture2D sourceTexture)
@@ -342,12 +361,17 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
 
     private Rect GetCropRect(Texture2DDescription description)
     {
-        var x = Math.Max(0, targetBounds.Left - outputBounds.Left);
-        var y = Math.Max(0, targetBounds.Top - outputBounds.Top);
-        var maxWidth = Math.Max(1, (int)description.Width - x);
-        var maxHeight = Math.Max(1, (int)description.Height - y);
-        var width = Math.Min(targetBounds.Width, maxWidth);
-        var height = Math.Min(targetBounds.Height, maxHeight);
+        return GetCropRect(targetBounds, outputBounds, ((int)description.Width, (int)description.Height));
+    }
+
+    internal static Rect GetCropRect(WindowBounds target, WindowBounds output, (int w, int h) texSize)
+    {
+        var x = Math.Max(0, target.Left - output.Left);
+        var y = Math.Max(0, target.Top - output.Top);
+        var maxWidth = Math.Max(1, texSize.w - x);
+        var maxHeight = Math.Max(1, texSize.h - y);
+        var width = Math.Min(target.Width, maxWidth);
+        var height = Math.Min(target.Height, maxHeight);
 
         return new Rect(x, y, width, height);
     }
@@ -361,15 +385,27 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
                 return false;
             }
 
-            if (lastAcceptedFrameTimestamp != DateTimeOffset.MinValue &&
-                timestamp - lastAcceptedFrameTimestamp < options.MinimumFrameInterval)
-            {
-                return false;
-            }
+            var accepted = ShouldAcceptFrame(
+                lastAcceptedFrameTimestamp == DateTimeOffset.MinValue ? 0L : lastAcceptedFrameTimestamp.UtcTicks,
+                timestamp.UtcTicks,
+                options.MinimumFrameInterval,
+                out var newLastTicks);
 
-            lastAcceptedFrameTimestamp = timestamp;
-            return true;
+            lastAcceptedFrameTimestamp = new DateTimeOffset(newLastTicks, TimeSpan.Zero);
+            return accepted;
         }
+    }
+
+    internal static bool ShouldAcceptFrame(long lastTicks, long nowTicks, TimeSpan minInterval, out long newLast)
+    {
+        if (lastTicks != 0 && nowTicks - lastTicks < minInterval.Ticks)
+        {
+            newLast = lastTicks;
+            return false;
+        }
+
+        newLast = nowTicks;
+        return true;
     }
 
     private void ReleaseDxgiResources()
