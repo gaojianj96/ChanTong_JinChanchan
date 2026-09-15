@@ -1,3 +1,4 @@
+using ChanSight.Core.Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ChanSight.Core.Extensions;
@@ -7,6 +8,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddChanSightCore(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<CompKnowledgeBase>();
         return services;
     }
 }

@@ -1,0 +1,8 @@
+{
+  "id": "test-mage",
+  "name": "测试法师",
+  "keyTraits": ["法师"],
+  "coreUnits": ["拉克丝", "佐伊"],
+  "secondaryUnits": ["璐璐"],
+  "description": "测试用法师阵容。"
+}

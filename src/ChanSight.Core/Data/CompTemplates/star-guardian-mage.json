@@ -1,0 +1,8 @@
+{
+  "id": "star-guardian-mage",
+  "name": "星之守护者法师",
+  "keyTraits": ["星之守护者", "法师"],
+  "coreUnits": ["拉克丝", "佐伊", "璐璐"],
+  "secondaryUnits": ["安妮", "维迦"],
+  "description": "以星之守护者羁绊提供护盾与回蓝,法师羁绊放大技能伤害,拉克丝与佐伊为核心双C,璐璐承担控制。"
+}
