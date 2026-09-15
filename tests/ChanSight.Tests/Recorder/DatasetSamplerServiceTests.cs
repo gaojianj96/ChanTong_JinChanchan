@@ -294,5 +294,19 @@ public sealed class DatasetSamplerServiceTests
             WrittenFiles[path] = $"<{bytes.Length} bytes>";
             return Task.CompletedTask;
         }
+
+        public Task AppendAllLinesAsync(string path, IEnumerable<string> lines, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var materialized = lines.ToList();
+            if (materialized.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            var appended = string.Join('\n', materialized) + "\n";
+            WrittenFiles[path] = WrittenFiles.TryGetValue(path, out var existing) ? existing + appended : appended;
+            return Task.CompletedTask;
+        }
     }
 }

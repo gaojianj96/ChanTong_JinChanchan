@@ -14,6 +14,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IFileSystem, FileSystem>();
         services.TryAddSingleton<INativeHotKeyApi, NativeHotKeyApi>();
 
+        services.AddSingleton<MatchLogger>();
+
         services.AddSingleton<DatasetSamplerOptions>(_ => DatasetSamplerOptions.Default);
         services.AddSingleton<DatasetSamplerService>();
         services.AddSingleton<IDatasetSampler>(sp => sp.GetRequiredService<DatasetSamplerService>());
