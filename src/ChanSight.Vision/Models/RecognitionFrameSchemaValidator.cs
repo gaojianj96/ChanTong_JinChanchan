@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace ChanSight.Vision.Models;
 
 /// <summary>
@@ -9,6 +11,8 @@ public static class RecognitionFrameSchemaValidator
     public const int BoardCellCount = 28;
     public const int BenchCellCount = 9;
     public const int ShopCardCount = 5;
+
+    private static readonly Regex StagePattern = new(@"^\d+-\d+$", RegexOptions.Compiled);
 
     public static IReadOnlyList<string> Validate(RecognitionFrame frame)
     {
@@ -46,34 +50,62 @@ public static class RecognitionFrameSchemaValidator
             errors.Add($"gold must be >= 0, got {frame.Gold}.");
         if (frame.Level is < 0 or > 9)
             errors.Add($"level must be in [0,9], got {frame.Level}.");
-        if (string.IsNullOrWhiteSpace(frame.Stage))
-            errors.Add("stage must be a non-empty string.");
+        if (string.IsNullOrWhiteSpace(frame.Stage) || !StagePattern.IsMatch(frame.Stage))
+            errors.Add($"stage must match ^\\d+-\\d+$ (e.g. \"3-2\"), got \"{frame.Stage}\".");
         if (frame.Hp < 0)
             errors.Add($"hp must be >= 0, got {frame.Hp}.");
         if (frame.Exp < 0)
             errors.Add($"exp must be >= 0, got {frame.Exp}.");
-        if (frame.Confidence < 0 || frame.Confidence > 1)
+        if (double.IsNaN(frame.Confidence) || frame.Confidence < 0 || frame.Confidence > 1)
             errors.Add($"frame confidence must be in [0,1], got {frame.Confidence}.");
+        if (!DateTimeOffset.TryParse(frame.Timestamp, out _))
+            errors.Add($"timestamp must be a valid ISO 8601 date-time, got \"{frame.Timestamp}\".");
     }
 
     private static void ValidateBoardCells(RecognitionFrame frame, List<string> errors)
     {
+        if (frame.BoardCells is null)
+            return; // null/count error recorded in ValidateCounts; skip element inspection to avoid NRE.
+
         for (var i = 0; i < frame.BoardCells.Count; i++)
-            ValidateUnitCell(frame.BoardCells[i], $"boardCells[{i}]", errors);
+        {
+            var cell = frame.BoardCells[i];
+            if (cell is null)
+            {
+                errors.Add($"boardCells[{i}] must not be null.");
+                continue;
+            }
+
+            ValidateUnitCell(cell, $"boardCells[{i}]", errors);
+        }
     }
 
     private static void ValidateBenchCells(RecognitionFrame frame, List<string> errors)
     {
+        if (frame.BenchCells is null)
+            return;
+
         for (var i = 0; i < frame.BenchCells.Count; i++)
-            ValidateUnitCell(frame.BenchCells[i], $"benchCells[{i}]", errors);
+        {
+            var cell = frame.BenchCells[i];
+            if (cell is null)
+            {
+                errors.Add($"benchCells[{i}] must not be null.");
+                continue;
+            }
+
+            ValidateUnitCell(cell, $"benchCells[{i}]", errors);
+        }
     }
 
     private static void ValidateUnitCell(UnitCell cell, string path, List<string> errors)
     {
         if (cell.Star is < 0 or > 3)
             errors.Add($"{path}.star must be in [0,3], got {cell.Star}.");
-        if (cell.Confidence < 0 || cell.Confidence > 1)
+        if (double.IsNaN(cell.Confidence) || cell.Confidence < 0 || cell.Confidence > 1)
             errors.Add($"{path}.confidence must be in [0,1], got {cell.Confidence}.");
+        if (!Enum.IsDefined(cell.SourceTier))
+            errors.Add($"{path}.sourceTier must be one of T0..T3, got {cell.SourceTier}.");
         if (cell.Items is not null)
         {
             for (var i = 0; i < cell.Items.Count; i++)
@@ -89,15 +121,26 @@ public static class RecognitionFrameSchemaValidator
 
     private static void ValidateShopCards(RecognitionFrame frame, List<string> errors)
     {
+        if (frame.ShopCards is null)
+            return;
+
         for (var i = 0; i < frame.ShopCards.Count; i++)
         {
             var card = frame.ShopCards[i];
+            if (card is null)
+            {
+                errors.Add($"shopCards[{i}] must not be null.");
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(card.Name))
                 errors.Add($"shopCards[{i}].name must be a non-empty string.");
             if (card.Cost < 0)
                 errors.Add($"shopCards[{i}].cost must be >= 0, got {card.Cost}.");
-            if (card.Confidence < 0 || card.Confidence > 1)
+            if (double.IsNaN(card.Confidence) || card.Confidence < 0 || card.Confidence > 1)
                 errors.Add($"shopCards[{i}].confidence must be in [0,1], got {card.Confidence}.");
+            if (!Enum.IsDefined(card.SourceTier))
+                errors.Add($"shopCards[{i}].sourceTier must be one of T0..T3, got {card.SourceTier}.");
         }
     }
 }

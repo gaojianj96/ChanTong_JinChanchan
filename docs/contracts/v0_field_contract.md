@@ -14,7 +14,7 @@
 | --- | --- | --- | --- |
 | **确定性字段 (Deterministic)** | 本地 CV | 由几何/OCR/模板匹配确定,可校验范围与精度 | 硬断言 |
 | **语义字段 (Semantic)** | VLM | 需要候选名 + 置信度,无法仅靠 CV 唯一确定 | 软候选 |
-| **元数据字段 (Metadata)** | 审计层 | source 层级 T0..T3、confidence、correction_flag、timestamp | 审计追踪 |
+| **元数据字段 (Metadata)** | 审计层 | sourceTier 层级 T0..T3、confidence、correctionFlag、timestamp | 审计追踪 |
 
 ## 3. 确定性字段 (本地 CV 负责)
 
@@ -24,7 +24,7 @@
 | `level` | int | 0..9 | 玩家等级 |
 | `stage` | string | 格式 `"d-d"`(如 `"3-2"`)| 阶段回合约 |
 | `hp` | int | >=0 | 血量 |
-| `xp` | int | ≥0 | 经验 |
+| `exp` | int | ≥0 | 经验 |
 | `star`(单元/卡) | int | 0..3 | 星级 |
 | 槽位空/满 | bool | `true`=满 | 槽位是否被占用 |
 | 装备图鉴 | `{iconId,count,iou}` | 每图标 iou>阈值 | 图标 id + 数量,匹配时 iou 必须超过阈值 |
@@ -42,9 +42,9 @@
 
 | 字段 | JSON 类型 | 说明 |
 | --- | --- | --- |
-| `source` 层级 | enum | T0..T3(来源可信层级) |
+| `sourceTier` 层级 | enum | T0..T3(来源可信层级) |
 | `confidence` | double | [0,1] |
-| `correction_flag` | bool | 是否人工修正 |
+| `correctionFlag` | bool | 是否人工修正 |
 | `timestamp` | string (ISO 8601) | 观测时间 |
 
 ## 6. Schema 结构 (RecognitionFrame)

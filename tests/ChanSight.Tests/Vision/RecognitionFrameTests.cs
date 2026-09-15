@@ -164,4 +164,144 @@ public sealed class RecognitionFrameTests
         shopCard.TryGetProperty("name", out _).Should().BeTrue();
         shopCard.TryGetProperty("cost", out _).Should().BeTrue();
     }
+
+    [Fact]
+    public void Validate_InvalidStageFormat_Fails()
+    {
+        var bad = BuildValidFrame() with { Stage = "3" };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("stage"));
+    }
+
+    [Fact]
+    public void Validate_InvalidTimestamp_Fails()
+    {
+        var bad = BuildValidFrame() with { Timestamp = "not-a-date" };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("timestamp"));
+    }
+
+    [Fact]
+    public void Validate_NaNFrameConfidence_Fails()
+    {
+        var bad = BuildValidFrame() with { Confidence = double.NaN };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("confidence"));
+    }
+
+    [Fact]
+    public void Validate_NaNCellConfidence_Fails()
+    {
+        var frame = BuildValidFrame();
+        var badCell = new UnitCell("x", 0, Array.Empty<ItemStack>(), double.NaN, SourceTier.T0);
+        var cells = frame.BoardCells.ToArray();
+        cells[0] = badCell;
+        var bad = frame with { BoardCells = cells };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("confidence"));
+    }
+
+    [Fact]
+    public void Validate_NaNShopCardConfidence_Fails()
+    {
+        var frame = BuildValidFrame();
+        var cards = frame.ShopCards.ToArray();
+        cards[0] = new ShopCard("card0", 1, double.NaN, SourceTier.T2);
+        var bad = frame with { ShopCards = cards };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("confidence"));
+    }
+
+    [Fact]
+    public void Validate_InvalidCellSourceTier_Fails()
+    {
+        var frame = BuildValidFrame();
+        var badCell = new UnitCell("x", 0, Array.Empty<ItemStack>(), 1.0, (SourceTier)99);
+        var cells = frame.BoardCells.ToArray();
+        cells[0] = badCell;
+        var bad = frame with { BoardCells = cells };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("sourceTier"));
+    }
+
+    [Fact]
+    public void Validate_InvalidShopCardSourceTier_Fails()
+    {
+        var frame = BuildValidFrame();
+        var cards = frame.ShopCards.ToArray();
+        cards[0] = new ShopCard("card0", 1, 0.9, (SourceTier)99);
+        var bad = frame with { ShopCards = cards };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("sourceTier"));
+    }
+
+    [Fact]
+    public void Validate_NullBoardCells_ReturnsErrorWithoutThrowing()
+    {
+        var bad = BuildValidFrame() with { BoardCells = null! };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("boardCells"));
+    }
+
+    [Fact]
+    public void Validate_NullBenchCells_ReturnsErrorWithoutThrowing()
+    {
+        var bad = BuildValidFrame() with { BenchCells = null! };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("benchCells"));
+    }
+
+    [Fact]
+    public void Validate_NullShopCards_ReturnsErrorWithoutThrowing()
+    {
+        var bad = BuildValidFrame() with { ShopCards = null! };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("shopCards"));
+    }
+
+    [Fact]
+    public void Validate_NullCellElement_Fails()
+    {
+        var frame = BuildValidFrame();
+        var cells = frame.BoardCells.ToArray();
+        cells[3] = null!;
+        var bad = frame with { BoardCells = cells };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("boardCells[3]") && e.Contains("null"));
+    }
+
+    [Fact]
+    public void Validate_NullShopCardElement_Fails()
+    {
+        var frame = BuildValidFrame();
+        var cards = frame.ShopCards.ToArray();
+        cards[2] = null!;
+        var bad = frame with { ShopCards = cards };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("shopCards[2]") && e.Contains("null"));
+    }
 }
