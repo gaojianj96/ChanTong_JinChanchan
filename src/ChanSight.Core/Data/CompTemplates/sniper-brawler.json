@@ -1,0 +1,8 @@
+{
+  "id": "sniper-brawler",
+  "name": "狙神斗士",
+  "keyTraits": ["狙神", "斗士"],
+  "coreUnits": ["艾希", "图奇", "崔丝塔娜"],
+  "secondaryUnits": ["布隆", "瑟提"],
+  "description": "狙神提供远程持续输出,斗士充当前排承伤,艾希与图奇双核拉满物理输出,崔丝塔娜补足爆发。"
+}

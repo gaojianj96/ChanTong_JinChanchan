@@ -1,0 +1,8 @@
+{
+  "id": "test-sniper",
+  "name": "测试狙神",
+  "keyTraits": ["狙神"],
+  "coreUnits": ["艾希", "图奇", "崔丝塔娜"],
+  "secondaryUnits": [],
+  "description": "测试用狙神阵容。"
+}

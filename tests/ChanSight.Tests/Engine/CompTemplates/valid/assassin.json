@@ -1,0 +1,8 @@
+{
+  "id": "test-assassin",
+  "name": "测试刺客",
+  "keyTraits": ["刺客"],
+  "coreUnits": ["劫", "卡特琳娜"],
+  "secondaryUnits": ["凯南", "乐芙兰"],
+  "description": "测试用刺客阵容。"
+}
