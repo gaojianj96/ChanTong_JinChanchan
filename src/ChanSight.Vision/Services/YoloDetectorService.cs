@@ -9,18 +9,20 @@ public sealed class YoloDetectorService : IYoloDetectorService
     private readonly IOnnxInferenceEngine _engine;
     private readonly IRoiMapperService _roiMapper;
     private readonly IGridSlicerService _gridSlicer;
+    private readonly IPostProcessor<YoloDetection> _postProcessor;
 
     private const int InputSize = 640;
-    private const int NumClasses = 3;
 
     public YoloDetectorService(
         IOnnxInferenceEngine engine,
         IRoiMapperService roiMapper,
-        IGridSlicerService gridSlicer)
+        IGridSlicerService gridSlicer,
+        IPostProcessor<YoloDetection> postProcessor)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _roiMapper = roiMapper ?? throw new ArgumentNullException(nameof(roiMapper));
         _gridSlicer = gridSlicer ?? throw new ArgumentNullException(nameof(gridSlicer));
+        _postProcessor = postProcessor ?? throw new ArgumentNullException(nameof(postProcessor));
     }
 
     public IReadOnlyList<DetectedUnit> Detect(Mat frame, float confidenceThreshold = 0.25f, float iouThreshold = 0.45f)
@@ -29,9 +31,112 @@ public sealed class YoloDetectorService : IYoloDetectorService
         if (frame.Empty())
             return Array.Empty<DetectedUnit>();
 
-        // Placeholder: In production, this would run the ONNX YOLO model.
-        // For now, returns empty to allow compilation and testing of core algorithms.
-        return Array.Empty<DetectedUnit>();
+        var letterboxed = Letterbox(frame, InputSize, out var scale, out var padX, out var padY);
+        using (letterboxed)
+        {
+            var tensor = ToChwFloatTensor(letterboxed);
+            var result = _engine.RunInference("images", tensor, new long[] { 1, 3, InputSize, InputSize });
+
+            var detections = DecodeOutput(
+                result.Data, result.Shape, InputSize, scale, padX, padY,
+                frame.Width, frame.Height, confidenceThreshold);
+
+            if (detections.Count == 0)
+                return Array.Empty<DetectedUnit>();
+
+            var post = new PostProcessOptions { ConfidenceThreshold = confidenceThreshold, NmsThreshold = iouThreshold };
+            var kept = _postProcessor.Process(detections, post);
+
+            var units = new List<DetectedUnit>(kept.Count);
+            foreach (var d in kept)
+            {
+                units.Add(new DetectedUnit(
+                    name: $"cls{d.ClassId}",
+                    star: 0,
+                    cost: 0,
+                    items: Array.Empty<string>(),
+                    confidence: (float)d.Confidence,
+                    boundingBox: d.Box,
+                    boardPosition: null,
+                    benchIndex: null));
+            }
+
+            return units;
+        }
+    }
+
+    public static IReadOnlyList<YoloDetection> DecodeOutput(
+        float[] output, long[] shape, int inputSize,
+        float scale, int padX, int padY,
+        int originalWidth, int originalHeight, float confidenceThreshold)
+    {
+        var cells = shape.Length >= 3 ? (int)shape[2] : 0;
+        var stride = shape.Length >= 3 ? (int)shape[1] : 0;
+
+        if (stride <= 4)
+            return Array.Empty<YoloDetection>();
+
+        var classCount = stride - 4;
+        var list = new List<YoloDetection>();
+
+        for (var n = 0; n < cells; n++)
+        {
+            var off = n * stride;
+            var cx = output[off];
+            var cy = output[off + 1];
+            var w = output[off + 2];
+            var h = output[off + 3];
+
+            var bestClass = -1;
+            var bestScore = confidenceThreshold;
+            for (var c = 0; c < classCount; c++)
+            {
+                var s = output[off + 4 + c];
+                if (s > bestScore)
+                {
+                    bestScore = s;
+                    bestClass = c;
+                }
+            }
+
+            if (bestClass < 0)
+                continue;
+
+            var box = RestoreBox(cx, cy, w, h, inputSize, scale, padX, padY, originalWidth, originalHeight);
+            list.Add(new YoloDetection(box, bestScore, bestClass));
+        }
+
+        return list;
+    }
+
+    public static float[] ToChwFloatTensor(Mat bgr)
+    {
+        ArgumentNullException.ThrowIfNull(bgr);
+
+        using var fp = new Mat();
+        bgr.ConvertTo(fp, MatType.CV_32FC3, 1.0 / 255.0);
+
+        using var rgb = new Mat();
+        Cv2.CvtColor(fp, rgb, ColorConversionCodes.BGR2RGB);
+
+        var height = rgb.Rows;
+        var width = rgb.Cols;
+        var plane = height * width;
+        var data = new float[3 * plane];
+
+        for (var r = 0; r < height; r++)
+        {
+            for (var c = 0; c < width; c++)
+            {
+                var p = rgb.At<Vec3f>(r, c);
+                var i = r * width + c;
+                data[i] = p.Item0;
+                data[plane + i] = p.Item1;
+                data[2 * plane + i] = p.Item2;
+            }
+        }
+
+        return data;
     }
 
     public static Mat Letterbox(Mat image, int targetSize, out float scale, out int padX, out int padY)

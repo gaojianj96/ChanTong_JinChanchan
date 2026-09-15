@@ -1,6 +1,7 @@
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Models;
 using ChanSight.Vision.Services;
+using ChanSight.Vision.Models;
 using FluentAssertions;
 using OpenCvSharp;
 
@@ -44,27 +45,27 @@ public sealed class YoloDetectorServiceTests
     public YoloDetectorServiceTests()
     {
         _gridSlicer = new GridSlicerService(_roiMapper);
-        _service = new YoloDetectorService(_engine, _roiMapper, _gridSlicer);
+        _service = new YoloDetectorService(_engine, _roiMapper, _gridSlicer, new ClassicPostProcessor<YoloDetection>());
     }
 
     [Fact]
     public void Constructor_NullEngine_ThrowsArgumentNull()
     {
-        var act = () => new YoloDetectorService(null!, _roiMapper, _gridSlicer);
+        var act = () => new YoloDetectorService(null!, _roiMapper, _gridSlicer, null!);
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("engine");
     }
 
     [Fact]
     public void Constructor_NullRoiMapper_ThrowsArgumentNull()
     {
-        var act = () => new YoloDetectorService(_engine, null!, _gridSlicer);
+        var act = () => new YoloDetectorService(_engine, null!, _gridSlicer, new ClassicPostProcessor<YoloDetection>());
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("roiMapper");
     }
 
     [Fact]
     public void Constructor_NullGridSlicer_ThrowsArgumentNull()
     {
-        var act = () => new YoloDetectorService(_engine, _roiMapper, null!);
+        var act = () => new YoloDetectorService(_engine, _roiMapper, null!, new ClassicPostProcessor<YoloDetection>());
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("gridSlicer");
     }
 
