@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddSingleton<IHypergeometricEngine, HypergeometricEngine>();
+        services.AddSingleton<GameStateManager>();
 
         services.AddSingleton(static _ =>
         {
