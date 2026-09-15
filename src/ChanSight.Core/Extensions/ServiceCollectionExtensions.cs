@@ -10,6 +10,7 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        services.AddSingleton<PoolConfig>();
         services.AddSingleton<IHypergeometricEngine, HypergeometricEngine>();
         services.AddSingleton<GameStateManager>();
         services.AddSingleton<OpponentScoutTracker>();

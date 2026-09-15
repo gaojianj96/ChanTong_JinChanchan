@@ -1,6 +1,7 @@
 using ChanSight.Capture.Extensions;
 using ChanSight.Cli;
 using ChanSight.Cli.Dashboard;
+using ChanSight.Core.Engine;
 using ChanSight.Core.Extensions;
 using ChanSight.Recorder.Extensions;
 using ChanSight.Vision.Extensions;
@@ -61,5 +62,59 @@ if (!string.IsNullOrWhiteSpace(cliOptions.ProbeModelPath))
     return;
 }
 
+if (cliOptions.DecisionDryRun)
+{
+    RunDecisionDryRun(host.Services);
+    return;
+}
+
 var dashboard = host.Services.GetRequiredService<InteractiveDashboard>();
 await dashboard.RunAsync(CancellationToken.None);
+
+static void RunDecisionDryRun(IServiceProvider services)
+{
+    var panel = services.GetRequiredService<DecisionPanelService>();
+
+    var demoState = new GameStateSnapshot(
+        Stage: "3-1",
+        Phase: GamePhase.Planning,
+        Gold: 60,
+        Level: 5,
+        Exp: 0,
+        Hp: 80,
+        Streak: 2,
+        BoardUnits: new BoardUnitState[]
+        {
+            new(0, "盖伦", 1, 1),
+            new(1, "拉克丝", 1, 1),
+            new(2, "佐伊", 1, 1),
+        },
+        BenchUnits: new BoardUnitState[]
+        {
+            new(3, "拉克丝", 1, 1),
+            new(4, "艾希", 1, 1),
+        },
+        ShopCards: Array.Empty<ShopCardState>(),
+        Opponents: Array.Empty<OpponentSnapshot>(),
+        Version: 0);
+
+    var result = panel.EvaluateAlgorithm(demoState);
+
+    Console.WriteLine("== ChanSight decision panel (dry-run) ==");
+    Console.WriteLine($"state: stage={result.State.Stage} phase={result.State.Phase} gold={result.State.Gold} level={result.State.Level}");
+    Console.WriteLine("algorithm advice:");
+
+    if (result.AlgorithmAdvice.Count == 0)
+    {
+        Console.WriteLine("  No advice");
+    }
+    else
+    {
+        foreach (var advice in result.AlgorithmAdvice)
+        {
+            Console.WriteLine($"  [{advice.Kind}/{advice.Verdict}] {advice.Reason}");
+        }
+    }
+
+    Console.WriteLine("advisor advice: <none> (manual button not triggered)");
+}

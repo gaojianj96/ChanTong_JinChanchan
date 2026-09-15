@@ -24,6 +24,15 @@ public sealed class CliVisionOptionsTests
     }
 
     [Fact]
+    public void DecisionDryRunFlag_Parses()
+    {
+        var options = CliVisionOptions.Parse(new[] { "--decision-dry-run" });
+
+        options.DecisionDryRun.Should().BeTrue();
+        options.VisionDryRun.Should().BeFalse();
+    }
+
+    [Fact]
     public void ProbeFlag_WithPath_Parses()
     {
         var options = CliVisionOptions.Parse(new[] { "--probe", "model.onnx" });

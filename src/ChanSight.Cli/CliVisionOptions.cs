@@ -5,6 +5,7 @@ public sealed record CliVisionOptions
     public bool VisionDryRun { get; init; }
     public string? ProbeModelPath { get; init; }
     public int? ProbeSize { get; init; }
+    public bool DecisionDryRun { get; init; }
 
     public CliVisionOptions()
     {
@@ -15,6 +16,7 @@ public sealed record CliVisionOptions
         var dryRun = false;
         string? probePath = null;
         int? probeSize = null;
+        var decisionDryRun = false;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -22,6 +24,9 @@ public sealed record CliVisionOptions
             {
                 case "--vision-dry-run":
                     dryRun = true;
+                    break;
+                case "--decision-dry-run":
+                    decisionDryRun = true;
                     break;
                 case "--probe" when i + 1 < args.Length:
                     probePath = args[++i];
@@ -33,6 +38,12 @@ public sealed record CliVisionOptions
             }
         }
 
-        return new CliVisionOptions { VisionDryRun = dryRun, ProbeModelPath = probePath, ProbeSize = probeSize };
+        return new CliVisionOptions
+        {
+            VisionDryRun = dryRun,
+            ProbeModelPath = probePath,
+            ProbeSize = probeSize,
+            DecisionDryRun = decisionDryRun,
+        };
     }
 }
