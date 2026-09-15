@@ -103,8 +103,41 @@ public sealed class VlmRecognitionAdapterTests
         result.Verdicts[0].Star.Should().Be(1);
     }
 
+    [Fact]
+    public async Task RecognizeAsync_ClientThrowsUnavailableEveryCall_CapsTotalRequestsAtTwo()
+    {
+        var fake = new AlwaysThrowingVlmClient();
+        var adapter = new VlmRecognitionAdapter(fake);
+        var cells = CreateCells(0, 1, 2);
+
+        var result = await adapter.RecognizeAsync(cells);
+
+        // Single retry in the adapter, no retry in the client: total requests === 2.
+        fake.CallCount.Should().Be(2);
+        result.Verdicts.Should().HaveCount(3);
+        result.Verdicts.Should().OnlyContain(v => v.Name == null && v.Confidence == 0.0);
+    }
+
     private static IReadOnlyList<VlmCellInput> CreateCells(params int[] indices) =>
         indices.Select(i => new VlmCellInput(i, new byte[] { 1, 2, 3 }, "image/png")).ToArray();
+
+    /// <summary>
+    /// <see cref="IVlmClient"/> that throws <see cref="VlmUnavailableException"/> on
+    /// every call, used to prove the adapter never exceeds two total requests.
+    /// </summary>
+    private sealed class AlwaysThrowingVlmClient : IVlmClient
+    {
+        public int CallCount { get; private set; }
+
+        public Task<string> CompleteAsync(
+            string prompt,
+            IReadOnlyList<(string mime, byte[] data)> images,
+            CancellationToken ct)
+        {
+            CallCount++;
+            throw new VlmUnavailableException("endpoint down");
+        }
+    }
 
     /// <summary>
     /// Programmable in-memory <see cref="IVlmClient"/> that replays queued

@@ -48,6 +48,19 @@ public sealed class ReplayLoaderTests
     }
 
     [Fact]
+    public async Task LoadAsync_NullLiteralLine_SkipsAndRecordsIssue()
+    {
+        var fs = new FakeFileSystem();
+        fs.Write(FilePath, Line(Event(1)), "null", Line(Event(2)));
+        var loader = new ReplayLoader(fs);
+
+        var result = await loader.LoadAsync(FilePath);
+
+        result.Events.Select(e => e.Seq).Should().Equal(1L, 2L);
+        result.Issues.Should().ContainSingle(i => i.Contains("could not be deserialized", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task LoadAsync_MissingFile_ReturnsEmptyEventsAndSingleIssue()
     {
         var loader = new ReplayLoader(new FakeFileSystem());
