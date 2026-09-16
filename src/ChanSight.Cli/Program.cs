@@ -75,32 +75,11 @@ await dashboard.RunAsync(CancellationToken.None);
 
 static void RunDecisionDryRun(IServiceProvider services)
 {
-    var panel = services.GetRequiredService<DecisionPanelService>();
+    var pipeline = services.GetRequiredService<RecognitionDecisionPipeline>();
 
-    var demoState = new GameStateSnapshot(
-        Stage: "3-1",
-        Phase: GamePhase.Planning,
-        Gold: 60,
-        Level: 5,
-        Exp: 0,
-        Hp: 80,
-        Streak: 2,
-        BoardUnits: new BoardUnitState[]
-        {
-            new(0, "盖伦", 1, 1),
-            new(1, "拉克丝", 1, 1),
-            new(2, "佐伊", 1, 1),
-        },
-        BenchUnits: new BoardUnitState[]
-        {
-            new(3, "拉克丝", 1, 1),
-            new(4, "艾希", 1, 1),
-        },
-        ShopCards: Array.Empty<ShopCardState>(),
-        Opponents: Array.Empty<OpponentSnapshot>(),
-        Version: 0);
+    var frame = BuildSyntheticRecognitionFrame();
 
-    var result = panel.EvaluateAlgorithm(demoState);
+    var result = pipeline.Process(frame);
 
     Console.WriteLine("== ChanSight decision panel (dry-run) ==");
     Console.WriteLine($"state: stage={result.State.Stage} phase={result.State.Phase} gold={result.State.Gold} level={result.State.Level}");
@@ -119,4 +98,39 @@ static void RunDecisionDryRun(IServiceProvider services)
     }
 
     Console.WriteLine("advisor advice: <none> (manual button not triggered)");
+}
+
+static RecognitionFrame BuildSyntheticRecognitionFrame()
+{
+    static UnitCell unit(string name) => new(name, 1, Array.Empty<ItemStack>(), 0.95, SourceTier.T0);
+    static UnitCell empty() => new(null, 0, Array.Empty<ItemStack>(), 1.0, SourceTier.T3);
+
+    var board = Enumerable.Range(0, 28).Select(_ => empty()).ToArray();
+    board[0] = unit("盖伦");
+    board[1] = unit("拉克丝");
+    board[2] = unit("佐伊");
+
+    var bench = Enumerable.Range(0, 9).Select(_ => empty()).ToArray();
+    bench[0] = unit("拉克丝");
+    bench[1] = unit("艾希");
+
+    var shop = Enumerable.Range(0, 5)
+        .Select(_ => new ShopCard(string.Empty, 0, 1.0, SourceTier.T3))
+        .ToArray();
+
+    return new RecognitionFrame
+    {
+        SourceTier = SourceTier.T0,
+        CorrectionFlag = false,
+        Timestamp = DateTime.UtcNow.ToString("O"),
+        Confidence = 1.0,
+        Gold = 60,
+        Level = 5,
+        Stage = "3-1",
+        Hp = 80,
+        Exp = 0,
+        BoardCells = board,
+        BenchCells = bench,
+        ShopCards = shop,
+    };
 }

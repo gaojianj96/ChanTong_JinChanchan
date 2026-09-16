@@ -28,6 +28,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<VlmRecognitionAdapter>();
         services.AddSingleton<LLMAdvisor>();
         services.AddSingleton<DecisionPanelService>();
+        services.AddSingleton<RecognitionToGameStateAdapter>();
+        services.AddSingleton<RecognitionDecisionPipeline>();
 
         return services;
     }
