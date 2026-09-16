@@ -70,6 +70,13 @@ if (cliOptions.DecisionDryRun)
     return;
 }
 
+if (cliOptions.Replay is not null)
+{
+    var replayCommand = host.Services.GetRequiredService<ReplayCommand>();
+    await replayCommand.RunAsync(cliOptions.Replay, CancellationToken.None);
+    return;
+}
+
 var dashboard = host.Services.GetRequiredService<InteractiveDashboard>();
 await dashboard.RunAsync(CancellationToken.None);
 

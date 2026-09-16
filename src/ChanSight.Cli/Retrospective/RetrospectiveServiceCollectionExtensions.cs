@@ -14,6 +14,7 @@ public static class RetrospectiveServiceCollectionExtensions
         services.AddSingleton<RetrospectiveReportGenerator>(sp => new RetrospectiveReportGenerator(
             sp.GetRequiredService<IVlmClient>(),
             sp.GetRequiredService<RetrospectiveScorer>()));
+        services.AddSingleton<ReplayCommand>();
 
         return services;
     }

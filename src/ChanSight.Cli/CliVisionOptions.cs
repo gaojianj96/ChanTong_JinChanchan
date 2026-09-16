@@ -1,3 +1,5 @@
+using ChanSight.Cli.Retrospective;
+
 namespace ChanSight.Cli;
 
 public sealed record CliVisionOptions
@@ -6,6 +8,7 @@ public sealed record CliVisionOptions
     public string? ProbeModelPath { get; init; }
     public int? ProbeSize { get; init; }
     public bool DecisionDryRun { get; init; }
+    public ReplayOptions? Replay { get; init; }
 
     public CliVisionOptions()
     {
@@ -17,6 +20,11 @@ public sealed record CliVisionOptions
         string? probePath = null;
         int? probeSize = null;
         var decisionDryRun = false;
+
+        string? replayPath = null;
+        var replayExport = false;
+        string? replayExportPath = null;
+        var replayPrivacy = false;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -35,6 +43,20 @@ public sealed record CliVisionOptions
                     probeSize = sz;
                     i++;
                     break;
+                case "--replay" when i + 1 < args.Length:
+                    replayPath = args[++i];
+                    break;
+                case "--replay-export":
+                    replayExport = true;
+                    if (i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
+                    {
+                        replayExportPath = args[++i];
+                    }
+
+                    break;
+                case "--replay-privacy":
+                    replayPrivacy = true;
+                    break;
             }
         }
 
@@ -44,6 +66,7 @@ public sealed record CliVisionOptions
             ProbeModelPath = probePath,
             ProbeSize = probeSize,
             DecisionDryRun = decisionDryRun,
+            Replay = replayPath is null ? null : new ReplayOptions(replayPath, replayExport, replayExportPath, replayPrivacy),
         };
     }
 }
