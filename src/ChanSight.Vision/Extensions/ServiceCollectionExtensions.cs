@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<HttpClient>(static _ => new HttpClient());
         services.AddSingleton<IVlmClient, OpenRouterVlmClient>();
         services.AddSingleton<VlmRecognitionAdapter>();
+        services.AddSingleton<FusionArbitrator>();
         services.AddSingleton<LLMAdvisor>();
         services.AddSingleton<DecisionPanelService>();
 
