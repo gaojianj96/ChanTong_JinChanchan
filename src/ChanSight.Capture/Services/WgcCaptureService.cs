@@ -232,7 +232,7 @@ public sealed class WgcCaptureService : IScreenCaptureService, IFrameSource
             }
 
             if (lastAcceptedFrameTimestamp != DateTimeOffset.MinValue &&
-                timestamp - lastAcceptedFrameTimestamp < options.MinimumFrameInterval)
+                timestamp - lastAcceptedFrameTimestamp < options.FrameInterval)
             {
                 return false;
             }

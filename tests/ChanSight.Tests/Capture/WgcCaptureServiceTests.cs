@@ -8,6 +8,55 @@ namespace ChanSight.Tests.Capture;
 public sealed class WgcCaptureServiceTests
 {
     [Fact]
+    public void WgcCaptureOptions_DefaultFrameIntervalIs500Ms()
+    {
+        WgcCaptureOptions.Default.FrameInterval.Should().Be(TimeSpan.FromMilliseconds(500));
+    }
+
+    [Fact]
+    public void WgcCaptureOptions_Validate_RejectsOutOfRangeAndAcceptsValid()
+    {
+        var invalidZero = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.Zero };
+        var invalidTooSlow = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.FromMilliseconds(30_000) };
+        var validMinimum = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.FromMilliseconds(50) };
+        var valid = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.FromMilliseconds(200) };
+
+        var validateZero = () => invalidZero.Validate();
+        var validateTooSlow = () => invalidTooSlow.Validate();
+
+        validateZero.Should().Throw<ArgumentOutOfRangeException>();
+        validateTooSlow.Should().Throw<ArgumentOutOfRangeException>();
+        validMinimum.Validate();
+        valid.Validate();
+    }
+
+    [Fact]
+    public async Task Frames_ThrottlesAtCustomFrameInterval()
+    {
+        var provider = new TestWgcFrameProvider();
+        var options = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.FromMilliseconds(200) };
+        await using var service = new WgcCaptureService(options, () => provider);
+
+        await service.StartAsync(CreateTarget());
+        provider.Publish(CreateFrame(1, TimeSpan.Zero));
+        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(100)));
+        provider.Publish(CreateFrame(3, TimeSpan.FromMilliseconds(200)));
+        provider.Publish(CreateFrame(4, TimeSpan.FromMilliseconds(300)));
+        await service.StopAsync();
+
+        service.Frames.TryRead(out var first).Should().BeTrue();
+        service.Frames.TryRead(out var second).Should().BeTrue();
+        service.Frames.TryRead(out _).Should().BeFalse();
+
+        using (first)
+        using (second)
+        {
+            first!.SequenceNumber.Should().Be(1);
+            second!.SequenceNumber.Should().Be(3);
+        }
+    }
+
+    [Fact]
     public async Task StartAsync_ExposesRunningFrameSourceAndStopReleasesProvider()
     {
         var provider = new TestWgcFrameProvider();
@@ -32,15 +81,15 @@ public sealed class WgcCaptureServiceTests
         var provider = new TestWgcFrameProvider();
         var options = WgcCaptureOptions.Default with
         {
-            TargetFramesPerSecond = 60,
+            FrameInterval = TimeSpan.FromMilliseconds(50),
             ChannelCapacity = 2
         };
         await using var service = new WgcCaptureService(options, () => provider);
 
         await service.StartAsync(CreateTarget());
         provider.Publish(CreateFrame(1, TimeSpan.Zero));
-        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(20)));
-        provider.Publish(CreateFrame(3, TimeSpan.FromMilliseconds(40)));
+        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(50)));
+        provider.Publish(CreateFrame(3, TimeSpan.FromMilliseconds(100)));
         await service.StopAsync();
 
         service.Frames.TryRead(out var first).Should().BeTrue();
@@ -58,7 +107,7 @@ public sealed class WgcCaptureServiceTests
     public async Task Frames_DropsFramesAboveTargetFrameRate()
     {
         var provider = new TestWgcFrameProvider();
-        var options = WgcCaptureOptions.Default with { TargetFramesPerSecond = 10 };
+        var options = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.FromMilliseconds(100) };
         await using var service = new WgcCaptureService(options, () => provider);
 
         await service.StartAsync(CreateTarget());
@@ -228,7 +277,7 @@ public sealed class WgcCaptureServiceTests
     public async Task ThrottledFrames_RaiseFrameDroppedEvent()
     {
         var provider = new TestWgcFrameProvider();
-        var options = WgcCaptureOptions.Default with { TargetFramesPerSecond = 10 };
+        var options = WgcCaptureOptions.Default with { FrameInterval = TimeSpan.FromMilliseconds(100) };
         await using var service = new WgcCaptureService(options, () => provider);
 
         var dropped = new List<FrameDroppedEventArgs>();
@@ -248,7 +297,7 @@ public sealed class WgcCaptureServiceTests
         var provider = new TestWgcFrameProvider();
         var options = WgcCaptureOptions.Default with
         {
-            TargetFramesPerSecond = 60,
+            FrameInterval = TimeSpan.FromMilliseconds(50),
             ChannelCapacity = 2
         };
         await using var service = new WgcCaptureService(options, () => provider);
@@ -258,8 +307,8 @@ public sealed class WgcCaptureServiceTests
 
         await service.StartAsync(CreateTarget());
         provider.Publish(CreateFrame(1, TimeSpan.Zero));
-        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(20)));
-        provider.Publish(CreateFrame(3, TimeSpan.FromMilliseconds(40)));
+        provider.Publish(CreateFrame(2, TimeSpan.FromMilliseconds(50)));
+        provider.Publish(CreateFrame(3, TimeSpan.FromMilliseconds(100)));
 
         dropped.Should().HaveCount(1);
         dropped[0].Reason.Should().Be(FrameDropReason.ChannelFull);

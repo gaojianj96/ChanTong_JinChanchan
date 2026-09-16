@@ -388,7 +388,7 @@ public sealed class DxgiCaptureService : IScreenCaptureService, IFrameSource
             var accepted = ShouldAcceptFrame(
                 lastAcceptedFrameTimestamp == DateTimeOffset.MinValue ? 0L : lastAcceptedFrameTimestamp.UtcTicks,
                 timestamp.UtcTicks,
-                options.MinimumFrameInterval,
+                options.FrameInterval,
                 out var newLastTicks);
 
             lastAcceptedFrameTimestamp = new DateTimeOffset(newLastTicks, TimeSpan.Zero);

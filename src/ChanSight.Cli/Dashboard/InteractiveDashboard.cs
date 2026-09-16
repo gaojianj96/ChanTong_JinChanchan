@@ -21,8 +21,10 @@ public sealed class InteractiveDashboard
     private bool _isRecording;
     private SessionMeta? _currentSession;
     private CancellationTokenSource? _recordingCts;
-    private int _targetFps = 30;
+    private readonly TimeSpan _captureInterval = TimeSpan.FromMilliseconds(WgcCaptureOptions.DefaultFrameIntervalMilliseconds);
     private int _toggleGuard;
+
+    private int CaptureFps => (int)Math.Round(1000.0 / _captureInterval.TotalMilliseconds);
     private volatile bool _captureLost;
     private long _droppedThrottled;
     private long _droppedChannelFull;
@@ -338,7 +340,7 @@ public sealed class InteractiveDashboard
             outputDir,
             _selectedWindow,
             now,
-            _targetFps,
+            CaptureFps,
             _selectedWindow.PhysicalSize);
 
         _recordingCts = new CancellationTokenSource();
@@ -404,7 +406,7 @@ public sealed class InteractiveDashboard
         grid.AddRow(new Markup("[grey]Status:[/]"), new Markup($"[{statusColor} bold]{_status}[/]"));
         grid.AddRow(new Markup("[grey]Window:[/]"), new Markup(_selectedWindow?.Title ?? "N/A"));
         grid.AddRow(new Markup("[grey]Resolution:[/]"), new Markup(resolution));
-        grid.AddRow(new Markup("[grey]Target FPS:[/]"), new Markup($"{_targetFps}"));
+        grid.AddRow(new Markup("[grey]Capture interval:[/]"), new Markup($"{_captureInterval.TotalMilliseconds:F0} ms ({CaptureFps} fps)"));
         var callbackMs = _captureService is WgcCaptureService wgc ? wgc.MaxFrameCallbackMilliseconds.ToString("F2") + " ms" : "N/A (capture)";
         grid.AddRow(new Markup("[grey]Capture callback max:[/]"), new Markup($"{callbackMs}"));
         grid.AddRow(new Markup("[grey]Dropped:[/]"), new Markup($"[grey]throttle {Interlocked.Read(ref _droppedThrottled)} / chfull {Interlocked.Read(ref _droppedChannelFull)}[/]"));
