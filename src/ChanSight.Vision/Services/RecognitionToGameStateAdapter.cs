@@ -7,10 +7,12 @@ namespace ChanSight.Vision.Services;
 public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
 {
     private readonly GameStateManager _manager;
+    private readonly IPhaseDetector _phaseDetector;
 
-    public RecognitionToGameStateAdapter(GameStateManager manager)
+    public RecognitionToGameStateAdapter(GameStateManager manager, IPhaseDetector? phaseDetector = null)
     {
         _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+        _phaseDetector = phaseDetector ?? new PhaseDetector();
     }
 
     public void Apply(RecognitionFrame frame)
@@ -18,10 +20,13 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
         ArgumentNullException.ThrowIfNull(frame);
 
         var current = _manager.Current;
+        var phase = _phaseDetector.Detect(frame);
+
+        ApplyPhase(phase);
 
         var snapshot = new GameStateSnapshot(
             Stage: ParseStage(frame.Stage),
-            Phase: current.Phase,
+            Phase: phase,
             Gold: frame.Gold,
             Level: frame.Level,
             Exp: frame.Exp,
@@ -34,6 +39,28 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
             Version: current.Version);
 
         _manager.Update(snapshot);
+    }
+
+    private void ApplyPhase(GamePhase phase)
+    {
+        if (_manager.Current.Version == 0)
+        {
+            // Mid-game bootstrap: the first frame may legitimately be Combat,
+            // Carousel or PvE, which Transition would reject.
+            _manager.SetPhase(phase);
+        }
+        else if (phase != _manager.Current.Phase)
+        {
+            try
+            {
+                _manager.Transition(phase);
+            }
+            catch (InvalidOperationException)
+            {
+                // Illegal transition during normal flow (e.g. a transient
+                // misclassification) is ignored rather than crashing.
+            }
+        }
     }
 
     private static BoardUnitState ToBoardUnit(int slotIndex, UnitCell cell)

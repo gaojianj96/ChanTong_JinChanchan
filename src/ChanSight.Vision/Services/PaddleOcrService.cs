@@ -125,7 +125,7 @@ public sealed class PaddleOcrService : IPaddleOcrService
         return 1;
     }
 
-    private static string? CleanStageText(string text)
+    public static string? CleanStageText(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
             return null;

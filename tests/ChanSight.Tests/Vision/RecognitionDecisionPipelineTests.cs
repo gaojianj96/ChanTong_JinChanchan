@@ -55,7 +55,10 @@ public sealed class RecognitionDecisionPipelineTests
 
         result.Should().NotBeNull();
         result.AdvisorAdvice.Should().BeNull();
-        result.AlgorithmAdvice.Should().OnlyContain(r => r.Verdict == Verdict.Hold);
+
+        // Stage "1-1" with an empty shop resolves to PvE, so economy/roll advice
+        // is correctly suppressed (the phase-detection bug this fixes).
+        result.AlgorithmAdvice.Should().BeEmpty();
     }
 
     [Fact]

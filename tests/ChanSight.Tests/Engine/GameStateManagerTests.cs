@@ -161,4 +161,27 @@ public sealed class GameStateManagerTests
 
         manager.Current.Should().NotBeNull();
     }
+
+    [Fact]
+    public void SetPhase_AppliesDirectlyAndIncrementsVersion()
+    {
+        var manager = new GameStateManager();
+
+        manager.SetPhase(GamePhase.Combat);
+
+        manager.Current.Phase.Should().Be(GamePhase.Combat);
+        manager.Current.Version.Should().Be(1);
+    }
+
+    [Fact]
+    public void SetPhase_BootstrapToCarousel_DoesNotThrow()
+    {
+        var manager = new GameStateManager();
+
+        // Planning -> Carousel is illegal via Transition, but SetPhase bypasses
+        // the transition table for mid-game bootstrap.
+        manager.SetPhase(GamePhase.Carousel);
+
+        manager.Current.Phase.Should().Be(GamePhase.Carousel);
+    }
 }

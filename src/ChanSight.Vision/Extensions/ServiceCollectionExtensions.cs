@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CellChangeDetector>();
         services.AddSingleton<HttpClient>(static _ => new HttpClient());
         services.AddSingleton<IVlmClient, OpenRouterVlmClient>();
+        services.AddSingleton<IPhaseDetector, PhaseDetector>();
         services.AddSingleton<VlmRecognitionAdapter>();
         services.AddSingleton<FusionArbitrator>();
         services.AddSingleton<LLMAdvisor>();

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ChanSight.Core.Engine;
 
 namespace ChanSight.Vision.Models;
 
@@ -60,6 +61,8 @@ public static class RecognitionFrameSchemaValidator
             errors.Add($"frame confidence must be in [0,1], got {frame.Confidence}.");
         if (!DateTimeOffset.TryParse(frame.Timestamp, out _))
             errors.Add($"timestamp must be a valid ISO 8601 date-time, got \"{frame.Timestamp}\".");
+        if (!Enum.IsDefined(frame.Phase))
+            errors.Add($"phase must be one of Planning/Combat/Carousel/PvE, got {frame.Phase}.");
     }
 
     private static void ValidateBoardCells(RecognitionFrame frame, List<string> errors)

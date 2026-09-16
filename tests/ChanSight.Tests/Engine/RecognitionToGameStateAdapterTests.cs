@@ -38,7 +38,7 @@ public sealed class RecognitionToGameStateAdapterTests
         snap.BoardUnits.Should().HaveCount(28);
         snap.BenchUnits.Should().HaveCount(9);
         snap.ShopCards.Should().HaveCount(5);
-        snap.Version.Should().Be(1);
+        snap.Version.Should().Be(2);
     }
 
     [Fact]
@@ -89,6 +89,62 @@ public sealed class RecognitionToGameStateAdapterTests
 
         snap.ShopCards[1].Name.Should().BeNull();
         snap.ShopCards[1].Cost.Should().Be(0);
+    }
+
+    [Fact]
+    public void Apply_FirstFrame_EmptyShopCombatStage_DetectsCombatNotPlanning()
+    {
+        var manager = new GameStateManager();
+        var adapter = new RecognitionToGameStateAdapter(manager);
+
+        var frame = new RecognitionFrame
+        {
+            Stage = "3-2",
+            BoardCells = CreateBoard(28),
+            BenchCells = CreateBench(9),
+            ShopCards = Array.Empty<ShopCard>(),
+        };
+
+        adapter.Apply(frame);
+
+        manager.Current.Phase.Should().Be(GamePhase.Combat);
+    }
+
+    [Fact]
+    public void Apply_SubsequentFrames_PhaseUpdatesContinuously()
+    {
+        var manager = new GameStateManager();
+        var adapter = new RecognitionToGameStateAdapter(manager);
+
+        // First frame: empty shop + "3-2" -> Combat (bootstrap).
+        adapter.Apply(new RecognitionFrame
+        {
+            Stage = "3-2",
+            BoardCells = CreateBoard(28),
+            BenchCells = CreateBench(9),
+            ShopCards = Array.Empty<ShopCard>(),
+        });
+        manager.Current.Phase.Should().Be(GamePhase.Combat);
+
+        // Next frame: shop visible -> Planning (legal transition from Combat).
+        adapter.Apply(new RecognitionFrame
+        {
+            Stage = "3-2",
+            BoardCells = CreateBoard(28),
+            BenchCells = CreateBench(9),
+            ShopCards = CreateShop(5),
+        });
+        manager.Current.Phase.Should().Be(GamePhase.Planning);
+
+        // Next frame: empty shop + PvE round -> PvE (legal transition from Planning).
+        adapter.Apply(new RecognitionFrame
+        {
+            Stage = "3-6",
+            BoardCells = CreateBoard(28),
+            BenchCells = CreateBench(9),
+            ShopCards = Array.Empty<ShopCard>(),
+        });
+        manager.Current.Phase.Should().Be(GamePhase.PvE);
     }
 
     private static IReadOnlyList<UnitCell> CreateBoard(int size)

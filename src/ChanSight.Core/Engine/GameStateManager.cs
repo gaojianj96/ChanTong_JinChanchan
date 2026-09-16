@@ -33,6 +33,12 @@ public sealed class GameStateManager
         _current = current with { Phase = next, Version = current.Version + 1 };
     }
 
+    public void SetPhase(GamePhase phase)
+    {
+        var current = Current;
+        _current = current with { Phase = phase, Version = current.Version + 1 };
+    }
+
     public void Update(GameStateSnapshot next)
     {
         ArgumentNullException.ThrowIfNull(next);

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ChanSight.Core.Engine;
 
 namespace ChanSight.Vision.Models;
 
@@ -56,6 +57,7 @@ public sealed record RecognitionFrame
     [JsonPropertyName("gold")] public int Gold { get; init; }
     [JsonPropertyName("level")] public int Level { get; init; }
     [JsonPropertyName("stage")] public string Stage { get; init; } = string.Empty;
+    [JsonPropertyName("phase")] public GamePhase Phase { get; init; } = GamePhase.Planning;
     [JsonPropertyName("hp")] public int Hp { get; init; }
     [JsonPropertyName("exp")] public int Exp { get; init; }
 
@@ -66,7 +68,11 @@ public sealed record RecognitionFrame
     public static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter<SourceTier>() },
+        Converters =
+        {
+            new JsonStringEnumConverter<SourceTier>(),
+            new JsonStringEnumConverter<GamePhase>(),
+        },
     };
 
     public static string Serialize(RecognitionFrame frame) =>

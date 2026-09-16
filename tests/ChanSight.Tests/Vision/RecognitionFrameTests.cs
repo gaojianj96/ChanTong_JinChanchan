@@ -1,3 +1,4 @@
+using ChanSight.Core.Engine;
 using ChanSight.Vision.Models;
 using FluentAssertions;
 using System.Text.Json;
@@ -67,6 +68,31 @@ public sealed class RecognitionFrameTests
         var errors = RecognitionFrameSchemaValidator.Validate(BuildValidFrame());
 
         errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Deserialize_PhaseRoundTrip_PreservesPhase()
+    {
+        var frame = BuildValidFrame() with { Phase = GamePhase.Combat };
+
+        var json = RecognitionFrame.Serialize(frame);
+        var roundTripped = RecognitionFrame.Deserialize(json);
+
+        roundTripped.Phase.Should().Be(GamePhase.Combat);
+        json.Should().Contain("\"phase\"");
+
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.GetProperty("phase").GetString().Should().Be("Combat");
+    }
+
+    [Fact]
+    public void Validate_InvalidPhase_FailsWithoutThrowing()
+    {
+        var bad = BuildValidFrame() with { Phase = (GamePhase)99 };
+
+        var errors = RecognitionFrameSchemaValidator.Validate(bad);
+
+        errors.Should().Contain(e => e.Contains("phase"));
     }
 
     [Fact]
