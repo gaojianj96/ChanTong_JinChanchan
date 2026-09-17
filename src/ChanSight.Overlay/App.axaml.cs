@@ -53,12 +53,14 @@ public partial class App : Application
         // 捕获服务必须是单例: MainWindow 启动它、LiveRecognitionService 消费它, 二者需同一实例。
         services.AddSingleton<IScreenCaptureService>(static _ => new WgcCaptureService());
 
-        // 关键帧归档: 磁盘实现落本地数据目录。
-        services.AddSingleton<IFrameArchive>(_ =>
+        // 关键帧归档: 磁盘实现落本地数据目录。同一实例同时以 FrameArchive 与 IFrameArchive 暴露,
+        // 供 ReviewService(读回) 与 LiveRecognitionService(写入) 共享。
+        services.AddSingleton<FrameArchive>(_ =>
             new FrameArchive(Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "ChanSight",
                 "frames")));
+        services.AddSingleton<IFrameArchive>(static sp => sp.GetRequiredService<FrameArchive>());
 
         services.AddSingleton<AnnotationStore>();
 
@@ -79,6 +81,17 @@ public partial class App : Application
         services.AddSingleton<LiveRecognitionService>();
         services.AddSingleton<LiveViewModel>();
         services.AddSingleton<LiveView>();
+
+        // 回顾链路: ReviewService 读回关键帧 + 识别重算闭包。
+        services.AddSingleton<ReviewService.FrameRecognitionFunc>(static sp =>
+        {
+            var pipeline = sp.GetRequiredService<RecognitionPipeline>();
+            return (frame, ct) => pipeline.RecognizeAsync(frame, ct);
+        });
+        services.AddSingleton<ReviewService>();
+        services.AddSingleton<ReviewViewModel>();
+        services.AddSingleton<ReviewView>();
+
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
