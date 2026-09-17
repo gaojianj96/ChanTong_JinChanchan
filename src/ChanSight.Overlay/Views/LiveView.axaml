@@ -1,116 +1,243 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ChanSight.Overlay.ViewModels"
+             xmlns:prim="using:Avalonia.Controls.Primitives"
              x:Class="ChanSight.Overlay.Views.LiveView"
              x:DataType="vm:LiveViewModel">
-    <ScrollViewer>
-        <StackPanel Margin="8" Spacing="8">
+    <ScrollViewer Background="{StaticResource PageBackground}"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" Spacing="12">
 
-            <TextBlock Text="{Binding Status}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <!-- ================= 状态卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="对局状态" Classes="cardTitle" />
+                            <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
 
-            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto,Auto">
-                <TextBlock Text="金币" FontWeight="Bold" />
-                <TextBlock Grid.Column="1" Text="等级" FontWeight="Bold" />
-                <TextBlock Grid.Column="2" Text="阶段" FontWeight="Bold" />
-                <TextBlock Grid.Row="1" Text="{Binding Gold}" FontSize="18" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Level}" FontSize="18" />
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Stage}" FontSize="18" />
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="血量" FontWeight="Bold" />
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding Hp}" FontSize="18" />
-            </Grid>
-
-            <TextBlock Text="棋盘 (28)" FontWeight="Bold" />
-            <ItemsControl ItemsSource="{Binding BoardCells}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:SlotDisplay">
-                        <Border BorderBrush="Gray" BorderThickness="1"
-                                Padding="4" Margin="2" CornerRadius="3">
-                            <StackPanel>
-                                <TextBlock Text="{Binding DisplayText}" FontSize="11" />
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+                        <Border Grid.Column="0" Classes="cardRaised" Padding="10,8">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="金币" Classes="statLabel" />
+                                <TextBlock Text="{Binding Gold}" Classes="statValue" Foreground="{StaticResource AccentGold}" />
                             </StackPanel>
                         </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <TextBlock Text="备战席 (9)" FontWeight="Bold" />
-            <ItemsControl ItemsSource="{Binding BenchCells}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:SlotDisplay">
-                        <Border BorderBrush="Gray" BorderThickness="1"
-                                Padding="4" Margin="2" CornerRadius="3">
-                            <TextBlock Text="{Binding DisplayText}" FontSize="11" />
+                        <Border Grid.Column="1" Classes="cardRaised" Padding="10,8">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="等级" Classes="statLabel" />
+                                <TextBlock Text="{Binding Level}" Classes="statValue" Foreground="{StaticResource AccentBlue}" />
+                            </StackPanel>
                         </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <TextBlock Text="商店 (5)" FontWeight="Bold" />
-            <ItemsControl ItemsSource="{Binding ShopCards}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:SlotDisplay">
-                        <Border BorderBrush="Gray" BorderThickness="1"
-                                Padding="4" Margin="2" CornerRadius="3">
-                            <TextBlock Text="{Binding DisplayText}" FontSize="11" />
+                        <Border Grid.Column="2" Classes="cardRaised" Padding="10,8">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="阶段" Classes="statLabel" />
+                                <TextBlock Text="{Binding Stage}" Classes="statValue" Foreground="{StaticResource AccentPurple}" />
+                            </StackPanel>
                         </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                        <Border Grid.Column="3" Classes="cardRaised" Padding="10,8">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="血量" Classes="statLabel" />
+                                <TextBlock Text="{Binding Hp}" Classes="statValue" Foreground="{StaticResource AccentRed}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-            <Separator />
-
-            <TextBlock Text="钉帧修正" FontWeight="Bold" />
-            <WrapPanel>
-                <Button Content="🔒 钉帧" Command="{Binding EnterPinCommand}" Margin="0,0,8,0" />
-                <Button Content="取消" Command="{Binding CancelPinCommand}" IsEnabled="{Binding IsPinned}" Margin="0,0,8,0" />
-                <TextBlock Text="{Binding PinnedFrameId, StringFormat='钉住的帧: {0}'}" VerticalAlignment="Center" />
-            </WrapPanel>
-
-            <StackPanel IsVisible="{Binding IsPinned}" Spacing="4">
-                <TextBlock Text="修正类型" FontWeight="SemiBold" />
-                <ComboBox ItemsSource="{Binding CellRegionTypes}" SelectedIndex="{Binding SelectedRegionTypeIndex}" />
-                <TextBlock Text="格序号 (0 起)" FontWeight="SemiBold" />
-                <NumericUpDown Minimum="0" Maximum="27" Value="{Binding SelectedCellIndex}" />
-                <TextBlock Text="英雄(候选)" FontWeight="SemiBold" />
-                <ComboBox ItemsSource="{Binding HeroCandidates}" SelectedItem="{Binding SelectedHero}" />
-                <TextBlock Text="星级" FontWeight="SemiBold" />
-                <NumericUpDown Minimum="0" Maximum="3" Value="{Binding SelectedStar}" />
-                <WrapPanel>
-                    <Button Content="确认英雄" Command="{Binding CommitHeroCommand}" Margin="0,0,8,0" />
-                    <Button Content="确认星级" Command="{Binding CommitStarCommand}" Margin="0,0,8,0" />
-                    <Button Content="标记为空" Command="{Binding CommitEmptyCommand}" />
-                </WrapPanel>
-            </StackPanel>
-
-            <Separator />
-
-            <Button Content="手动重算" Command="{Binding RecalculateCommand}" FontSize="14" />
-            <TextBlock Text="推荐列表" FontWeight="Bold" />
-            <ListBox ItemsSource="{Binding Recommendations}" MinHeight="120">
-                <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="vm:RecommendationDisplay">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding Verdict}" FontWeight="Bold" />
-                            <TextBlock Text="{Binding Reason}" TextWrapping="Wrap" />
+            <!-- ================= 棋盘卡: 4×7 六角网格 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentBlue}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="棋盘 · 28" Classes="cardTitle" />
+                            <TextBlock Text="4×7 六角网格 · 交错排列(奇数行右移半格)" Classes="muted" />
                         </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding BoardCells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Width="578" Height="196" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemContainerTheme>
+                            <ControlTheme TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{ReflectionBinding HexX}" />
+                                <Setter Property="Canvas.Top" Value="{ReflectionBinding HexY}" />
+                            </ControlTheme>
+                        </ItemsControl.ItemContainerTheme>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SlotDisplay">
+                                <Border Classes="slot"
+                                        Classes.empty="{Binding IsEmpty}"
+                                        Classes.corrected="{Binding HasCorrection}"
+                                        Width="68" Height="54" Padding="3">
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               Classes="slotName"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               LineHeight="12" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 备战席条: 9 格横排 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentPurple}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="备战席 · 9" Classes="cardTitle" />
+                            <TextBlock Text="横向条状布局" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding BenchCells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <prim:UniformGrid Columns="9" ColumnSpacing="4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SlotDisplay">
+                                <Border Classes="slot"
+                                        Classes.empty="{Binding IsEmpty}"
+                                        Classes.corrected="{Binding HasCorrection}"
+                                        Height="52" Padding="4">
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               Classes="slotName"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               LineHeight="12" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 商店条: 5 格横排 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="商店 · 5" Classes="cardTitle" />
+                            <TextBlock Text="横向条状布局 · 显示费用" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding ShopCards}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <prim:UniformGrid Columns="5" ColumnSpacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SlotDisplay">
+                                <Border Classes="slot"
+                                        Classes.empty="{Binding IsEmpty}"
+                                        Classes.corrected="{Binding HasCorrection}"
+                                        Height="58" Padding="6">
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               Classes="slotName"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               LineHeight="12" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 修正卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGreen}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="钉帧修正" Classes="cardTitle" />
+                            <TextBlock Text="钉住当前帧后逐格修正, 支持英雄/星级/标记为空" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <WrapPanel>
+                        <Button Content="🔒 钉帧" Classes="accent" Command="{Binding EnterPinCommand}" Margin="0,0,8,0" />
+                        <Button Content="取消钉帧" Classes="ghost" Command="{Binding CancelPinCommand}" IsEnabled="{Binding IsPinned}" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding PinnedFrameId, StringFormat='钉住的帧: {0}'}" Classes="subtle" VerticalAlignment="Center" />
+                    </WrapPanel>
+
+                    <Border Classes="cardRaised" IsVisible="{Binding IsPinned}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="修正区域" Classes="subtle" />
+                            <ComboBox ItemsSource="{Binding CellRegionTypes}" SelectedIndex="{Binding SelectedRegionTypeIndex}" />
+
+                            <Grid ColumnDefinitions="Auto,*,32,Auto,*" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0" Text="格序号" Classes="subtle" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="1" Minimum="0" Maximum="27" Value="{Binding SelectedCellIndex}" />
+                                <TextBlock Grid.Column="3" Text="星级" Classes="subtle" VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="4" Minimum="0" Maximum="3" Value="{Binding SelectedStar}" />
+                            </Grid>
+
+                            <TextBlock Text="英雄候选" Classes="subtle" />
+                            <ComboBox ItemsSource="{Binding HeroCandidates}" SelectedItem="{Binding SelectedHero}" />
+
+                            <WrapPanel>
+                                <Button Content="确认英雄" Classes="accent" Command="{Binding CommitHeroCommand}" Margin="0,0,8,0" />
+                                <Button Content="确认星级" Classes="ghost" Command="{Binding CommitStarCommand}" Margin="0,0,8,0" />
+                                <Button Content="标记为空" Classes="danger" Command="{Binding CommitEmptyCommand}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 推荐卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="阵容推荐" Classes="cardTitle" />
+                            <TextBlock Text="平铺列表 · 信息密度不减" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Button Content="↻ 手动重算" Classes="accent" Command="{Binding RecalculateCommand}" HorizontalAlignment="Left" />
+
+                    <ListBox ItemsSource="{Binding Recommendations}" MinHeight="140" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RecommendationDisplay">
+                                <Border Classes="cardRaised" Padding="10,6" Margin="0,0,0,6">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Border Background="{StaticResource AccentGreen}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Verdict}" FontSize="11" FontWeight="Bold" Foreground="#0B1F18" />
+                                        </Border>
+                                        <TextBlock Text="{Binding Reason}" Classes="subtle" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Priority, StringFormat='P{0}'}" Classes="muted" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
 
         </StackPanel>
     </ScrollViewer>

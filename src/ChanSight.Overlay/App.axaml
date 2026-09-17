@@ -1,8 +1,170 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="ChanSight.Overlay.App"
-             RequestedThemeVariant="Light">
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <!-- ============ 色彩体系: 现代暗色 + 金铲铲主题金色点缀 ============ -->
+        <SolidColorBrush x:Key="PageBackground" Color="#0D1117" />
+        <SolidColorBrush x:Key="CardSurface" Color="#151B24" />
+        <SolidColorBrush x:Key="CardSurfaceRaised" Color="#1C2430" />
+        <SolidColorBrush x:Key="CardSurfaceSunken" Color="#0F141C" />
+        <SolidColorBrush x:Key="CardBorder" Color="#28313F" />
+        <SolidColorBrush x:Key="CardBorderStrong" Color="#3A465A" />
+
+        <SolidColorBrush x:Key="TextPrimary" Color="#E8EDF5" />
+        <SolidColorBrush x:Key="TextSecondary" Color="#9AA7BA" />
+        <SolidColorBrush x:Key="TextMuted" Color="#647083" />
+
+        <SolidColorBrush x:Key="AccentGold" Color="#EFBF52" />
+        <SolidColorBrush x:Key="AccentGoldBright" Color="#FFD878" />
+        <SolidColorBrush x:Key="AccentGoldDeep" Color="#C99A2E" />
+
+        <SolidColorBrush x:Key="AccentBlue" Color="#55A6F0" />
+        <SolidColorBrush x:Key="AccentBlueDim" Color="#122B42" />
+
+        <SolidColorBrush x:Key="AccentPurple" Color="#A88BF0" />
+        <SolidColorBrush x:Key="AccentPurpleDim" Color="#2A2142" />
+
+        <SolidColorBrush x:Key="AccentRed" Color="#F26D6D" />
+        <SolidColorBrush x:Key="AccentRedDim" Color="#2F1A1A" />
+
+        <SolidColorBrush x:Key="AccentGreen" Color="#3BC99A" />
+        <SolidColorBrush x:Key="AccentGreenDim" Color="#142E27" />
+
+        <LinearGradientBrush x:Key="CardHeaderGold" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Offset="0" Color="#EFBF52" />
+            <GradientStop Offset="1" Color="#6E5316" />
+        </LinearGradientBrush>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
+
+        <!-- ============ 卡片: 立体分层核心 ============ -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{StaticResource CardSurface}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 6 18 0 #4D000000" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+
+        <Style Selector="Border.cardRaised">
+            <Setter Property="Background" Value="{StaticResource CardSurfaceRaised}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderStrong}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BoxShadow" Value="0 4 14 0 #40000000" />
+            <Setter Property="Padding" Value="10" />
+        </Style>
+
+        <!-- ============ 文本层级 ============ -->
+        <Style Selector="TextBlock.cardTitle">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+        </Style>
+
+        <Style Selector="TextBlock.subtle">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <Style Selector="TextBlock.statLabel">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+
+        <Style Selector="TextBlock.statValue">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <!-- ============ 按钮 ============ -->
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="{StaticResource AccentGold}" />
+            <Setter Property="Foreground" Value="#201703" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,7" />
+        </Style>
+        <Style Selector="Button.accent:pointerover">
+            <Setter Property="Background" Value="{StaticResource AccentGoldBright}" />
+        </Style>
+        <Style Selector="Button.accent:pressed">
+            <Setter Property="Background" Value="{StaticResource AccentGoldDeep}" />
+        </Style>
+
+        <Style Selector="Button.ghost">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderStrong}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,7" />
+        </Style>
+        <Style Selector="Button.ghost:pointerover">
+            <Setter Property="Background" Value="{StaticResource CardSurfaceRaised}" />
+        </Style>
+
+        <Style Selector="Button.danger">
+            <Setter Property="Background" Value="{StaticResource AccentRedDim}" />
+            <Setter Property="Foreground" Value="{StaticResource AccentRed}" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentRed}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,7" />
+        </Style>
+        <Style Selector="Button.danger:pointerover">
+            <Setter Property="Background" Value="#402020" />
+        </Style>
+
+        <!-- ============ 分隔线 ============ -->
+        <Style Selector="Separator">
+            <Setter Property="Background" Value="{StaticResource CardBorder}" />
+            <Setter Property="Height" Value="1" />
+        </Style>
+
+        <!-- ============ 槽位格子(棋盘六角 / 备战席 / 商店) ============ -->
+        <Style Selector="Border.slot">
+            <Setter Property="Background" Value="{StaticResource CardSurfaceRaised}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderStrong}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="9" />
+        </Style>
+        <Style Selector="Border.slot.empty">
+            <Setter Property="Background" Value="{StaticResource CardSurfaceSunken}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
+        </Style>
+        <Style Selector="Border.slot.corrected">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentGold}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <Style Selector="TextBlock.slotName">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <!-- ============ 输入控件统一圆角 ============ -->
+        <Style Selector="ComboBox">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="NumericUpDown">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
     </Application.Styles>
 </Application>

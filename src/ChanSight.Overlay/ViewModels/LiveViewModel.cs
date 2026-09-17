@@ -14,11 +14,16 @@ public partial class SlotDisplay : ObservableObject
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayText))]
+    [NotifyPropertyChangedFor(nameof(Row))]
+    [NotifyPropertyChangedFor(nameof(Col))]
+    [NotifyPropertyChangedFor(nameof(HexX))]
+    [NotifyPropertyChangedFor(nameof(HexY))]
     private int _index;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayText))]
     [NotifyPropertyChangedFor(nameof(CorrectionMark))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
     private string _name = string.Empty;
 
     [ObservableProperty]
@@ -40,6 +45,21 @@ public partial class SlotDisplay : ObservableObject
             : Name + (Cost > 0 ? $"({Cost}费)" : Star > 0 ? $"★{Star}" : string.Empty) + CorrectionMark;
 
     public string CorrectionMark => HasCorrection ? " ✓改" : string.Empty;
+
+    /// <summary>棋盘 4×7 网格行号(0-3)。仅棋盘格有意义, 其余区域按序号自然计算。</summary>
+    public int Row => Index / 7;
+
+    /// <summary>棋盘 4×7 网格列号(0-6)。</summary>
+    public int Col => Index % 7;
+
+    /// <summary>棋盘六角布局的像素 X 坐标(交错行右移半个步距)。仅棋盘使用。</summary>
+    public double HexX => Col * BoardGridLayout.PitchX + (Row % 2 == 1 ? BoardGridLayout.Stagger : 0);
+
+    /// <summary>棋盘六角布局的像素 Y 坐标。仅棋盘使用。</summary>
+    public double HexY => Row * BoardGridLayout.PitchY;
+
+    /// <summary>该格是否为空(未识别到英雄)。用于空格的弱化显示。</summary>
+    public bool IsEmpty => string.IsNullOrEmpty(Name);
 }
 
 /// <summary>推荐列表展示项。</summary>
