@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChanSight.Vision", "src\ChanSight.Vision\ChanSight.Vision.csproj", "{7EA52980-1E01-4E39-A0FC-8E7587235F0D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChanSight.Overlay", "src\ChanSight.Overlay\ChanSight.Overlay.csproj", "{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,11 +101,24 @@ Global
 		{7EA52980-1E01-4E39-A0FC-8E7587235F0D}.Release|x64.Build.0 = Release|Any CPU
 		{7EA52980-1E01-4E39-A0FC-8E7587235F0D}.Release|x86.ActiveCfg = Release|Any CPU
 		{7EA52980-1E01-4E39-A0FC-8E7587235F0D}.Release|x86.Build.0 = Release|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Debug|x64.Build.0 = Debug|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Debug|x86.Build.0 = Debug|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Release|x64.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Release|x64.Build.0 = Release|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Release|x86.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7EA52980-1E01-4E39-A0FC-8E7587235F0D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{F1A2B3C4-5D6E-4F7A-8B9C-0D1E2F3A4B5C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
