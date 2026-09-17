@@ -13,15 +13,12 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IPerceptualHashService, PerceptualHashService>();
         services.AddSingleton<IDatasetCleanerService, DatasetCleanerService>();
-        services.AddSingleton<IYoloDatasetExporter, YoloDatasetExporter>();
         services.AddSingleton<IRoiMapperService, RoiMapperService>();
         services.AddSingleton<IGridSlicerService, GridSlicerService>();
         services.AddSingleton<IOnnxInferenceEngine, OnnxInferenceEngine>();
-        services.AddSingleton<IYoloDetectorService, YoloDetectorService>();
         services.AddSingleton<IPaddleOcrService, PaddleOcrService>();
         services.AddSingleton<LocalDeterministicRecognizer>();
         services.AddSingleton<IAnchorCalibrator, ClassicAnchorCalibrator>();
-        services.AddSingleton(typeof(IPostProcessor<>), typeof(ClassicPostProcessor<>));
         services.AddSingleton<CellChangeDetector>();
         services.AddSingleton<HttpClient>(static _ => new HttpClient());
         services.AddSingleton<IVlmClient, OpenRouterVlmClient>();

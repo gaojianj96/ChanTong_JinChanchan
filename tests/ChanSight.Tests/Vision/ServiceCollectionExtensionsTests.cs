@@ -45,19 +45,6 @@ public sealed class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddChanSightVision_RegistersYoloDatasetExporter()
-    {
-        var services = new ServiceCollection();
-
-        services.AddChanSightVision();
-        var provider = services.BuildServiceProvider();
-
-        var service = provider.GetService<IYoloDatasetExporter>();
-        service.Should().NotBeNull();
-        service.Should().BeOfType<YoloDatasetExporter>();
-    }
-
-    [Fact]
     public void AddChanSightVision_RegistersServicesAsSingletons()
     {
         var services = new ServiceCollection();
