@@ -101,9 +101,9 @@ M3 视觉管线已实现并每任务通过双盲评审；实机验收状态见 `
 
 ```powershell
 # 延迟基准 (go/no-go, 默认 30fps/33.3ms 口径, 附 CPU 对照)
-dotnet run --project src/ChanSight.Cli -- --probe "assets/models/yolo26n.onnx"
+dotnet run --project src/ChanSight.Cli -- --probe "assets/models/paddleocr.onnx"
 # 可选: 指定输入尺寸(静态 640 模型会拒绝其它尺寸并提示动态导出)
-dotnet run --project src/ChanSight.Cli -- --probe "assets/models/yolo26n.onnx" --probe-size 480
+dotnet run --project src/ChanSight.Cli -- --probe "assets/models/paddleocr.onnx" --probe-size 480
 # 视觉链路干跑(不加载模型, Stub 引擎, 全管道连通性验证)
 dotnet run --project src/ChanSight.Cli -- --vision-dry-run
 ```
@@ -124,7 +124,7 @@ JianChanChan/
 │   └── orchestration.yaml   # OpenRouter 与模型协作映射
 ├── data/                    # 赛季静态数据与模型权重
 │   ├── season_data/         # 英雄、羁绊、装备配置
-│   └── weights/             # YOLO 等视觉模型权重
+│   └── weights/             # 视觉模型权重
 ├── src/                     # 系统核心源码 (由 Codex CLI 维护)
 │   ├── capture/             # 窗口与屏幕抓取
 │   ├── vision/              # 视觉特征提取、OCR与目标检测

@@ -475,7 +475,7 @@ y_{c} &= r \cdot h \cdot \frac{\sqrt{3}}{2}
 - **线程安全池实现**：使用 `std::mutex` + `std::condition_variable` 或无锁环形队列（如 `moodycamel::ConcurrentQueue`）管理空闲 `Mat`。
 - **容量弹性策略**：池内维护 `std::map<int, std::vector<cv::Mat>>` 按尺寸桶分类，超出阈值触发 `resize()` 或回收最小占用块。
 - **监控与熔断**：集成内存水位告警（如 `cv::getMemoryUsage()` 或平台 API），连续 3 次池命中率 `< 80%` 时触发全量重建。
-- **GPU 加速预留**：若后续接入 YOLO/OCR，提前设计 `cv::cuda::GpuMat` 接口桥接，避免 CPU-GPU 频繁 `copyTo()`。
+- **GPU 加速预留**：若后续接入视觉识别/OCR，提前设计 `cv::cuda::GpuMat` 接口桥接，避免 CPU-GPU 频繁 `copyTo()`。
 
 ---
 ### 📌 综合评审结论与实施优先级

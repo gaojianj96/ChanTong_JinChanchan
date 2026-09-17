@@ -11,11 +11,11 @@
 
 ## 1. 目标与范围
 
-C1b 冻结不依赖真实 ONNX/OCR/YOLO 模型实现的基础服务契约，为 C2 Anchor 校准、C3 代码缺口补齐提供稳定边界。
+C1b 冻结不依赖真实 ONNX/OCR 模型实现的基础服务契约，为 C2 Anchor 校准、C3 代码缺口补齐提供稳定边界。
 
 - **本阶段冻结**：`IFramePool`、`IOnnxInferenceEngine`、`IPostProcessor<TDetection>`、`IAnchorCalibrator`。
-- **仅 stub，不冻结输出细节**：`StubInferenceEngine`（C3 实现并注册）；`IYoloDetectorService`、`IPaddleOcrService` 保持空壳或暂不注册，等待 C4/C5 完成。
-- **留到 C4 之后冻结**：`IYoloDetectorService`、`IPaddleOcrService`、`IYoloDatasetExporter` 的具体检测/识别输出结构，因依赖 C4.5 PostProcessor 抽象与 C5/C6 后处理结果。
+- **仅 stub，不冻结输出细节**：`StubInferenceEngine`（C3 实现并注册）；`IPaddleOcrService` 保持空壳或暂不注册，等待 C4/C5 完成。
+- **留到 C4 之后冻结**：`IPaddleOcrService` 的具体识别输出结构，因依赖 C4.5 PostProcessor 抽象与 C5/C6 后处理结果。
 - 已有稳定接口 `IDatasetCleanerService`、`IGridSlicerService`、`IPerceptualHashService`、`IRoiMapperService` 本次仅确认签名，不修改。
 
 Core 中的 `IFramePool` 不依赖 OpenCvSharp/ONNX/WGC，仅使用 `System.Memory` 与 `System.Buffers`。
@@ -41,7 +41,7 @@ Core 中的 `IFramePool` 不依赖 OpenCvSharp/ONNX/WGC，仅使用 `System.Memo
 | `IAnchorCalibrator` | `ClassicAnchorCalibrator`（C2） | Singleton | 无状态角点检测；参数只读。 |
 | `IPostProcessor<TDetection>` | 具体后处理器（C4.5/C5） | Singleton | 无状态；阈值由 `PostProcessOptions` 每次传入。 |
 | `IDatasetCleanerService`、`IGridSlicerService`、`IPerceptualHashService`、`IRoiMapperService` | 已有实现 | Singleton | 无状态工具；实现需保证线程安全。 |
-| `IYoloDetectorService`、`IPaddleOcrService` | 暂不注册 | — | 输出结构未冻结，待 C4/C5 后加入。 |
+| `IPaddleOcrService` | 暂不注册 | — | 输出结构未冻结，待 C4/C5 后加入。 |
 
 `IFramePool` 不由 `AddChanSightVision()` 注册，避免跨层依赖；它由 Core 提供的 `AddChanSightCore()` 注册为 Singleton，容量配置由启动期决定。
 

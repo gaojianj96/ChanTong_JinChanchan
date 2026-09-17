@@ -30,7 +30,7 @@
 
 ---
 
-## 2. 存储目录与命名规范对 YOLO/OCR 标注工具的兼容性
+## 2. 存储目录与命名规范对 OCR 标注工具的兼容性
 
 **DeepSeek V4 Flash：**  
 Label Studio / CVAT / Labelme 都支持 `COCO` 或 `Pascal VOC` 格式的导入，但它们对**目录结构**有隐性要求：  
@@ -40,7 +40,7 @@ Label Studio / CVAT / Labelme 都支持 `COCO` 或 `Pascal VOC` 格式的导入�
 
 **MiniMax M3：**  
 兼容性还需要考虑**元数据**：  
-- 对于 YOLO 训练，标注工具要求图像与对应的 `.txt` 标签文件在同一目录或按指定 `train/val` 划分。Plan 中应明确：采样器生成的快照是否附带棋盘状态 JSON？建议将 JSON 与图像并列存放（如 `xxx.jpg` 同目录下 `xxx.json`），方便后续自动标注脚本读取。  
+- 对于视觉模型训练，标注工具要求图像与对应的 `.txt` 标签文件在同一目录或按指定 `train/val` 划分。Plan 中应明确：采样器生成的快照是否附带棋盘状态 JSON？建议将 JSON 与图像并列存放（如 `xxx.jpg` 同目录下 `xxx.json`），方便后续自动标注脚本读取。  
 - 若将来要对接 Label Studio，其支持引用外部存储（如 S3），目录深度不宜超过 3 层。建议结构：  
   ```
   snapshots/
@@ -53,8 +53,8 @@ Label Studio / CVAT / Labelme 都支持 `COCO` 或 `Pascal VOC` 格式的导入�
   这种结构可通过简单路径映射直接导入。
 
 **Qwen 3.7 Flash：**  
-要注意 YOLO 标注工具对**图像尺寸**的敏感度：  
-- 若采样器截取了原始分辨率（如 1920×1080），而 YOLO 训练常缩放到 640x640，请确保 plan 中记录原始分辨率，或允许配置输出尺寸（保持宽高比 + padding）。  
+要注意标注工具对**图像尺寸**的敏感度：  
+- 若采样器截取了原始分辨率（如 1920×1080），而视觉模型训练常缩放到 640x640，请确保 plan 中记录原始分辨率，或允许配置输出尺寸（保持宽高比 + padding）。  
 - 命名规范中避免使用 `_` 作为时间戳分隔符，因为 Labelme 会将 `_` 视为类别或实例分隔符？并不严重，但推荐用 `-` 和 `.` 组合。  
 - 另外，若采样目录包含 `__MACOSX` 或其他隐藏文件，标注工具有时会误解析。Plan 中应加入 `.gitkeep` 占位，但不要在图像文件名中包含 `#`、`%` 等 URL 不安全字符。
 
@@ -142,10 +142,9 @@ Label Studio / CVAT / Labelme 都支持 `COCO` 或 `Pascal VOC` 格式的导入�
 
 | 工具 | 目录/命名要求 | 兼容性陷阱 |
 |---|---|---|
-| **YOLO (Ultralytics)** | `images/train`, `images/val` + `labels/train`, `labels/val`；`data.yaml` 指定路径与 `names` | 文件名需唯一；路径中**禁止中文/空格**；建议纯 ASCII |
 | **CVAT** | 任务导入支持 `.zip` 包或本地帧序列；帧名建议零填充 `frame_000001.jpg` | 视频任务需先抽帧；本地任务对路径深度敏感 |
 | **Labelme** | 每张图配同名 `.json`（自动生成）；支持任意目录结构 | JSON 内嵌路径需与实际一致 |
-| **Label Studio** | 通过 `<Image>` 标签加载本地/URL；支持 COCO/YOLO/VOC 导出 | 需保证 `MAX_IMAGE` 与文件可访问性 |
+| **Label Studio** | 通过 `<Image>` 标签加载本地/URL；支持 COCO/VOC 导出 | 需保证 `MAX_IMAGE` 与文件可访问性 |
 
 ### 推荐目录结构（兼容四工具）
 
@@ -161,10 +160,10 @@ dataset_root/
 │       └── snapshots/                 # F7 独立快照
 │           ├── snap_20250115_103045_123.jpg   # 含毫秒时间戳
 │           └── ...
-├── labels_yolo/                       # 标注后落地（与 images 镜像）
+├── labels/                           # 标注后落地（与 images 镜像）
 │   └── 2025-01-15_session-001/
 │       └── frame_000001.txt
-└── data.yaml                          # YOLO 训练配置
+└── data.yaml                          # 训练配置
 ```
 
 ### 命名规范要点
@@ -172,14 +171,14 @@ dataset_root/
 - **时间戳冗余**：快照文件名内嵌 `YYYYMMDD_HHMMSS_mmm`，便于人工检索
 - **ASCII only**：避免 Unicode 路径（Windows + 部分工具的痛点）
 - **元数据 sidecar**：`meta.json` + 每帧可选 `.json`（含 timestamp_ms、source_region、session_id），便于回溯与多模态扩展
-- **软链接友好**：保留 `images/` → `sessions/.../frames/` 的软链结构，YOLO 训练无需复制
+- **软链接友好**：保留 `images/` → `sessions/.../frames/` 的软链结构，训练无需复制
 
 ### 评审要点（请 Plan 中确认）
 - [ ] 是否定义了 `meta.json` schema？
 - [ ] 文件名是否零填充 + ASCII only？
 - [ ] 是否预留了 `labels/` 目录的镜像结构？
 - [ ] 是否考虑了 Windows / Linux 路径分隔符兼容？
-- [ ] 是否提供从该结构一键导出 YOLO/COCO/VOC 的脚本（哪怕是后续 Issue）？
+- [ ] 是否提供从该结构一键导出 COCO/VOC 的脚本（哪怕是后续 Issue）？
 
 ---
 

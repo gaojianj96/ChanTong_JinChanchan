@@ -3,7 +3,7 @@
 ## 1. 任务背景与目标
 - **目标 Issue**: `Issue #5: [Dataset] 对局数据集采样器 (按秒自动采样 + 自定义快照热键)`
 - **所属阶段**: `Milestone 1: 屏幕捕获与对局录制采样工具`
-- **核心目的**: 在录制游戏画面的同时，通过定时采样器（如每 2 秒 / 5 秒）或独立快照热键（如 `F7` / `F8`，与 `F6` 启停完全解耦）抽取高清单帧图片（PNG/JPG），自动生成标准化标注目录结构 `datasets/recordings/{session_id}/frames/{timestamp}_{index}.jpg`，为后续 YOLO 弈子检测与 PaddleOCR 商店识别构建真实样本数据集。
+- **核心目的**: 在录制游戏画面的同时，通过定时采样器（如每 2 秒 / 5 秒）或独立快照热键（如 `F7` / `F8`，与 `F6` 启停完全解耦）抽取高清单帧图片（PNG/JPG），自动生成标准化标注目录结构 `datasets/recordings/{session_id}/frames/{timestamp}_{index}.jpg`，为后续视觉识别与 PaddleOCR 商店识别构建真实样本数据集。
 
 ---
 

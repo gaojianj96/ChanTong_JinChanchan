@@ -16,11 +16,11 @@
   - **CPU 降级性能悬崖**：DirectML 回退到 CPU EP 后，推理速度可能下降 10~50 倍，建议增加 **显存不足时的分块推理** 或 **动态降低输入分辨率** 的中间策略，而非直接降级。
   - **初始化超时**：`DMLCreateDevice` 在某些老旧驱动下可能卡死，建议加入超时机制（如 5 秒）并异步检测。
 
-**2. YOLOv11n 输出头解码与 NMS 性能优化**
+**2. 输出头解码与 NMS 性能优化**
 
 - **优点**：使用 `ONNX Runtime` 的 `Custom Op` 或 `TensorRT` 风格的后处理融合是合理的。
 - **建议**：
-  - **解码优化**：YOLOv11 的 `dist2bbox` 和 `softmax` 可以合并为单个 `GridSample + Sigmoid` 操作，减少内存拷贝。建议使用 `DirectML` 的 `DML_OPERATOR_ELEMENT_WISE_IDENTITY` 配合 `DML_OPERATOR_GATHER_ND` 实现。
+  - **解码优化**：检测模型的 `dist2bbox` 和 `softmax` 可以合并为单个 `GridSample + Sigmoid` 操作，减少内存拷贝。建议使用 `DirectML` 的 `DML_OPERATOR_ELEMENT_WISE_IDENTITY` 配合 `DML_OPERATOR_GATHER_ND` 实现。
   - **NMS 多类别处理**：计划中提到了“多类别 NMS”，但未说明是 **类别无关 NMS**（Class-Agnostic）还是 **类别相关 NMS**（Class-Specific）。对于英雄、星级、装备三个独立类别，建议采用 **类别相关 NMS**（每个类别独立执行），避免不同类别框互相抑制。
   - **性能瓶颈**：NMS 在 CPU 上执行是常见瓶颈。若 DirectML 不支持高效 NMS，可考虑使用 `ONNX Runtime` 的 `NonMaxSuppression` 算子（已优化），或使用 `torchvision::nms` 的 C++ 实现。
 
@@ -43,11 +43,11 @@
   - **日志与诊断**：初始化失败时应输出详细的错误码（如 `DXGI_ERROR_DEVICE_REMOVED`），并建议用户更新驱动或切换 GPU。
   - **降级策略优先级**：建议顺序：DirectML GPU → DirectML CPU（通过 `DMLExecutionProvider` 的 `CPUDevice`）→ ONNX Runtime CPU EP。注意 DirectML CPU 比 ORT CPU 更慢，应优先使用 ORT CPU。
 
-**2. YOLOv11n 后处理**
+**2. 检测后处理**
 
 - **性能优化**：
   - **批量 NMS**：若一次检测多个帧（如视频流），可将多个图像的检测结果合并后执行一次 NMS，减少调用开销。
-  - **稀疏化输出**：YOLOv11n 输出 8400 个候选框，但大部分置信度极低。建议在解码后立即过滤掉置信度 <0.3 的框，减少 NMS 输入量。
+  - **稀疏化输出**：检测模型输出 8400 个候选框，但大部分置信度极低。建议在解码后立即过滤掉置信度 <0.3 的框，减少 NMS 输入量。
   - **硬件加速 NMS**：如果 DirectML 不支持，可考虑使用 **CUDA 上的 NMS**（通过 `ort-extensions` 或自定义 CUDA kernel），但需注意跨平台兼容性。
 
 **3. PaddleOCR + 模糊纠错**
@@ -66,10 +66,10 @@
 - **跨平台兼容性**：计划仅针对 Windows，但若未来扩展至 Linux（通过 D3D12 的 VKD3D 或 Proton），需提前预留接口。建议将 DirectML EP 初始化封装为独立模块，便于替换。
 - **内存管理**：DirectML 默认使用 GPU 内存池，但未提及 **显存溢出处理**。建议设置 `max_pool_size` 并监听 `DML_DEVICE_REMOVED` 事件，触发降级。
 
-**2. YOLOv11n 后处理**
+**2. 检测后处理**
 
-- **精度与速度权衡**：YOLOv11n 本身是轻量模型，但后处理可能成为瓶颈。建议使用 **INT8 量化** 的 YOLOv11n（通过 ONNX Runtime 的 `Quantization` 工具），可减少 2~4 倍推理时间，且精度损失 <1%。
-- **输出头解码细节**：YOLOv11 的 `dist2bbox` 需要 `grid` 坐标，建议使用 `torch.meshgrid` 的 ONNX 等效实现（`Range` + `Tile`），避免动态 shape 导致算子不支持。
+- **精度与速度权衡**：检测模型本身是轻量模型，但后处理可能成为瓶颈。建议使用 **INT8 量化** 的检测模型（通过 ONNX Runtime 的 `Quantization` 工具），可减少 2~4 倍推理时间，且精度损失 <1%。
+- **输出头解码细节**：检测模型的 `dist2bbox` 需要 `grid` 坐标，建议使用 `torch.meshgrid` 的 ONNX 等效实现（`Range` + `Tile`），避免动态 shape 导致算子不支持。
 
 **3. PaddleOCR + 模糊纠错**
 
@@ -82,7 +82,7 @@
 ### 📋 综合建议（讨论组共识）
 
 1. **DirectML 降级策略**：增加中间降级步骤（降低分辨率/量化），并加入 GPU 能力分级与超时检测。
-2. **YOLOv11n 后处理**：采用类别相关 NMS，提前过滤低置信度框，并考虑 INT8 量化。
+2. **检测后处理**：采用类别相关 NMS，提前过滤低置信度框，并考虑 INT8 量化。
 3. **PaddleOCR 纠错**：使用 BK 树加速字典搜索，结合字符置信度加权编辑距离，并增加低分辨率预处理。
 4. **文档补充**：建议在 plan 中明确列出所有失败场景的 fallback 路径、性能指标（如 FPS 目标）、以及测试用例（如不同 GPU 型号、不同分辨率 OCR 样本）。
 
@@ -95,7 +95,7 @@
 # Milestone 3 Implementation Plan 二次审核报告
 
 **审核角色**：MiniMax-M3（基础讨论组联合评审）
-**审核范围**：`docs/plans/plan_milestone_3.md` — ONNX Runtime DirectML 引擎 + YOLOv11n 检测 + PaddleOCR 识别管线
+**审核范围**：`docs/plans/plan_milestone_3.md` — ONNX Runtime DirectML 引擎 + PaddleOCR 识别管线
 **审核日期**：2026-01-25
 
 ---
@@ -135,7 +135,7 @@ EpBackend InitializeBackend(const GPUInfo& gpu) {
     }
     
     // Step 3: 检查显存预算
-    size_t model_size = GetModelFootprint("yolov11n.onnx");  // ~10MB
+    size_t model_size = GetModelFootprint("model.onnx");  // ~10MB
     size_t vram_available = adapters[0].GetAvailableVRAM();
     if (vram_available < model_size * 3) {  // 3x for workspace
         LogWarning("VRAM insufficient, falling back to CPU");
@@ -154,7 +154,7 @@ EpBackend InitializeBackend(const GPUInfo& gpu) {
     
     // Step 5: 验证 session 创建
     try {
-        auto session = Ort::Session(env, "yolov11n.onnx", session_opts);
+        auto session = Ort::Session(env, "model.onnx", session_opts);
         return EpBackend::DML_FP32;
     } catch (const Ort::Exception& e) {
         LogError("DML session failed: {}", e.what());
@@ -165,7 +165,7 @@ EpBackend InitializeBackend(const GPUInfo& gpu) {
 
 ### 1.4 关键改进建议
 
-1. **增加 `enable_dynamic_graph_fusion`**：DirectML 1.8+ 支持算子融合，可提升 YOLO backbone 性能 15-25%
+1. **增加 `enable_dynamic_graph_fusion`**：DirectML 1.8+ 支持算子融合，可提升检测模型 backbone 性能 15-25%
 2. **FP16 路径**：对支持 FP16 的 GPU（NVIDIA Turing+、AMD RDNA2+、Intel Arc），使用 FP16 模型可降低显存占用并提升吞吐
 3. **CPU 降级分级**：不要简单 fallback 到 CPU，应根据 CPU 能力选择 AVX-512 → AVX2 → Baseline
 4. **健康检查**：每 30 秒做一次 `Run()` 探针，检测 GPU hang（DirectML 偶发 driver reset）
@@ -179,11 +179,11 @@ EpBackend InitializeBackend(const GPUInfo& gpu) {
 
 ---
 
-## 二、YOLOv11n 输出解码与多类别 NMS 后处理
+## 二、目标检测输出解码与多类别 NMS 后处理
 
 ### 2.1 输出格式分析
 
-YOLOv11 是 anchor-free 架构，输出头格式为：
+检测模型是 anchor-free 架构，输出头格式为：
 ```
 output[0]: (1, 84, 8400)  // 4 box + 80 classes (COCO)
 或
@@ -209,7 +209,7 @@ Plan 中提到的 NMS 后处理在 CPU 上执行是**正确选择**（GPU NMS �
 
 ```cpp
 // 优化 1：避免重复分配，使用预分配 buffer
-class YoloDecoder {
+class DetectorDecoder {
     std::vector<float> boxes_;      // (8400, 4)
     std::vector<float> scores_;     // (8400, num_classes)
     std::vector<int>   classes_;    // (8400)
@@ -233,7 +233,7 @@ inline __m256 sigmoid_avx2(__m256 x) {
 }
 
 // 优化 3：DFL (Distribution Focal Loss) 解码向量化
-// YOLOv11 使用 DFL，需要对 16 个 reg_max 值做 softmax + 加权求和
+// 检测模型使用 DFL，需要对 16 个 reg_max 值做 softmax + 加权求和
 // 建议：预计算 softmax 表 + 查表加速
 ```
 
@@ -288,7 +288,7 @@ std::vector<Detection> MultiClassNMS(
 
 ### 2.6 待澄清问题
 
-- Plan 中 YOLOv11n 是 **官方预训练权重** 还是 **自训练的游戏数据集权重**？
+- Plan 中检测模型是 **官方预训练权重** 还是 **自训练的游戏数据集权重**？
 - 输入分辨率是固定 640 还是动态？
 - 是否使用 **TensorRT 导出**（如果走 DML，建议 ONNX 原生）？
 - NMS 的 IoU 阈值和 score 阈值是否经过游戏场景调优？
@@ -408,7 +408,7 @@ struct OcrConfig {
 │ 模块        │ 预算     │ 备注       │
 ├─────────────┼──────────┼────────────┤
 │ 截图捕获    │ 5ms      │ DXGI 输出  │
-│ YOLO 检测   │ 20ms     │ DML 推理   │
+│ 检测识别    │ 20ms     │ DML 推理   │
 │ OCR 识别    │ 15ms     │ 关键区域   │
 │ 字典纠错    │ 2ms      │ 内存查表   │
 │ 业务逻辑    │ 5ms      │ 决策       │
@@ -420,7 +420,7 @@ struct OcrConfig {
 
 ### 4.2 内存管理
 
-- **模型常驻**：YOLO (~10MB) + OCR det (~5MB) + OCR rec (~20MB) ≈ 35MB
+- **模型常驻**：检测模型 (~10MB) + OCR det (~5MB) + OCR rec (~20MB) ≈ 35MB
 - **工作内存**：DML workspace 建议预留 256MB
 - **峰值显存**：~300MB（远低于现代 GPU 显存）
 
@@ -437,11 +437,11 @@ struct OcrConfig {
 
 ### 🔴 高优先级（必须解决）
 1. DirectML 初始化的**完整降级链**（DML → CPU AVX-512 → CPU AVX2 → Baseline）
-2. YOLO NMS 的**多线程并行实现**
+2. 检测 NMS 的**多线程并行实现**
 3. OCR 字典的**冷启动时间**（首次加载 < 100ms）
 
 ### 🟡 中优先级（建议优化）
-1. YOLO 小目标检测增强（多尺度或 SAHI）
+1. 小目标检测增强（多尺度或 SAHI）
 2. OCR 低分辨率区域的超分策略
 3. 端到端时延监控埋点
 
@@ -462,14 +462,14 @@ struct OcrConfig {
 
 ## Qwen 3.7 Flash ($(@{name=Qwen 3.7 Flash; id=qwen/qwen3.7-flash; outFile=docs/raw_responses/out_review_plan_m3_qw.json}.id))
 
-以下为由模拟讨论组（DeepSeek V4 Flash / MiniMax M3 / Qwen 3.7 Flash）联合输出的 **Milestone 3 Implementation Plan 二次技术评审报告**。内容严格围绕您提出的三项核心议题，结合 ONNX Runtime、YOLOv11n 与 PaddleOCR 的工程实践给出可落地的优化建议、风险预警与验证指标。
+以下为由模拟讨论组（DeepSeek V4 Flash / MiniMax M3 / Qwen 3.7 Flash）联合输出的 **Milestone 3 Implementation Plan 二次技术评审报告**。内容严格围绕您提出的三项核心议题，结合 ONNX Runtime 与 PaddleOCR 的工程实践给出可落地的优化建议、风险预警与验证指标。
 
 ---
 ## 📊 评审总览
 | 评审维度 | 当前 Plan 成熟度 | 主要风险 | 优化优先级 |
 |----------|------------------|----------|------------|
 | DirectML EP 初始化与降级 | ⭐⭐⭐☆ | 隐式 WARP 降级导致性能断崖；多 GPU 环境设备绑定冲突 | 🔴 高 |
-| YOLOv11n 解码与多类别 NMS | ⭐⭐☆☆ | 逐类 NMS 循环开销大；小目标 IoU 计算精度不足 | 🔴 高 |
+| 检测模型解码与多类别 NMS | ⭐⭐☆☆ | 逐类 NMS 循环开销大；小目标 IoU 计算精度不足 | 🔴 高 |
 | PaddleOCR + 英雄字典低分辨率鲁棒性 | ⭐⭐⭐☆ | 模糊文本置信度校准缺失；Levenshtein 误匹配率高 | 🟡 中 |
 
 ---
@@ -530,7 +530,7 @@ def init_directml_ep():
 
 ---
 
-### 2️⃣ YOLOv11n 输出头解码与多类别 NMS 后处理优化
+### 2️⃣ 检测模型输出头解码与多类别 NMS 后处理优化
 #### ✅ 现状评估
 Plan 采用标准 anchor-free 解码公式，NMS 按类别分组执行。但未考虑：
 - 游戏 UI 中小目标（<32px）的坐标抖动敏感性
@@ -547,7 +547,7 @@ Plan 采用标准 anchor-free 解码公式，NMS 按类别分组执行。但未�
 # 向量化解码 + 全局 NMS 预处理（NumPy/Cython 推荐）
 import numpy as np
 
-def decode_yolov11n_outputs(raw_output: np.ndarray, conf_thresh=0.25, iou_thresh=0.35):
+def decode_detection_outputs(raw_output: np.ndarray, conf_thresh=0.25, iou_thresh=0.35):
     # raw_output: [B, 84, 8400] -> [B, 8400, 84]
     boxes = raw_output[..., :4].astype(np.float32)
     scores = raw_output[..., 4:].astype(np.float32)
@@ -632,7 +632,7 @@ def ocr_with_dictionary_crop(crop: np.ndarray, hero_dict: dict, season_version: 
 ## 🔗 跨模块协同建议
 | 模块交互点 | 潜在冲突 | 缓解策略 |
 |------------|----------|----------|
-| YOLO → OCR ROI 裁剪 | 检测框抖动导致 OCR 区域偏移 | 增加 10% padding + 中心对齐校正 |
+| 检测 → OCR ROI 裁剪 | 检测框抖动导致 OCR 区域偏移 | 增加 10% padding + 中心对齐校正 |
 | DirectML → CPU 降级 | 内存带宽瓶颈拖累 OCR 预处理 | 预分配共享内存池，禁用实时 resize |
 | 字典版本管理 | 多实例并发读取冲突 | 使用 `mmap` 或只读缓存 + 版本号原子切换 |
 
@@ -646,7 +646,7 @@ def ocr_with_dictionary_crop(crop: np.ndarray, hero_dict: dict, season_version: 
 
 如需，我可提供：
 - `docs/plans/plan_milestone_3.md` 的修订 diff 模板
-- YOLOv11n NMS 的 Cython 加速代码骨架
+- 检测 NMS 的 Cython 加速代码骨架
 - PaddleOCR 低分辨率预处理参数调优表
 - DirectML 多 GPU 设备路由脚本
 

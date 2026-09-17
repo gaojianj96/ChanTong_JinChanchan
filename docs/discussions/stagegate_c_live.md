@@ -5,14 +5,14 @@
 **结论：有条件放行**进入下一阶段“实机验收/权重 receipt”；**不放行**宣称 M3 关闭或生产就绪。C0-C6 代码、测试、评审证据充分，但关键外部依赖与实机指标未闭环，下一阶段正是补证。
 
 **遗漏/风险清单**
-- **P0 阻断验收**：`yolov11n.onnx`、`paddleocr.onnx` 权重缺失；实机延迟 go/no-go 未跑；识别准确率未测；Golden 人工复核≥30帧未做；多 DP I 回归未做。
+- **P0 阻断验收**：`paddleocr.onnx` 权重缺失；实机延迟 go/no-go 未跑；识别准确率未测；Golden 人工复核≥30帧未做；多 DP I 回归未做。
 - **P1 高风险**：bench 系统性 +3px@原生下偏已登账，需确认对 ROI/OCR/几何端到端影响；DirectML/CPU 回退实机一致性与性能未验；多分辨率回归仅 C2，端到端未覆盖。
 - **P2 中风险**：NMS/Conf/Roi 参数未真实场景调优；OCR 字典纠错可能过纠/漏纠；CLI dry-run/probe 与实机 receipt 日志需对齐。
 - **P3 低风险**：文档/收据模板固化；跨版本 canonical 兼容说明。
 
 **需求符合度（M3 Issue）**
 - **#10 ONNX**：引擎、DirectML+CPU 回退、延迟探针、go/no-go 判据已覆盖原始诉求；缺权重 receipt、实机延迟与回退一致性。
-- **#11 YOLO**：解码、RGB 新 CHW、后处理已覆盖；缺 yolov11n 权重、实机准确率、Golden≥30、多 DP I 回归；+3px 偏差需收据化。
+- **#11 目标检测**：解码、RGB 新 CHW、后处理已覆盖；缺检测模型权重、实机准确率、Golden≥30、多 DP I 回归；+3px 偏差需收据化。
 - **#12 OCR**：字典纠错已覆盖；缺 paddleocr 权重、实机识别准确率、Golden 人工复核、ROI/几何联动。
 
 **可验收收据化**：C0-C6 全量 274/274 多次全绿、build 0 警告、双盲评审+commit、A3 smoke、+3px 登账，可作为代码/测试 receipt。权重、延迟、准确率、Golden、多 DP 必须作为下一阶段 receipt；达标后方可关闭 M3。
@@ -39,9 +39,9 @@ C 系列架构层已具备进入"实机验收/权重 receipt"阶段的资格。�
 | 级别 | 项 | 说明 |
 |---|---|---|
 | **P0** | 无 | C 系列内部无阻断项 |
-| **P1** | ① yolov11n.onnx / paddleocr.onnx 权重未到 | receipt 阶段硬阻塞，需供应链确认 ETA |
+| **P1** | ① paddleocr.onnx 权重未到 | receipt 阶段硬阻塞，需供应链确认 ETA |
 | **P1** | ② A3 bench 系统性 +3px@原生下偏 | 已登账但**未做根因定位**（采样？插值？Anchor 偏移？），receipt 前必须给出归因 |
-| **P1** | ③ Golden 人工复核 ≥30 帧未做 | OCR/YOLO 准确率口径无人工锚点，go/no-go 缺基准 |
+| **P1** | ③ Golden 人工复核 ≥30 帧未做 | OCR/检测准确率口径无人工锚点，go/no-go 缺基准 |
 | **P1** | ④ 实机延迟 go/no-go 未采集 | DirectML 路径仅 dry-run 验证，硬件吞吐/抖动未知 |
 | **P2** | ⑤ 多 DP I 回归未跑 | C3 IFramePool 在多路并发下的稳定性未证 |
 | **P2** | ⑥ DirectML→CPU 回退阈值 | 仅静态回退，运行时热切换策略缺 |
@@ -69,7 +69,7 @@ C 系列架构层已具备进入"实机验收/权重 receipt"阶段的资格。�
 风险清单（分级）：
 
 - **P0 阻断**：  
-  1. `yolov11n.onnx` / `paddleocr.onnx` 权重来源、hash、许可证、输入输出契约未 receipt；  
+  1. `paddleocr.onnx` 权重来源、hash、许可证、输入输出契约未 receipt；  
   2. 实机延迟/内存/设备回退未达 go/no-go；  
   3. 识别准确率、召回、≥30帧 Golden 人工复核未通过；  
   4. 多 DP I 回归失败。
