@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPhaseDetector, PhaseDetector>();
         services.AddSingleton<VlmRecognitionAdapter>();
         services.AddSingleton<FusionArbitrator>();
+        services.AddSingleton<RecognitionPipeline>();
         services.AddSingleton<LLMAdvisor>();
         services.AddSingleton<DecisionPanelService>();
         services.AddSingleton<RecognitionToGameStateAdapter>();
