@@ -19,10 +19,10 @@
 - 加载黑屏：金铲铲加载界面常伴有渐变或 Logo，建议结合**时间连续性**：若连续 3 帧均满足低对比度条件，才判定为坏帧。Plan 中若仅用单帧阈值，可能误删加载动画中的过渡帧。  
 - 极低对比度：使用**图像标准差 < 15** 作为阈值，但需注意某些英雄技能特效（如全屏暗影）可能短暂降低对比度，建议增加**直方图平坦度**指标（如熵值 < 4.0）辅助判断。
 
-**3. YOLO 标注格式目录结构工业标准兼容性**
+**3. 目标检测标注格式目录结构工业标准兼容性**
 
-- 标准 YOLO 格式要求：`images/` 和 `labels/` 同级，且文件名一致（扩展名不同）。Plan 中若采用 `dataset/train/images/` 和 `dataset/train/labels/` 结构，完全符合 Ultralytics 和 Darknet 规范。  
-- 需注意：金铲铲标注可能包含**旋转框**（如棋子朝向），但 YOLO 原生不支持旋转框。若 Plan 中计划使用 `OBB` 格式（如 YOLOv8-OBB），则目录结构需调整为 `images/` 和 `labels/` 下分别存放 `.jpg` 和 `.txt`（每行 `class x_center y_center width height angle`）。建议明确标注类型。  
+- 标准目标检测标注格式要求：`images/` 和 `labels/` 同级，且文件名一致（扩展名不同）。Plan 中若采用 `dataset/train/images/` 和 `dataset/train/labels/` 结构，符合主流检测标注规范。  
+- 需注意：金铲铲标注可能包含**旋转框**（如棋子朝向），但通用检测标注框架原生不支持旋转框。若 Plan 中计划使用 `OBB` 格式，则目录结构需调整为 `images/` 和 `labels/` 下分别存放 `.jpg` 和 `.txt`（每行 `class x_center y_center width height angle`）。建议明确标注类型。  
 - 另外，建议添加 `dataset.yaml` 配置文件，包含 `path`、`train`、`val`、`nc`、`names` 字段，这是工业级训练的标准入口。
 
 ---
@@ -41,10 +41,10 @@
 - 加载黑屏：金铲铲的加载过程常出现**黑色背景 + 白色加载图标**，此时均值可能较低但方差较大。建议使用**非零像素比例 < 1%** 作为更鲁棒的指标。  
 - 极低对比度：除了标准差，建议加入**拉普拉斯方差**（Laplacian variance）检测模糊帧，因为加载黑屏通常也是模糊的。阈值可设为 `拉普拉斯方差 < 100`。
 
-**3. YOLO 目录结构兼容性**
+**3. 目标检测目录结构兼容性**
 
-- 完全兼容标准格式：`images/train2017/` 和 `labels/train2017/` 是 COCO 风格，但 YOLO 更常用 `train/images/` 和 `train/labels/`。Plan 中若采用后者，建议在文档中明确说明。  
-- 需注意：金铲铲标注可能包含**遮挡**（如棋子被技能特效覆盖），YOLO 格式无法直接表示遮挡。若 Plan 中计划使用 `segmentation` 格式（多边形），则目录结构不变，但 `.txt` 文件内容变为 `class x1 y1 x2 y2 ...`。建议注明是否支持分割标注。  
+- 完全兼容标准格式：`images/train2017/` 和 `labels/train2017/` 是 COCO 风格，但检测标注更常用 `train/images/` 和 `train/labels/`。Plan 中若采用后者，建议在文档中明确说明。  
+- 需注意：金铲铲标注可能包含**遮挡**（如棋子被技能特效覆盖），检测标注格式无法直接表示遮挡。若 Plan 中计划使用 `segmentation` 格式（多边形），则目录结构不变，但 `.txt` 文件内容变为 `class x1 y1 x2 y2 ...`。建议注明是否支持分割标注。  
 - 另外，建议在 Plan 中增加**验证集划分**的说明（如 80/10/10），并确保目录结构包含 `val` 文件夹，这是工业标准。
 
 ---
@@ -63,9 +63,9 @@
 - 加载黑屏：金铲铲的“正在加载”画面有时包含**渐变背景**（从黑到暗蓝），此时均值可能为 20-30。建议使用**直方图峰值位置**：若峰值在 0-10 区间且占比 > 90%，则判定为坏帧。  
 - 极低对比度：除了标准差，建议使用**信息熵**：若熵 < 2.5，则帧内容极可能为纯色或渐变，属于坏帧。Plan 中若仅用单一阈值，建议给出**多条件 AND/OR 逻辑**，避免误删。
 
-**3. YOLO 格式目录结构**
+**3. 目标检测格式目录结构**
 
-- 工业标准：Ultralytics YOLOv8 默认使用 `dataset/images/train/` 和 `dataset/labels/train/`，且支持 `dataset/train/images/` 两种写法。Plan 中若采用后者，需在 `data.yaml` 中正确配置 `train: train/images`。  
+- 工业标准：主流检测框架默认使用 `dataset/images/train/` 和 `dataset/labels/train/`，且支持 `dataset/train/images/` 两种写法。Plan 中若采用后者，需在 `data.yaml` 中正确配置 `train: train/images`。  
 - 兼容性：若标注包含**类别 ID**，需确保从 0 开始连续编号。金铲铲的棋子种类可能超过 60 种，Plan 中需明确类别映射表。  
 - 额外建议：增加 `README.md` 说明数据集来源、清洗规则和标注规范，这是工业级数据集的标准交付物。
 
@@ -77,7 +77,7 @@
 
 1. **去重策略**：建议引入局部哈希或双重校验，避免静态 UI 导致的误判。  
 2. **坏帧检测**：应采用多指标联合判定（均值、标准差、熵、拉普拉斯方差），并考虑时间连续性。  
-3. **目录结构**：完全兼容 YOLO 标准，但需明确标注类型（矩形框 / 旋转框 / 分割）并补充 `data.yaml` 配置文件。
+3. **目录结构**：完全兼容主流检测标注标准，但需明确标注类型（矩形框 / 旋转框 / 分割）并补充 `data.yaml` 配置文件。
 
 请 Plan 作者根据上述意见修订 Implementation Plan，特别是补充阈值实验数据和去重准确率评估指标。
 
@@ -210,9 +210,9 @@ def is_bad_frame(frame):
 
 ---
 
-## 三、YOLO 标注格式工业标准兼容性评审
+## 三、目标检测标注格式工业标准兼容性评审
 
-### 3.1 推荐目录结构（Ultralytics YOLOv8 标准）
+### 3.1 推荐目录结构（主流检测标注标准）
 
 ```
 dataset_root/
@@ -256,7 +256,7 @@ names: [
 ]                                      # 类别名称列表
 ```
 
-### 3.3 标注文件格式（YOLO 归一化坐标）
+### 3.3 标注文件格式（归一化坐标）
 
 ```text
 # labels/train/frame_001.txt
@@ -284,7 +284,7 @@ names: [
 
 ### 3.5 跨框架兼容性建议
 
-为支持多框架训练（YOLOv5/v8/v11、MMDetection、Detectron2），建议：
+为支持多框架训练（MMDetection、Detectron2 等），建议：
 
 1. **同时导出 COCO 格式**（备选）：
    ```
@@ -310,7 +310,7 @@ names: [
 ### ✅ 方案优点
 1. dHash + PopCount 选型合理，性能满足工业级数据清洗需求
 2. 坏帧检测覆盖了主要异常场景
-3. YOLO 格式符合主流标准
+3. 检测标注格式符合主流标准
 
 ### ⚠️ 需改进项
 
@@ -371,14 +371,14 @@ names: [
 | **工程提示** | 建议输出 `bad_frame_report.csv` 含路径、特征值、判定原因、置信度，便于后期人工复核与阈值迭代。 |
 
 ---
-### 📁 评审点 3：导出 YOLO 标注格式目录结构的工业标准兼容性
+### 📁 评审点 3：导出目标检测标注格式目录结构的工业标准兼容性
 
 | 维度 | 评估与建议 |
 |------|------------|
-| **标准对齐情况** | YOLOv5/v8/v10 官方规范严格依赖以下结构：<br>`data/<split>/images/` ↔ `data/<split>/labels/`（同名 `.jpg` ↔ `.txt`）<br>需配套 `data.yaml` 定义路径、类别数、类别名映射。 |
-| **常见兼容陷阱** | ① 文件名含空格/中文/特殊字符导致 `ultralytics` 解析失败<br>② 标签归一化未严格限制在 `[0,1]` 区间（YOLO 要求相对坐标）<br>③ 类别 ID 与 `names.txt` 错位引发训练混淆<br>④ 缺少 `train/val/test` 划分元数据，无法直接 `yolo check dataset` |
-| **工业级改造建议** | ✅ **命名规范化**：导出前执行 `re.sub(r'[^\w\-\.]', '_', fname)`，统一为 `snake_case`<br>✅ **强制校验脚本**：提供 `validate_yolo_structure.py`，检查文件配对、坐标范围、类别映射一致性<br>✅ **自动生成 `data.yaml`**：模板如下：<br>`path: ./dataset`<br>`train: images/train`<br>`val: images/val`<br>`nc: 8`<br>`names: ['unit_a', 'unit_b', ...]`<br>✅ **支持双格式输出**：默认 YOLO TXT，可选 COCO JSON（通过 `--format coco` 切换），满足多框架迁移需求 |
-| **验证指标** | `yolo check dataset --data data.yaml` 零报错 / 坐标归一化误差 < 1e-4 / 类别映射准确率 100% |
+| **标准对齐情况** | 主流检测框架官方规范严格依赖以下结构：<br>`data/<split>/images/` ↔ `data/<split>/labels/`（同名 `.jpg` ↔ `.txt`）<br>需配套 `data.yaml` 定义路径、类别数、类别名映射。 |
+| **常见兼容陷阱** | ① 文件名含空格/中文/特殊字符导致解析失败<br>② 标签归一化未严格限制在 `[0,1]` 区间（检测标注要求相对坐标）<br>③ 类别 ID 与 `names.txt` 错位引发训练混淆<br>④ 缺少 `train/val/test` 划分元数据，无法直接通过标注校验命令 |
+| **工业级改造建议** | ✅ **命名规范化**：导出前执行 `re.sub(r'[^\w\-\.]', '_', fname)`，统一为 `snake_case`<br>✅ **强制校验脚本**：提供 `validate_annotation_structure.py`，检查文件配对、坐标范围、类别映射一致性<br>✅ **自动生成 `data.yaml`**：模板如下：<br>`path: ./dataset`<br>`train: images/train`<br>`val: images/val`<br>`nc: 8`<br>`names: ['unit_a', 'unit_b', ...]`<br>✅ **支持双格式输出**：默认检测标注 TXT，可选 COCO JSON（通过 `--format coco` 切换），满足多框架迁移需求 |
+| **验证指标** | 标注校验命令零报错 / 坐标归一化误差 < 1e-4 / 类别映射准确率 100% |
 
 ---
 ### 🛠 综合实施路线建议
@@ -390,18 +390,18 @@ names: [
 
 2. **Phase 2：参数固化与自动化**  
    - 将阈值写入 `config/dedup.yaml` 与 `config/badframe.yaml`
-   - 集成 ROI 掩码、文件名清洗、YOLO 结构校验至主流程
+   - 集成 ROI 掩码、文件名清洗、标注结构校验至主流程
    - 添加进度日志与断点续传支持（`resume=True`）
 
 3. **Phase 3：验收标准**  
    - 去重模块：万级数据集处理 ≤ 60s，误删率 ≤ 2%
    - 坏帧模块：召回 ≥ 97%，误杀 ≤ 4%，支持流式增量检测
-   - 导出模块：100% 通过 `yolo check dataset`，坐标/类别/路径零偏差
+   - 导出模块：100% 通过标注校验命令，坐标/类别/路径零偏差
 
 如需，我可提供：
 - `dhash_popcount_dedup.py` 生产级实现模板（含 ROI 掩码与并行批处理）
 - 坏帧特征提取与自适应阈值拟合代码片段
-- YOLO 目录生成与校验完整脚本（含 `data.yaml` 自动生成）
+- 标注目录生成与校验完整脚本（含 `data.yaml` 自动生成）
 
 请确认是否需针对某一项输出可直接嵌入 `plan_issue_7.md` 的代码级补充说明。
 

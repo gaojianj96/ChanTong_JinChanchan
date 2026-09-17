@@ -29,7 +29,7 @@
 C0✅ → C0b(meta 孤儿回收) → C1a(几何 Schema + IFrameDropSink) → C2(Anchor 校准,多DPI回归)
      → C4.5(PostProcessor 抽象) → C4(ONNX 真模型 + go/no-go 判据 + 1080p 降级路径)
      → C3(IFramePool+DI+dry-run + CAPTURE_LOST 端到端 + frame_meta 扩展槽)
-     → C5(YOLO 后处理) ∥ C6(PaddleOCR 验证) → A3(切片叠加验证,smoke 级)
+     → C5(目标检测后处理) ∥ C6(PaddleOCR 验证) → A3(切片叠加验证,smoke 级)
 ```
 
 ## 用户参与点(新增)

@@ -25,7 +25,7 @@ ChanSight (铲瞳)
 ├── UI 表现与交互层: Avalonia UI 11+ (C# XAML, 跨平台透明置顶 Overlay)
 ├── 业务与决策引擎: C# (.NET 8/9, 异步流水线 + 牌库历史 + 概率推算)
 ├── 视觉推理引擎: Microsoft.ML.OnnxRuntime (DirectML EP / CoreML EP / CPU)
-├── 模型层: YOLOv11n ONNX + PaddleOCR-v4-Mobile ONNX
+├── 模型层: PaddleOCR-v4-Mobile ONNX
 ├── 底层系统交互: 
 │   ├── Windows: Windows.Graphics.Capture API / DXGI (P/Invoke)
 │   └── macOS: ScreenCaptureKit

@@ -6,7 +6,7 @@
 
 | # | 项 | 执行方 | 通过线 | 状态 |
 |---|---|---|---|---|
-| R1 | 模型权重(yolov26n.onnx / paddleocr det+rec) | 用户 | 文件就位于 `assets/models/` | ✅ yolo26n 已下载(SHA256 2E947B78…42D6F7) |
+| R1 | 模型权重(paddleocr det+rec) | 用户 | 文件就位于 `assets/models/` | 待 |
 | R2 | 实机延迟 go/no-go | 用户(1 命令) | `--probe` 输出判据 | ✅ 已实测: 输入 1x3x640x640 静态;DML mean 27.2ms / CPU 26.9ms;**口径 2026-09-12 用户裁定 = 30fps(33.3ms)→ Go**;默认阈值已改 33.3ms |
 | R3 | 多 DPI/多显/非独占回归 | 用户+我 | ≤2px | 用户决定跳过(单屏固定分辨率) |
 | R4 | Golden 人工复核 ≥30 帧 | 用户目检 | 绿/粉叉对齐 | ✅ **2026-09-12 用户确认绿粉叉全部对齐**(经 bench+board 两次反推修正) |
@@ -20,7 +20,7 @@
 2. **R2**: 拿到任意 [1,3,640,640] onnx 后跑
    `dotnet run --project src/ChanSight.Cli -- --probe "assets/models/模型名.onnx"`。
 3. **R3**: Win 缩放 125%/150% + 第二屏各录少量帧。
-4. **R1**: 从 Ultralytics/PaddleOCR 下载权重(提供 hash)。
+4. **R1**: 从 PaddleOCR 官方渠道下载权重(提供 hash)。
 
 ## 3. 廉洁腐坏约束(委员会 Qwen,已采用)
 

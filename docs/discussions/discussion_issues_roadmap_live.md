@@ -88,7 +88,7 @@
   - [ ] 创建 `ModelMetadata` 记录输入/输出名称、形状、类型
   - [ ] 实现 `InferenceSession` 的创建与配置（`SessionOptions` 指定DirectML执行提供者）
   - [ ] 添加模型版本校验与错误处理
-- **交付物**: `OnnxModelLoader` 类及加载示例模型（如yolov8n.onnx）
+- **交付物**: `OnnxModelLoader` 类及加载示例模型（如棋子识别模型 .onnx）
 - **验收标准**: 能成功加载模型并获取输入输出元数据，DirectML提供者可用
 
 ### Issue #2.2: 推理执行器 (InferenceExecutor)
@@ -102,18 +102,18 @@
   - [ ] 实现推理结果封装 `InferenceResult`（包含原始输出张量、推理耗时）
   - [ ] 使用 `Channel<InferenceResult>` 输出结果
 - **交付物**: `InferenceExecutor` 类及性能基准测试
-- **验收标准**: 推理延迟 < 50ms（使用DirectML，模型如yolov8n）
+- **验收标准**: 推理延迟 < 50ms（使用DirectML，模型如通用目标检测模型）
 
 ### Issue #2.3: 后处理与结果解析
 
 - **模块**: Core
 - **核心任务清单**:
   - [ ] 实现 `PostProcessor` 抽象基类，支持不同模型的后处理
-  - [ ] 以YOLOv8为例：解析输出张量，应用NMS（非极大值抑制）
+  - [ ] 解析输出张量，应用NMS（非极大值抑制）
   - [ ] 使用 `OpenCvSharp4` 的 `Dnn.NMSBoxes` 或手动实现
   - [ ] 生成 `DetectionResult` 列表（包含类别、置信度、边界框）
   - [ ] 支持自定义后处理插件（通过依赖注入或工厂模式）
-- **交付物**: `PostProcessor` 基类及YOLOv8实现
+- **交付物**: `PostProcessor` 基类及目标检测实现
 - **验收标准**: 对已知测试图像，后处理结果与官方参考一致
 
 ### Issue #2.4: DirectML 性能调优
@@ -126,7 +126,7 @@
   - [ ] 对比CPU与DirectML推理延迟，记录数据
   - [ ] 实现推理结果缓存（相同输入跳过推理，用于静态场景）
 - **交付物**: 性能调优报告及最终配置参数
-- **验收标准**: 在RTX 3060上推理延迟 < 20ms（yolov8n）
+- **验收标准**: 在RTX 3060上推理延迟 < 20ms
 
 ---
 
@@ -594,7 +594,7 @@ M1 ──► M2 ──► M3 ──► M4 ──► M5
 - 推理后端工厂
 
 **验收标准**
-- DirectML 推理 YOLOv8n 1080p 单帧 ≤ 25ms（GPU）
+- DirectML 推理目标检测 1080p 单帧 ≤ 25ms（GPU）
 - CPU 推理可作为降级方案
 
 ---
@@ -653,7 +653,7 @@ M1 ──► M2 ──► M3 ──► M4 ──► M5
 
 ---
 
-### 🔧 M2-004 · 目标检测模块（YOLO 系列）
+### 🔧 M2-004 · 目标检测模块
 
 | 字段 | 内容 |
 |------|------|
@@ -664,14 +664,14 @@ M1 ──► M2 ──► M3 ──► M4 ──► M5
 
 **核心任务清单**
 - [ ] 实现 `IDetector` 接口
-- [ ] 实现 YOLOv8 / YOLOv10 后处理（NMS、置信度过滤）
+- [ ] 实现目标检测后处理（NMS、置信度过滤）
 - [ ] 实现 `Detection` 数据结构（BBox、ClassId、Confidence、ClassName）
 - [ ] 实现多尺度检测（可选）
 - [ ] 实现检测结果可视化（调试用）
 - [ ] 实现检测结果缓存（短时帧间追踪）
 
 **交付物**
-- `YoloDetector` 实现
+- `Detector` 实现
 - 检测结果可视化工具
 
 **验收标准**
@@ -1516,7 +1516,7 @@ M1 ──► M2 ──► M3 ──► M4 ──► M5
 | M2-001 | ONNX Runtime + DirectML 集成 | vision | 🔴 P0 | M1-005 | 2d |
 | M2-002 | 模型加载与版本管理 | vision | 🔴 P0 | M2-001 | 2d |
 | M2-003 | OpenCV 预处理管线（推理） | vision | 🔴 P0 | M2-001 | 2d |
-| M2-004 | 目标检测模块（YOLO） | vision | 🔴 P0 | M2-003 | 3d |
+| M2-004 | 目标检测模块 | vision | 🔴 P0 | M2-003 | 3d |
 | M2-005 | OCR / 文本识别模块 | vision | 🟡 P1 | M2-004 | 3d |
 | M2-006 | 推理结果后处理与关联 | vision | 🟡 P1 | M2-004, M2-005 | 2d |
 | M2-007 | 模型热插拔与降级策略 | vision | 🟡 P1 | M2-002 | 1d |

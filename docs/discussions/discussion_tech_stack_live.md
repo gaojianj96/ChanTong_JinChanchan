@@ -28,14 +28,11 @@
 - **BitBlt / PrintWindow**：备选方案，但效率低（30fps以下），不推荐。
 
 #### 2.2 弈子/星级/装备检测（目标检测模型）
-**推荐模型：YOLOv11s ONNX + DirectML Execution Provider**  
-（YOLOv11于2024年发布，精度/速度平衡优于v8/v10）
+**推荐方案：轻量目标检测 ONNX + DirectML Execution Provider**  
 
 | 模型 | 优势 | 劣势 |
 |------|------|------|
-| **YOLOv11s** | ① 最新架构，mAP高，小目标（弈子图标）检测能力强；<br>② 支持ONNX导出，DirectML推理延迟<5ms（RTX 3060级别）；<br>③ 模型体积小（~20MB），便于部署。 | 需自行标注棋盘4x7网格、备战席9格、商店5格数据（约5000张样本）。 |
-| **YOLOv10s** | ① 无NMS后处理，推理速度更快；<br>② 但小目标精度略逊于v11。 | 生态更新慢，社区资源少。 |
-| **YOLOv8s** | 成熟稳定，大量预训练权重可用。 | 相对v11精度低约2%，对装备小图标可能漏检。 |
+| **轻量目标检测模型** | ① 小目标（弈子图标）检测能力强；<br>② 支持ONNX导出，DirectML推理延迟<5ms（RTX 3060级别）；<br>③ 模型体积小（~20MB），便于部署。 | 需自行标注棋盘4x7网格、备战席9格、商店5格数据（约5000张样本）。 |
 
 **推理引擎**：**ONNX Runtime** 1.18+，启用DirectML Provider（Windows专用），支持FP16量化，可进一步提速。  
 **备选**：OpenVINO（Intel GPU优化，但NVIDIA GPU下不如DirectML）。
@@ -51,9 +48,9 @@
 - 优势：开源、无第三方依赖；劣势：中文识别精度低（需额外训练），速度慢（CPU约30ms）。
 
 **推荐流程**：
-1. 用YOLOv11检测出“商店区域”、“备战席区域”、“装备图标区域”；
+1. 用目标检测检测出“商店区域”、“备战席区域”、“装备图标区域”；
 2. 对检测到的文字区域（如商店卡牌名称、金币数字）裁剪，送入PP-OCR识别；
-3. 对装备图标，使用YOLO分类头直接输出装备ID（无需OCR）。
+3. 对装备图标，使用分类头直接输出装备ID（无需OCR）。
 
 #### 2.4 牌库历史追踪与卡池概率推算（逻辑层）
 - 纯C++实现，维护一个`std::unordered_map<英雄ID, int>`记录已出现/已购买数量。
@@ -90,7 +87,7 @@
 |------|----------|----------|----------|
 | **开发语言** | C++20 | 性能极致，原生Windows API，零Python依赖 | 开发效率低，需经验丰富的C++工程师 |
 | **截屏** | DXGI Duplication | 帧率>120fps，延迟<1ms，不侵入游戏 | 需处理多显示器、分辨率变化 |
-| **目标检测** | YOLOv11s ONNX + DirectML | 精度高，速度<5ms，FP16量化支持 | 需自行标注训练数据（约5000张） |
+| **目标检测** | 轻量检测模型 ONNX + DirectML | 精度高，速度<5ms，FP16量化支持 | 需自行标注训练数据（约5000张） |
 | **OCR** | PaddleOCR C++ (PP-OCRv4) | 中文识别>95%，推理<10ms | 依赖Paddle Inference库（约30MB） |
 | **推理引擎** | ONNX Runtime + DirectML | 跨硬件（NVIDIA/AMD/Intel），成熟稳定 | 需安装DirectML运行时（Windows自带） |
 | **悬浮窗** | Direct2D Overlay | 极轻量，无窗口冲突，60fps流畅 | 开发工作量大，无现成UI组件 |
@@ -101,7 +98,7 @@
 ### 五、综合推荐路线图
 
 ```
-[DXGI截屏] → [YOLOv11s ONNX推理（棋盘/备战席/商店）] → [PP-OCR识别文字]
+[DXGI截屏] → [检测模型 ONNX 推理（棋盘/备战席/商店）] → [PP-OCR识别文字]
         ↓                                                      ↓
    [C++推理结果] ← 共享内存 → [Direct2D悬浮窗渲染]
         ↓
@@ -113,7 +110,7 @@
 - 构建：CMake + vcpkg（管理ONNX Runtime、OpenCV、PaddleOCR等）
 - 截屏：DXGI (DirectX 11)
 - 推理：ONNX Runtime 1.18 + DirectML
-- 模型：YOLOv11s (自定义数据集) + PP-OCRv4 (PaddleOCR C++)
+- 模型：目标检测模型 (自定义数据集) + PP-OCRv4 (PaddleOCR C++)
 - 悬浮窗：Direct2D + DirectWrite
 - 日志：spdlog
 - 配置：JSON (nlohmann/json)
@@ -195,19 +192,11 @@ auto session = Ort::Session(env, model_path, session_options);
 | TensorRT EP | 仅 NVIDIA | ★★★★★+ | 需额外转换 engine，部署复杂 |
 | CPU EP (DML fallback) | 任意 | ★★ | 兜底方案 |
 
-### 2.2 弈子/装备检测模型：**YOLOv11 (Ultralytics) ONNX**
+### 2.2 弈子/装备检测模型：**轻量目标检测 ONNX**
 
-#### 2.2.1 推荐：**YOLOv11n / YOLOv11s ONNX + 自定义数据集微调**
+#### 2.2.1 推荐：**轻量目标检测模型 ONNX + 自定义数据集微调**
 
-金铲铲的弈子、装备、星级标识在屏幕上的特征非常鲜明（小目标、颜色强对比、固定位置），**YOLOv11 系列**在精度与速度间提供了最佳平衡。
-
-| 模型 | mAP@0.5 | 推理延迟 (RTX 3060, 640px) | 模型大小 | 推荐度 |
-|------|---------|---------------------------|----------|--------|
-| **YOLOv11n** ⭐ | ~63% | **~3-5 ms** | 5.4 MB | **首选**，帧率优先 |
-| YOLOv11s | ~72% | ~6-8 ms | 18 MB | 精度优先时选用 |
-| YOLOv10n | ~62% | ~4-6 ms | 5.8 MB | NMS-free，可简化后处理 |
-| YOLOv8n | ~60% | ~5-7 ms | 6.2 MB | 备选，生态最成熟 |
-| RT-DETR-R18 | ~65% | ~10-15 ms | 40 MB | 不推荐，Transformer 推理慢 |
+金铲铲的弈子、装备、星级标识在屏幕上的特征非常鲜明（小目标、颜色强对比、固定位置），轻量目标检测模型在精度与速度间提供了良好平衡。
 
 **关键优化**：
 - **输入分辨率**：弈子检测建议 **320×320 或 416×416**（小目标为主）
@@ -215,7 +204,7 @@ auto session = Ort::Session(env, model_path, session_options);
 - **多任务拆分**：弈子 vs 装备 vs 星级建议训练**三个独立小模型**，而非一个大模型，便于并行推理与独立迭代
 
 ```cpp
-// YOLOv11 ONNX 推理伪代码
+// 目标检测 ONNX 推理伪代码
 cv::Mat blob = cv::dnn::blobFromImage(
     roi, 1.0/255.0, cv::Size(320, 320),
     cv::Scalar(0,0,0), true, false);
@@ -238,7 +227,7 @@ auto output_tensors = session.Run(
 #### 2.3.1 推荐：**PaddleOCR v4 Server/Mobile + ONNX 导出**
 
 PaddleOCR 官方提供 C++ 推理代码，但**更推荐转换为 ONNX 格式后通过 ONNX Runtime 推理**，理由：
-1. 与 YOLO 共用同一推理引擎，统一内存管理与 EP
+1. 与目标检测共用同一推理引擎，统一内存管理与 EP
 2. DirectML EP 可同时加速检测与识别
 3. 部署包更小，依赖更少
 
@@ -284,7 +273,7 @@ for (auto& roi : text_rois) {
         ┌────────────────┼────────────────┐
         ▼                ▼                ▼
 ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ YOLO 弈子    │ │ YOLO 装备    │ │ PaddleOCR    │
+│ 弈子检测    │ │ 装备检测    │ │ PaddleOCR    │
 │ (DML EP)    │ │ (DML EP)    │ │ (DML EP)    │
 └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
        └────────────────┼────────────────┘
@@ -426,10 +415,8 @@ void RenderOverlay() {
 
 | 模型 | 优势 | 劣势 | 推荐场景 |
 |------|------|------|----------|
-| **YOLOv11n ONNX** ⭐ | 速度快（< 5ms）、体积小（5MB）、Ultralytics 工具链完善、社区资源丰富 | 极小目标（< 16px）精度下降 | **本项目首选** |
-| YOLOv10n | NMS-free，后处理更简单 | 速度优势不明显、生态不如 v11 | 简化后处理 |
+| **轻量检测模型 ONNX** ⭐ | 速度快（< 5ms）、体积小（5MB）、工具链完善、社区资源丰富 | 极小目标（< 16px）精度下降 | **本项目首选** |
 | RT-DETR | Transformer 架构、全局感受野 | 推理慢、模型大 | 复杂场景高精度 |
-| YOLOv8n | 生态最成熟、文档丰富 | 性能略逊于 v11 | 备选 |
 | Faster R-CNN | 精度高 | 速度慢（> 50ms） | 不推荐 |
 
 ### 4.4 OCR 引擎层
@@ -462,7 +449,7 @@ void RenderOverlay() {
 ├── 截取: Windows Graphics Capture API + DXGI 1.2
 ├── 渲染: DirectX 11 + Dear ImGui 1.90 (Docking)
 ├── 推理: ONNX Runtime 1.17+ + DirectML EP
-├── 检测: YOLOv11n ONNX (INT8 量化, 320×320)
+├── 检测: 轻量目标检测 ONNX (INT8 量化, 320×320)
 ├── OCR:   PaddleOCR v4 Mobile ONNX (CN+EN, 自定义字典)
 ├── 图像:  OpenCV 4.9+ (C++)
 ├── 工具:  spdlog + nlohmann/json + fmt + Eigen3
@@ -473,7 +460,7 @@ void RenderOverlay() {
 
 1. **C++20 单语言全栈**：避免跨语言 FFI 开销，Overlay 与推理共享同一进程同一渲染管线，端到端延迟可控在 **< 50ms**（截取到 Overlay 显示）。
 2. **ONNX Runtime + DirectML**：跨厂商 GPU 兼容，部署包小（< 100MB），无需用户安装 CUDA/TensorRT。
-3. **YOLOv11n + PaddleOCR Mobile**：单帧总推理时间 **< 20ms**（RTX 3060），满足 60 FPS 实时监控。
+3. **轻量检测模型 + PaddleOCR Mobile**：单帧总推理时间 **< 20ms**（RTX 3060），满足 60 FPS 实时监控。
 4. **Dear ImGui**：Overlay 渲染开销 < 1ms，完美匹配游戏帧率，代码量小（< 2000 行即可完成完整 UI）。
 
 ### 性能预算（端到端）
@@ -482,8 +469,8 @@ void RenderOverlay() {
 |------|----------|
 | 屏幕截取 | < 5 ms |
 | GPU 预处理 | < 2 ms |
-| YOLO 弈子检测 | < 5 ms |
-| YOLO 装备检测 | < 5 ms |
+| 弈子检测 | < 5 ms |
+| 装备检测 | < 5 ms |
 | PaddleOCR 识别 | < 10 ms |
 | 状态解析 + 决策 | < 3 ms |
 | Overlay 渲染 | < 2 ms |
@@ -512,13 +499,13 @@ void RenderOverlay() {
 
 ---
 ### 🔹 2. 视觉检测/OCR 推理引擎与模型选型
-#### ✅ 推荐组合：`ONNX Runtime (ORT) + YOLOv8/v10/v11 Nano/Small`
+#### ✅ 推荐组合：`ONNX Runtime (ORT) + 轻量目标检测模型`
 | 组件 | 选型细节 | 工程实现要点 |
 |:---|:---|:---|
 | **推理引擎** | `ONNX Runtime C++` | 启用 `Ort::SessionOptions::SetIntraOpNumThreads(1)` + `GPU Provider`；使用 `ORT_MEMORY_ALLOCATION_TYPE` 优化显存复用 |
-| **模型架构** | `YOLOv8n/s` 或 `YOLOv10n` | 单阶段检测兼顾速度与精度；输出头包含：棋盘区域、棋子类别、星级（1-3）、装备图标、备战席/商店槽位 |
+| **模型架构** | 轻量单阶段检测模型 | 单阶段检测兼顾速度与精度；输出头包含：棋盘区域、棋子类别、星级（1-3）、装备图标、备战席/商店槽位 |
 | **量化策略** | `INT8 动态量化` 或 `FP16` | 通过 `onnxruntime.quantization` 离线转换；INT8 在移动端/核显上延迟可压至 `8~12ms`，FP16 更稳 |
-| **OCR 替代方案** | **纯视觉图标检测** | TFT 界面元素高度标准化，OCR 易受分辨率/字体补丁影响。改用 YOLO 检测“金币数/刷新按钮/英雄名图标”，准确率更高且免文本解析 |
+| **OCR 替代方案** | **纯视觉图标检测** | TFT 界面元素高度标准化，OCR 易受分辨率/字体补丁影响。改用目标检测识别“金币数/刷新按钮/英雄名图标”，准确率更高且免文本解析 |
 
 #### 🛠 模型训练与导出工作流（非运行时）
 ```mermaid
@@ -565,7 +552,7 @@ Capture Thread (WGC)
 | **语言** | C++17/20 | 零 GC 停顿、直接 HW 访问、生态成熟 | 学习曲线陡、手动内存管理易错 | 全面使用 `std::unique_ptr`/`span`/`concurrency` 库，静态扫描拦截 |
 | **捕获** | WGC | 硬件直出、支持透明层、多屏安全 | Win10 1903+ 仅支持，旧系统需降级 | 提供 DXGI Duplication fallback，运行时自动探测 |
 | **推理** | ONNX Runtime | 跨加速器、模型热更、社区标准 | 略重于 ncnn/TensorRT | 关闭 CPU 线程池干扰，绑定单核；启用 `ORT_ENABLE_ALL` 按需加载 |
-| **模型** | YOLOv8/v10 ONNX | 端到端检测、免后处理调参、抗形变 | 小目标（星级/装备）易漏检 | 增加 `small_object_head`；数据增强含缩放/亮度扰动；置信度阈值动态校准 |
+| **模型** | 轻量目标检测 ONNX | 端到端检测、免后处理调参、抗形变 | 小目标（星级/装备）易漏检 | 增加 `small_object_head`；数据增强含缩放/亮度扰动；置信度阈值动态校准 |
 | **UI** | Dear ImGui + DX11 | 零布局开销、绘制极快、调试直观 | 即时模式需手动维护状态 | 封装 `ChanSightWidget` 类管理可见性/位置/透明度，保持逻辑解耦 |
 | **OCR** | 弃用，改用图标检测 | 免字体依赖、抗分辨率变化、速度↑300% | 需标注完整图标集 | 收集各版本客户端截图，自动化裁剪生成数据集 |
 
@@ -574,7 +561,7 @@ Capture Thread (WGC)
 1. **延迟预算分配**：捕获 `≤3ms` → 预处理 `≤2ms` → 推理 `≤8ms` → 后处理 `≤2ms` → 渲染 `≤3ms`。总端到端延迟应 `<20ms`（≈1帧@60Hz）。
 2. **反规避设计**：避免使用 `FindWindow`/`EnumWindows` 等敏感 API。通过 WGC 获取句柄，运行时不注入 DLL，不挂钩 DirectInput/XInput。
 3. **概率推算算法**：使用超几何分布 + 马尔可夫链模拟卡池。C++ 实现 `std::mt19937` 伪随机种子固定，保证复现性；历史序列用 `circular_buffer` 滚动存储。
-4. **模型迭代闭环**：建立本地 `assets/models/` 目录结构，通过配置文件切换 `yolov8n.onnx` / `yolov10s.onnx`，无需重新编译。
+4. **模型迭代闭环**：建立本地 `assets/models/` 目录结构，通过配置文件切换检测模型 `.onnx`，无需重新编译。
 5. **兼容性测试矩阵**：重点验证 `1920×1080 / 2560×1440`、`NVIDIA/AMD/Intel 核显`、`窗口化/全屏独占` 模式下的网格映射偏移。
 
 ---

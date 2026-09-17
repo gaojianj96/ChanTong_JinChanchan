@@ -82,11 +82,11 @@ ChanSight/
 ├── src/
 │   ├── ChanSight.Core/           # 领域模型、牌库时序状态机、超几何概率算法
 │   ├── ChanSight.Capture/        # WGC / DXGI 跨平台抽象与高速抓取管道
-│   ├── ChanSight.Vision/         # ONNX Runtime (DirectML) + YOLOv11n + PaddleOCR
+│   ├── ChanSight.Vision/         # ONNX Runtime (DirectML) + PaddleOCR
 │   ├── ChanSight.Overlay/        # Avalonia UI 11 跨平台透明穿透悬浮窗
 │   └── ChanSight.App/            # 主启动入口、依赖注入、AOT 配置
 ├── assets/
-│   ├── models/                   # yolov11n.onnx, paddleocr.onnx
+│   ├── models/                   # paddleocr.onnx
 │   └── game_data/                # champions.json, traits.json
 └── docs/                         # 设计与技术文档
 ```
