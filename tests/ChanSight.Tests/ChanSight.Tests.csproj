@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\src\ChanSight.Recorder\ChanSight.Recorder.csproj" />
     <ProjectReference Include="..\..\src\ChanSight.Cli\ChanSight.Cli.csproj" />
     <ProjectReference Include="..\..\src\ChanSight.Vision\ChanSight.Vision.csproj" />
+    <ProjectReference Include="..\..\src\ChanSight.Overlay\ChanSight.Overlay.csproj" />
   </ItemGroup>
 
   <ItemGroup>

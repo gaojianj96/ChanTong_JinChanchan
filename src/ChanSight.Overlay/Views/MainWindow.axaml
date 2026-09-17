@@ -3,13 +3,9 @@
         xmlns:vm="using:ChanSight.Overlay.ViewModels"
         x:Class="ChanSight.Overlay.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="ChanSight"
-        Width="420"
-        Height="720"
-        MinWidth="320"
-        MinHeight="480">
-    <TextBlock Text="{Binding Status}"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center"
-               FontSize="20" />
+        Title="ChanSight - 实时识别"
+        Width="460"
+        Height="820"
+        MinWidth="340"
+        MinHeight="520">
 </Window>

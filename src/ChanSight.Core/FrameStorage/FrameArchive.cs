@@ -4,7 +4,7 @@ using System.Text.Json;
 using ChanSight.Core.Engine;
 using OpenCvSharp;
 
-public sealed class FrameArchive
+public sealed class FrameArchive : IFrameArchive
 {
     private const string FramesDirectoryName = "frames";
 

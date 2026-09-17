@@ -16,5 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ChanSight.Core\ChanSight.Core.csproj" />
+    <ProjectReference Include="..\ChanSight.Capture\ChanSight.Capture.csproj" />
+    <ProjectReference Include="..\ChanSight.Vision\ChanSight.Vision.csproj" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChanSight.Overlay.ViewModels"
+             x:Class="ChanSight.Overlay.Views.LiveView"
+             x:DataType="vm:LiveViewModel">
+    <ScrollViewer>
+        <StackPanel Margin="8" Spacing="8">
+
+            <TextBlock Text="{Binding Status}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+            <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                <TextBlock Text="金币" FontWeight="Bold" />
+                <TextBlock Grid.Column="1" Text="等级" FontWeight="Bold" />
+                <TextBlock Grid.Column="2" Text="阶段" FontWeight="Bold" />
+                <TextBlock Grid.Row="1" Text="{Binding Gold}" FontSize="18" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Level}" FontSize="18" />
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Stage}" FontSize="18" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="血量" FontWeight="Bold" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding Hp}" FontSize="18" />
+            </Grid>
+
+            <TextBlock Text="棋盘 (28)" FontWeight="Bold" />
+            <ItemsControl ItemsSource="{Binding BoardCells}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SlotDisplay">
+                        <Border BorderBrush="Gray" BorderThickness="1"
+                                Padding="4" Margin="2" CornerRadius="3">
+                            <StackPanel>
+                                <TextBlock Text="{Binding DisplayText}" FontSize="11" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="备战席 (9)" FontWeight="Bold" />
+            <ItemsControl ItemsSource="{Binding BenchCells}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SlotDisplay">
+                        <Border BorderBrush="Gray" BorderThickness="1"
+                                Padding="4" Margin="2" CornerRadius="3">
+                            <TextBlock Text="{Binding DisplayText}" FontSize="11" />
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="商店 (5)" FontWeight="Bold" />
+            <ItemsControl ItemsSource="{Binding ShopCards}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SlotDisplay">
+                        <Border BorderBrush="Gray" BorderThickness="1"
+                                Padding="4" Margin="2" CornerRadius="3">
+                            <TextBlock Text="{Binding DisplayText}" FontSize="11" />
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Separator />
+
+            <TextBlock Text="钉帧修正" FontWeight="Bold" />
+            <WrapPanel>
+                <Button Content="🔒 钉帧" Command="{Binding EnterPinCommand}" Margin="0,0,8,0" />
+                <Button Content="取消" Command="{Binding CancelPinCommand}" IsEnabled="{Binding IsPinned}" Margin="0,0,8,0" />
+                <TextBlock Text="{Binding PinnedFrameId, StringFormat='钉住的帧: {0}'}" VerticalAlignment="Center" />
+            </WrapPanel>
+
+            <StackPanel IsVisible="{Binding IsPinned}" Spacing="4">
+                <TextBlock Text="修正类型" FontWeight="SemiBold" />
+                <ComboBox ItemsSource="{Binding CellRegionTypes}" SelectedIndex="{Binding SelectedRegionTypeIndex}" />
+                <TextBlock Text="格序号 (0 起)" FontWeight="SemiBold" />
+                <NumericUpDown Minimum="0" Maximum="27" Value="{Binding SelectedCellIndex}" />
+                <TextBlock Text="英雄(候选)" FontWeight="SemiBold" />
+                <ComboBox ItemsSource="{Binding HeroCandidates}" SelectedItem="{Binding SelectedHero}" />
+                <TextBlock Text="星级" FontWeight="SemiBold" />
+                <NumericUpDown Minimum="0" Maximum="3" Value="{Binding SelectedStar}" />
+                <WrapPanel>
+                    <Button Content="确认英雄" Command="{Binding CommitHeroCommand}" Margin="0,0,8,0" />
+                    <Button Content="确认星级" Command="{Binding CommitStarCommand}" Margin="0,0,8,0" />
+                    <Button Content="标记为空" Command="{Binding CommitEmptyCommand}" />
+                </WrapPanel>
+            </StackPanel>
+
+            <Separator />
+
+            <Button Content="手动重算" Command="{Binding RecalculateCommand}" FontSize="14" />
+            <TextBlock Text="推荐列表" FontWeight="Bold" />
+            <ListBox ItemsSource="{Binding Recommendations}" MinHeight="120">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RecommendationDisplay">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Verdict}" FontWeight="Bold" />
+                            <TextBlock Text="{Binding Reason}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
