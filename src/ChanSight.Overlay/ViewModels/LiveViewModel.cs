@@ -4,6 +4,7 @@ using ChanSight.Core.Engine;
 using ChanSight.Overlay.Models;
 using ChanSight.Overlay.Services;
 using ChanSight.Vision.Models;
+using ChanSight.Vision.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -39,12 +40,19 @@ public partial class SlotDisplay : ObservableObject
     [NotifyPropertyChangedFor(nameof(CorrectionMark))]
     private bool _hasCorrection;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ItemsText))]
+    private string _items = string.Empty;
+
     public string DisplayText =>
         string.IsNullOrEmpty(Name)
             ? (Index + 1).ToString()
             : Name + (Cost > 0 ? $"({Cost}费)" : Star > 0 ? $"★{Star}" : string.Empty) + CorrectionMark;
 
     public string CorrectionMark => HasCorrection ? " ✓改" : string.Empty;
+
+    /// <summary>装备列表展示(逗号分隔), 为空返回空串。</summary>
+    public string ItemsText => string.IsNullOrWhiteSpace(Items) ? string.Empty : $"🛡 {Items}";
 
     /// <summary>棋盘 4×7 网格行号(0-3)。仅棋盘格有意义, 其余区域按序号自然计算。</summary>
     public int Row => Index / 7;
@@ -65,6 +73,16 @@ public partial class SlotDisplay : ObservableObject
 /// <summary>推荐列表展示项。</summary>
 public sealed record RecommendationDisplay(string Verdict, string Reason, int Priority);
 
+/// <summary>数据健康度: 自动识别产物为“未校准”, 手动 VLM 识别为“已校准”。</summary>
+public enum DataHealth
+{
+    Uncalibrated,
+    Calibrated,
+}
+
+/// <summary>手动整帧 VLM 识别闭包: 已取当前帧整图, 返回识别结果。可注入以便测试。</summary>
+public delegate Task<RecognitionFrame> ManualRecognizeFunc(bool isSelf, CancellationToken ct);
+
 /// <summary>
 /// 实时窗口 ViewModel: 展示 Gold/Level/Stage/Hp + 棋盘(28)/备战席(9)/商店(5)格;
 /// 支持钉帧修正(仅记录 CorrectionRecord, 锚 PinnedFrameId)、修正粘滞、手动重算。
@@ -76,10 +94,14 @@ public partial class LiveViewModel : ObservableObject
     private readonly Func<GameStateSnapshot, DecisionPanelResult> _evaluate;
     private readonly StickyCorrections _sticky = new();
     private readonly IReadOnlyList<string> _heroCandidates;
+    private readonly IReadOnlyList<string> _itemCandidates;
+    private readonly ManualRecognizeFunc? _manualRecognize;
+    private readonly RecognitionToGameStateAdapter? _adapter;
 
     private GameStateSnapshot? _latest;
     private RecognitionFrame? _latestFrame;
     private string? _latestFrameId;
+    private RecognitionFrame? _pendingOpponentFrame;
 
     [ObservableProperty]
     private int _gold;
@@ -114,6 +136,25 @@ public partial class LiveViewModel : ObservableObject
     [ObservableProperty]
     private int _selectedStar;
 
+    /// <summary>对手序号(-1 表示未知/待确认)。绑定到下拉选择。</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOpponentIndexUnknown))]
+    private int _opponentIndex = -1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HealthLabel))]
+    [NotifyPropertyChangedFor(nameof(IsUncalibrated))]
+    private DataHealth _dataHealth = DataHealth.Uncalibrated;
+
+    /// <summary>对手识别后的展示信息(玩家名 + 经济档)。</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasOpponentInfo))]
+    private string _opponentInfo = string.Empty;
+
+    /// <summary>待提交的装备列表(逗号分隔, 用于点格装备修正)。</summary>
+    [ObservableProperty]
+    private string _selectedItems = string.Empty;
+
     public ObservableCollection<SlotDisplay> BoardCells { get; } = new();
 
     public ObservableCollection<SlotDisplay> BenchCells { get; } = new();
@@ -122,16 +163,58 @@ public partial class LiveViewModel : ObservableObject
 
     public ObservableCollection<RecommendationDisplay> Recommendations { get; } = new();
 
+    /// <summary>对手确认后的棋盘展示格。</summary>
+    public ObservableCollection<SlotDisplay> OpponentBoardCells { get; } = new();
+
+    /// <summary>对手确认后的备战席展示格。</summary>
+    public ObservableCollection<SlotDisplay> OpponentBenchCells { get; } = new();
+
     public IReadOnlyList<string> HeroCandidates => _heroCandidates;
+
+    /// <summary>装备候选(用于点格装备修正下拉)。</summary>
+    public IReadOnlyList<string> ItemCandidates => _itemCandidates;
+
+    /// <summary>对手序号可选项(0-7), 7 表示“未知”。</summary>
+    public IReadOnlyList<string> OpponentIndexOptions { get; } =
+    [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "未知",
+    ];
+
+    /// <summary>手动识别是否可用(已注入手动识别闭包)。</summary>
+    public bool ManualAvailable => _manualRecognize is not null;
+
+    /// <summary>对手序号是否“未知”(-1 或越界)。</summary>
+    public bool IsOpponentIndexUnknown => OpponentIndex < 0 || OpponentIndex > 6;
+
+    /// <summary>健康度文案。</summary>
+    public string HealthLabel => DataHealth == DataHealth.Calibrated ? "已校准" : "未校准";
+
+    /// <summary>是否“未校准”(用于显示黄色警告提示)。</summary>
+    public bool IsUncalibrated => DataHealth == DataHealth.Uncalibrated;
+
+    /// <summary>是否有对手识别结果可展示。</summary>
+    public bool HasOpponentInfo => !string.IsNullOrWhiteSpace(OpponentInfo);
 
     public LiveViewModel(
         AnnotationStore annotationStore,
         Func<GameStateSnapshot, DecisionPanelResult> evaluate,
-        LiveRecognitionService? service = null)
+        LiveRecognitionService? service = null,
+        ManualRecognizeFunc? manualRecognize = null,
+        RecognitionToGameStateAdapter? adapter = null)
     {
         _annotationStore = annotationStore ?? throw new ArgumentNullException(nameof(annotationStore));
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
+        _manualRecognize = manualRecognize;
+        _adapter = adapter;
         _heroCandidates = GameSeasonDictionary.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        _itemCandidates = GameSeasonDictionary.Items.OrderBy(static name => name, StringComparer.Ordinal).ToList();
 
         if (service is not null)
         {
@@ -158,6 +241,9 @@ public partial class LiveViewModel : ObservableObject
         Level = update.State.Level;
         Stage = update.State.Stage;
         Hp = update.State.Hp;
+
+        // 自动识别链路产物 = 未校准; 手动 VLM 识别后才会切换为已校准。
+        DataHealth = DataHealth.Uncalibrated;
 
         RebuildCells(update.State);
         ValidateSticky();
@@ -267,6 +353,32 @@ public partial class LiveViewModel : ObservableObject
         RebuildStickyMarkers();
     }
 
+    /// <summary>提交装备列表修正。</summary>
+    public async Task CommitItemsCorrectionAsync(string regionType, int cellIndex, IReadOnlyList<string> items)
+    {
+        if (!IsPinned || PinnedFrameId is null)
+        {
+            return;
+        }
+
+        ArgumentNullException.ThrowIfNull(items);
+
+        var recognized = RecognizedFor(regionType, cellIndex);
+        var record = CorrectionFactory.Create(
+            id: Guid.NewGuid().ToString("N"),
+            matchId: ResolveMatchId(),
+            frameId: PinnedFrameId,
+            snapshotVersion: _latest?.Version ?? 0,
+            regionType: regionType,
+            cellIndex: cellIndex,
+            recognizedValue: recognized,
+            correctedValue: CorrectionValue.Items(items));
+
+        await _annotationStore.AppendCorrectionAsync(record).ConfigureAwait(false);
+        _sticky.Set(new StickyEntry(regionType, cellIndex, recognized, CorrectionValue.Items(items)));
+        RebuildStickyMarkers();
+    }
+
     /// <summary>手动重算: 用粘滞修正后的状态刷新推荐列表。仅按钮触发, 不自动调用。</summary>
     public void RecalculateRecommendations()
     {
@@ -321,9 +433,139 @@ public partial class LiveViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task CommitItems()
+    {
+        if (SelectedCellIndex < 0)
+        {
+            return;
+        }
+
+        var items = ParseSelectedItems(SelectedItems);
+        await CommitItemsCorrectionAsync(RegionTypes.BoardItems, SelectedCellIndex, items).ConfigureAwait(true);
+    }
+
+    [RelayCommand]
     private void Recalculate() => RecalculateRecommendations();
 
     private void OnFrameUpdated(LiveFrameUpdate update) => ApplyUpdate(update);
+
+    /// <summary>
+    /// 手动触发整帧 VLM 识别。isSelf=true 识别己方并写 GameStateManager; isSelf=false
+    /// 识别对手, 结果暂存并等待用户确认/修正对手序号后才写槽。
+    /// 不自动重算推荐(由后续 DUAL-RECO 决定)。
+    /// </summary>
+    [RelayCommand]
+    private Task ManualRecognizeAsync(bool isSelf) => RunManualRecognitionAsync(isSelf);
+
+    [RelayCommand]
+    private Task ManualRecognizeSelf() => RunManualRecognitionAsync(true);
+
+    [RelayCommand]
+    private Task ManualRecognizeOpponent() => RunManualRecognitionAsync(false);
+
+    public async Task RunManualRecognitionAsync(bool isSelf)
+    {
+        if (_manualRecognize is null)
+        {
+            Status = "手动识别不可用(未注入识别闭包)。";
+            return;
+        }
+
+        Status = "手动识别中…";
+        try
+        {
+            var frame = await _manualRecognize(isSelf, CancellationToken.None).ConfigureAwait(true);
+
+            if (isSelf)
+            {
+                _adapter?.Apply(frame);
+                Gold = frame.Gold;
+                Level = frame.Level;
+                Stage = string.IsNullOrWhiteSpace(frame.Stage) ? Stage : frame.Stage;
+                Hp = frame.Hp;
+                DataHealth = DataHealth.Calibrated;
+                Status = ComposeRecognitionStatus(frame, self: true);
+            }
+            else
+            {
+                _pendingOpponentFrame = frame;
+                OpponentIndex = frame.OpponentIndex is >= 0 and <= 6 ? frame.OpponentIndex.Value : -1;
+                OpponentInfo = BuildOpponentInfo(frame);
+                DataHealth = DataHealth.Calibrated;
+                Status = IsOpponentIndexUnknown
+                    ? "对手识别完成, 请确认对手序号…"
+                    : ComposeRecognitionStatus(frame, self: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Status = $"手动识别失败: {ex.Message}";
+        }
+    }
+
+    /// <summary>用户确认(或修正)对手序号后, 把待确认的对手识别结果写入对应 OpponentSnapshot。</summary>
+    [RelayCommand]
+    private void ConfirmOpponent()
+    {
+        if (_pendingOpponentFrame is null)
+        {
+            Status = "无待确认的对手识别结果。";
+            return;
+        }
+
+        if (IsOpponentIndexUnknown || _adapter is null)
+        {
+            Status = "请先选择对手序号(0-6)。";
+            return;
+        }
+
+        _adapter.ApplyOpponent(_pendingOpponentFrame, OpponentIndex);
+        RebuildOpponentCells(_pendingOpponentFrame);
+        Status = $"已写入对手 #{OpponentIndex} ({_pendingOpponentFrame.PlayerName ?? "未知玩家"})";
+    }
+
+    private void RebuildOpponentCells(RecognitionFrame frame)
+    {
+        OpponentBoardCells.Clear();
+        foreach (var (cell, index) in frame.BoardCells.Select((c, i) => (c, i)))
+        {
+            OpponentBoardCells.Add(new SlotDisplay
+            {
+                Index = index,
+                Name = cell.Name ?? string.Empty,
+                Star = cell.Star,
+                Items = cell.Items is null ? string.Empty : string.Join(",", cell.Items.Select(i => i.IconId)),
+            });
+        }
+
+        OpponentBenchCells.Clear();
+        foreach (var (cell, index) in frame.BenchCells.Select((c, i) => (c, i)))
+        {
+            OpponentBenchCells.Add(new SlotDisplay
+            {
+                Index = index,
+                Name = cell.Name ?? string.Empty,
+                Star = cell.Star,
+                Items = cell.Items is null ? string.Empty : string.Join(",", cell.Items.Select(i => i.IconId)),
+            });
+        }
+    }
+
+    private static string ComposeRecognitionStatus(RecognitionFrame frame, bool self)
+    {
+        var issueCount = frame.Issues?.Count ?? 0;
+        var baseText = self
+            ? $"手动识别完成 · 己方 · {issueCount} 个 issue"
+            : $"手动识别完成 · 对手 · {issueCount} 个 issue";
+
+        return issueCount > 0 ? baseText + " · 识别不完整,请人工核对" : baseText;
+    }
+
+    private static string BuildOpponentInfo(RecognitionFrame frame)
+    {
+        var gold = frame.GoldEstimate.HasValue ? $"{frame.GoldEstimate.Value}+" : "未知";
+        return $"{frame.PlayerName ?? "未知玩家"} · 经济 {gold}";
+    }
 
     private string ResolveMatchId() => LiveRecognitionService.DefaultMatchId;
 
@@ -337,6 +579,7 @@ public partial class LiveViewModel : ObservableObject
                 Index = unit.SlotIndex,
                 Name = unit.Name ?? string.Empty,
                 Star = unit.Star,
+                Items = unit.Items is null ? string.Empty : string.Join(",", unit.Items),
             });
         }
 
@@ -348,6 +591,7 @@ public partial class LiveViewModel : ObservableObject
                 Index = unit.SlotIndex,
                 Name = unit.Name ?? string.Empty,
                 Star = unit.Star,
+                Items = unit.Items is null ? string.Empty : string.Join(",", unit.Items),
             });
         }
 
@@ -374,11 +618,20 @@ public partial class LiveViewModel : ObservableObject
         {
             RegionTypes.BoardHero => cellIndex < _latest.BoardUnits.Count ? _latest.BoardUnits[cellIndex].Name : null,
             RegionTypes.BoardStar => cellIndex < _latest.BoardUnits.Count ? _latest.BoardUnits[cellIndex].Star.ToString() : null,
+            RegionTypes.BoardItems => cellIndex < _latest.BoardUnits.Count ? JoinItems(_latest.BoardUnits[cellIndex].Items) : null,
             RegionTypes.BenchHero => cellIndex < _latest.BenchUnits.Count ? _latest.BenchUnits[cellIndex].Name : null,
             RegionTypes.ShopHero => cellIndex < _latest.ShopCards.Count ? _latest.ShopCards[cellIndex].Name : null,
             _ => null,
         };
     }
+
+    private static string? JoinItems(IReadOnlyList<string>? items) =>
+        items is null || items.Count == 0 ? null : string.Join(",", items);
+
+    private static IReadOnlyList<string> ParseSelectedItems(string raw) =>
+        (raw ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToArray();
 
     private void ValidateSticky()
     {
@@ -400,7 +653,8 @@ public partial class LiveViewModel : ObservableObject
         {
             var hero = _sticky.Get(RegionTypes.BoardHero, cell.Index);
             var star = _sticky.Get(RegionTypes.BoardStar, cell.Index);
-            cell.HasCorrection = hero is not null || star is not null;
+            var items = _sticky.Get(RegionTypes.BoardItems, cell.Index);
+            cell.HasCorrection = hero is not null || star is not null || items is not null;
 
             if (hero is not null)
             {
@@ -415,6 +669,11 @@ public partial class LiveViewModel : ObservableObject
             if (star is not null)
             {
                 cell.Star = ParseStar(star.Corrected);
+            }
+
+            if (items is not null)
+            {
+                cell.Items = JoinCorrectedItems(ParseItems(items.Corrected));
             }
         }
 
@@ -473,6 +732,13 @@ public partial class LiveViewModel : ObservableObject
                     board[entry.CellIndex] = ApplyStarToUnit(board[entry.CellIndex], entry.Corrected);
                 }
             }
+            else if (entry.RegionType == RegionTypes.BoardItems)
+            {
+                if (entry.CellIndex < board.Count)
+                {
+                    board[entry.CellIndex] = ApplyItemsToUnit(board[entry.CellIndex], entry.Corrected);
+                }
+            }
             else if (entry.RegionType == RegionTypes.ShopHero)
             {
                 if (entry.CellIndex < shop.Count)
@@ -500,6 +766,12 @@ public partial class LiveViewModel : ObservableObject
     {
         var star = ParseStar(corrected);
         return unit with { Star = star };
+    }
+
+    private static BoardUnitState ApplyItemsToUnit(BoardUnitState unit, string corrected)
+    {
+        var items = ParseItems(corrected);
+        return unit with { Items = items };
     }
 
     private static ShopCardState ApplyHeroToShop(ShopCardState card, string corrected)
@@ -547,6 +819,31 @@ public partial class LiveViewModel : ObservableObject
 
         return 0;
     }
+
+    private static IReadOnlyList<string> ParseItems(string corrected)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(corrected);
+            if (doc.RootElement.TryGetProperty("items", out var items) && items.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                return items.EnumerateArray()
+                    .Where(i => i.ValueKind == System.Text.Json.JsonValueKind.String)
+                    .Select(i => i.GetString())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Cast<string>()
+                    .ToArray();
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+        }
+
+        return Array.Empty<string>();
+    }
+
+    private static string JoinCorrectedItems(IReadOnlyList<string> items) =>
+        items.Count == 0 ? string.Empty : string.Join(",", items);
 
     private static GameStateSnapshot CreateEmptySnapshot() => new(
         Stage: "1-1",

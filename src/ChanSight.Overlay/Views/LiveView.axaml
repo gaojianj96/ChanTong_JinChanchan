@@ -49,6 +49,107 @@
                 </StackPanel>
             </Border>
 
+            <!-- ================= 手动 VLM 识别 + 数据健康度 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGreen}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="手动整帧 VLM 识别" Classes="cardTitle" />
+                            <TextBlock Text="自动识别不准时手动兜底 · 识别结果写入状态并标记健康度" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="数据健康度:" Classes="subtle" VerticalAlignment="Center" />
+                        <Border Background="{StaticResource AccentGreen}" CornerRadius="4" Padding="8,2">
+                            <TextBlock Text="{Binding HealthLabel}" FontWeight="Bold" Foreground="#0B1F18" />
+                        </Border>
+                        <TextBlock Classes="subtle" VerticalAlignment="Center"
+                                   IsVisible="{Binding IsUncalibrated}"
+                                   Text="⚠ 数据未校准" />
+                    </StackPanel>
+
+                    <WrapPanel>
+                        <Button Content="识别己方" Classes="accent" Command="{Binding ManualRecognizeSelfCommand}" Margin="0,0,8,0" />
+                        <Button Content="识别对手" Classes="ghost" Command="{Binding ManualRecognizeOpponentCommand}" Margin="0,0,8,0" />
+                    </WrapPanel>
+
+                    <!-- 对手序号确认 -->
+                    <Border Classes="cardRaised" IsVisible="{Binding HasOpponentInfo}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="{Binding OpponentInfo}" Classes="subtle" />
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <TextBlock Grid.Column="0" Text="对手序号" Classes="subtle" VerticalAlignment="Center" />
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding OpponentIndexOptions}"
+                                          SelectedIndex="{Binding OpponentIndex}" />
+                                <Button Grid.Column="2" Content="确认写入" Classes="accent"
+                                        Command="{Binding ConfirmOpponentCommand}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 对手信息展示 ================= -->
+            <Border Classes="card" IsVisible="{Binding HasOpponentInfo}">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="对手信息" Classes="cardTitle" />
+                            <TextBlock Text="{Binding OpponentInfo}" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="棋盘 / 装备" Classes="subtle" />
+                    <ItemsControl ItemsSource="{Binding OpponentBoardCells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SlotDisplay">
+                                <Border Classes="slot"
+                                        Classes.empty="{Binding IsEmpty}"
+                                        Width="64" Height="40" Padding="2" Margin="0,0,4,4">
+                                    <StackPanel Spacing="0">
+                                        <TextBlock Text="{Binding DisplayText}" Classes="slotName" FontSize="9"
+                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="10" />
+                                        <TextBlock Text="{Binding ItemsText}" Classes="muted" FontSize="8"
+                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="8" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="备战席" Classes="subtle" />
+                    <ItemsControl ItemsSource="{Binding OpponentBenchCells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SlotDisplay">
+                                <Border Classes="slot"
+                                        Classes.empty="{Binding IsEmpty}"
+                                        Width="64" Height="40" Padding="2" Margin="0,0,4,4">
+                                    <StackPanel Spacing="0">
+                                        <TextBlock Text="{Binding DisplayText}" Classes="slotName" FontSize="9"
+                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="10" />
+                                        <TextBlock Text="{Binding ItemsText}" Classes="muted" FontSize="8"
+                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="8" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <!-- ================= 棋盘卡: 4×7 六角网格 ================= -->
             <Border Classes="card">
                 <StackPanel Spacing="10">
@@ -78,13 +179,22 @@
                                         Classes.empty="{Binding IsEmpty}"
                                         Classes.corrected="{Binding HasCorrection}"
                                         Width="68" Height="54" Padding="3">
-                                    <TextBlock Text="{Binding DisplayText}"
-                                               Classes="slotName"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               TextAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               LineHeight="12" />
+                                    <StackPanel Spacing="0">
+                                        <TextBlock Text="{Binding DisplayText}"
+                                                   Classes="slotName"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   LineHeight="12" />
+                                        <TextBlock Text="{Binding ItemsText}"
+                                                   Classes="muted"
+                                                   FontSize="9"
+                                                   HorizontalAlignment="Center"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   LineHeight="9" />
+                                    </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -202,6 +312,16 @@
                                 <Button Content="确认英雄" Classes="accent" Command="{Binding CommitHeroCommand}" Margin="0,0,8,0" />
                                 <Button Content="确认星级" Classes="ghost" Command="{Binding CommitStarCommand}" Margin="0,0,8,0" />
                                 <Button Content="标记为空" Classes="danger" Command="{Binding CommitEmptyCommand}" />
+                            </WrapPanel>
+
+                            <Separator />
+
+                            <TextBlock Text="装备修正(棋盘格, 逗号分隔)" Classes="subtle" />
+                            <TextBox Text="{Binding SelectedItems}" Watermark="如 羊刀,狂徒铠甲" />
+                            <WrapPanel>
+                                <Button Content="确认装备" Classes="ghost" Command="{Binding CommitItemsCommand}" />
+                                <ComboBox ItemsSource="{Binding ItemCandidates}" SelectedItem="{Binding SelectedItems}"
+                                          MinWidth="160" Margin="8,0,0,0" />
                             </WrapPanel>
                         </StackPanel>
                     </Border>

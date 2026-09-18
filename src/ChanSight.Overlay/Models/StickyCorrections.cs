@@ -81,5 +81,8 @@ public static class CorrectionValue
 
     public static string Star(int star) => System.Text.Json.JsonSerializer.Serialize(new { star });
 
+    public static string Items(IReadOnlyList<string> items) =>
+        System.Text.Json.JsonSerializer.Serialize(new { items });
+
     public static string Empty() => System.Text.Json.JsonSerializer.Serialize(new { empty = true });
 }

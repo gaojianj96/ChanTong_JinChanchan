@@ -80,6 +80,32 @@ public partial class App : Application
 
         services.AddSingleton<LiveRecognitionService>();
         services.AddSingleton<LiveViewModel>();
+
+        // 手动整帧 VLM 识别闭包: 从 LatestFrameStore 取当前帧整图, 走 ManualFrameVlmService。
+        services.AddSingleton<LatestFrameStore>();
+        services.AddSingleton<ManualRecognizeFunc>(static sp =>
+        {
+            var manual = sp.GetRequiredService<ManualFrameVlmService>();
+            var frames = sp.GetRequiredService<LatestFrameStore>();
+            return (isSelf, ct) =>
+            {
+                var frame = frames.TakeLatest();
+                if (frame is null)
+                {
+                    return Task.FromException<RecognitionFrame>(
+                        new InvalidOperationException("尚无可用画面, 请先开始捕获。"));
+                }
+
+                try
+                {
+                    return manual.RecognizeAsync(frame, isSelf, ct);
+                }
+                finally
+                {
+                    frame.Dispose();
+                }
+            };
+        });
         services.AddSingleton<LiveView>();
 
         // 回顾链路: ReviewService 读回关键帧 + 识别重算闭包。
