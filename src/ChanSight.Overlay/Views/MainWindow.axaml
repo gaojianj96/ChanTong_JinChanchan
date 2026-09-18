@@ -15,12 +15,28 @@
                 BorderBrush="{StaticResource CardBorder}"
                 BorderThickness="0,0,0,1"
                 Padding="12,8">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <Border Background="{StaticResource CardHeaderGold}" CornerRadius="6" Padding="10,3" VerticalAlignment="Center">
-                    <TextBlock Text="ChanSight" FontWeight="Bold" FontSize="14" Foreground="#201703" />
-                </Border>
-                <Button Content="{Binding ToggleLabel}" Classes="accent" Command="{Binding ToggleModeCommand}" />
-                <TextBlock Text="{Binding Status}" Classes="subtle" VerticalAlignment="Center" />
+            <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Border Background="{StaticResource CardHeaderGold}" CornerRadius="6" Padding="10,3" VerticalAlignment="Center">
+                        <TextBlock Text="ChanSight" FontWeight="Bold" FontSize="14" Foreground="#201703" />
+                    </Border>
+                    <Button Content="{Binding ToggleLabel}" Classes="accent" Command="{Binding ToggleModeCommand}" />
+                    <TextBlock Text="{Binding Status}" Classes="subtle" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- 窗口选择区: 列出匹配窗口供选择; 找不到时显示引导文案 -->
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasWindows}">
+                    <TextBlock Text="捕获窗口:" Classes="subtle" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding WindowOptions}"
+                              SelectedIndex="{Binding SelectedWindowIndex}"
+                              MinWidth="360"
+                              HorizontalAlignment="Stretch" />
+                    <Button Content="↻ 重新扫描" Classes="ghost" Command="{Binding RefreshWindowsCommand}" />
+                </StackPanel>
+                <TextBlock Text="{Binding NoWindowHint}"
+                           Classes="muted"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding !HasWindows}" />
             </StackPanel>
         </Border>
         <ContentControl Name="Host" />
