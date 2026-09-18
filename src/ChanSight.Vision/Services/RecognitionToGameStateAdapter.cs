@@ -32,7 +32,7 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
             Exp: frame.Exp,
             Hp: frame.Hp,
             Streak: current.Streak,
-            PlayerName: null,
+            PlayerName: frame.PlayerName,
             BoardUnits: frame.BoardCells.Select((cell, index) => ToBoardUnit(index, cell)).ToArray(),
             BenchUnits: frame.BenchCells.Select((cell, index) => ToBoardUnit(index, cell)).ToArray(),
             ShopCards: frame.ShopCards.Select((card, index) => ToShopCard(index, card)).ToArray(),
@@ -40,6 +40,32 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
             Version: current.Version);
 
         _manager.Update(snapshot);
+    }
+
+    /// <summary>
+    /// Applies an opponent-perspective frame to the opponent snapshot at the given
+    /// index (0-6). PlayerName/GoldEstimate/BoardUnits/BenchUnits are written to
+    /// the corresponding <see cref="OpponentSnapshot"/>; the self snapshot is left
+    /// untouched.
+    /// </summary>
+    public void ApplyOpponent(RecognitionFrame frame, int opponentIndex)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+
+        var current = _manager.Current;
+        var existing = current.Opponents.ElementAtOrDefault(opponentIndex);
+
+        var snapshot = new OpponentSnapshot(
+            PlayerIndex: opponentIndex,
+            PlayerName: frame.PlayerName,
+            Hp: existing?.Hp,
+            Level: existing?.Level,
+            GoldEstimate: frame.GoldEstimate ?? existing?.GoldEstimate ?? 0,
+            BoardUnits: frame.BoardCells.Select((cell, index) => ToBoardUnit(index, cell)).ToArray(),
+            BenchUnits: frame.BenchCells.Select((cell, index) => ToBoardUnit(index, cell)).ToArray(),
+            Version: existing?.Version ?? 0);
+
+        _manager.UpdateOpponent(opponentIndex, snapshot);
     }
 
     private void ApplyPhase(GamePhase phase)
@@ -72,7 +98,9 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
             Name: occupied ? cell.Name : null,
             Star: occupied ? cell.Star : 0,
             CopyCount: occupied ? CopiesFor(cell.Star) : 0,
-            Items: Array.Empty<string>());
+            Items: occupied && cell.Items is not null
+                ? cell.Items.Select(i => i.IconId).ToArray()
+                : Array.Empty<string>());
     }
 
     private static ShopCardState ToShopCard(int slotIndex, ShopCard card)

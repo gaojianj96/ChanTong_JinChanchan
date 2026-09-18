@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DecisionPanelService>();
         services.AddSingleton<RecognitionToGameStateAdapter>();
         services.AddSingleton<RecognitionDecisionPipeline>();
+        services.AddSingleton<ManualFrameVlmService>();
 
         return services;
     }

@@ -65,6 +65,12 @@ public sealed record RecognitionFrame
     [JsonPropertyName("benchCells")] public IReadOnlyList<UnitCell> BenchCells { get; init; } = Array.Empty<UnitCell>();
     [JsonPropertyName("shopCards")] public IReadOnlyList<ShopCard> ShopCards { get; init; } = Array.Empty<ShopCard>();
 
+    [JsonPropertyName("playerName")] public string? PlayerName { get; init; }
+    [JsonPropertyName("goldEstimate")] public int? GoldEstimate { get; init; }
+    [JsonPropertyName("opponentIndex")] public int? OpponentIndex { get; init; }
+    [JsonPropertyName("perspective")] public string? Perspective { get; init; }
+    [JsonPropertyName("issues")] public IReadOnlyList<string> Issues { get; init; } = Array.Empty<string>();
+
     public static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
