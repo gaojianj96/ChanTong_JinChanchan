@@ -13,7 +13,7 @@ public sealed class OpponentScoutTrackerTests
         var manager = new GameStateManager();
         var tracker = new OpponentScoutTracker(manager);
 
-        var board = new[] { new BoardUnitState(0, "Yasuo", 2, 1) };
+        var board = new[] { new BoardUnitState(0, "Yasuo", 2, 1, Array.Empty<string>()) };
 
         tracker.ObserveBoard(0, board, hp: 80, level: 5, stage: "2-1", capturedAt: Now);
 
@@ -35,7 +35,7 @@ public sealed class OpponentScoutTrackerTests
         var manager = new GameStateManager();
         var tracker = new OpponentScoutTracker(manager);
 
-        var board = new[] { new BoardUnitState(0, "Yasuo", 2, 1) };
+        var board = new[] { new BoardUnitState(0, "Yasuo", 2, 1, Array.Empty<string>()) };
 
         tracker.ObserveBoard(0, board, hp: 80, level: 5, stage: "2-1", capturedAt: Now);
         tracker.ObserveBoard(0, board, hp: 80, level: 5, stage: "2-1", capturedAt: Now);
@@ -50,8 +50,8 @@ public sealed class OpponentScoutTrackerTests
         var manager = new GameStateManager();
         var tracker = new OpponentScoutTracker(manager);
 
-        var before = new[] { new BoardUnitState(0, "Yasuo", 2, 1) };
-        var after = new[] { new BoardUnitState(0, "Yasuo", 3, 1) };
+        var before = new[] { new BoardUnitState(0, "Yasuo", 2, 1, Array.Empty<string>()) };
+        var after = new[] { new BoardUnitState(0, "Yasuo", 3, 1, Array.Empty<string>()) };
 
         tracker.ObserveBoard(0, before, hp: 80, level: 5, stage: "2-1", capturedAt: Now);
         tracker.ObserveBoard(0, after, hp: 80, level: 5, stage: "2-1", capturedAt: Now);
@@ -67,7 +67,7 @@ public sealed class OpponentScoutTrackerTests
         var manager = new GameStateManager();
         var tracker = new OpponentScoutTracker(manager);
 
-        var board = new[] { new BoardUnitState(0, "Yasuo", 2, 1) };
+        var board = new[] { new BoardUnitState(0, "Yasuo", 2, 1, Array.Empty<string>()) };
 
         tracker.ObserveBoard(0, board, hp: 80, level: 5, stage: "2-1", capturedAt: Now);
         tracker.ObserveBoard(0, board, hp: 80, level: 5, stage: "3-2", capturedAt: Now);
@@ -82,7 +82,7 @@ public sealed class OpponentScoutTrackerTests
         var manager = new GameStateManager();
         var tracker = new OpponentScoutTracker(manager);
 
-        var ownBoard = new[] { new BoardUnitState(0, "Katarina", 2, 1) };
+        var ownBoard = new[] { new BoardUnitState(0, "Katarina", 2, 1, Array.Empty<string>()) };
 
         tracker.ObserveBoard(-1, ownBoard, hp: 100, level: 6, stage: "2-1", capturedAt: Now);
 
@@ -98,8 +98,8 @@ public sealed class OpponentScoutTrackerTests
         var manager = new GameStateManager();
         var tracker = new OpponentScoutTracker(manager);
 
-        var board1 = new[] { new BoardUnitState(0, "Yasuo", 2, 1) };
-        var board3 = new[] { new BoardUnitState(0, "Garen", 1, 1) };
+        var board1 = new[] { new BoardUnitState(0, "Yasuo", 2, 1, Array.Empty<string>()) };
+        var board3 = new[] { new BoardUnitState(0, "Garen", 1, 1, Array.Empty<string>()) };
 
         tracker.ObserveBoard(-1, Array.Empty<BoardUnitState>(), hp: null, level: null, stage: "2-1", capturedAt: Now);
         tracker.ObserveBoard(1, board1, hp: 80, level: 5, stage: "2-1", capturedAt: Now);

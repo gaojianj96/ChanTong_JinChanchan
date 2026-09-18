@@ -151,6 +151,7 @@ public sealed class DecisionPanelServiceTests
             Exp: 0,
             Hp: 80,
             Streak: 2,
+            PlayerName: null,
             BoardUnits: board ?? Array.Empty<BoardUnitState>(),
             BenchUnits: bench ?? Array.Empty<BoardUnitState>(),
             ShopCards: Array.Empty<ShopCardState>(),
@@ -158,7 +159,7 @@ public sealed class DecisionPanelServiceTests
             Version: 0);
 
     private static BoardUnitState Unit(int slot, string name, int star) =>
-        new(slot, name, star, StarCopies(star));
+        new(slot, name, star, StarCopies(star), Array.Empty<string>());
 
     private static int StarCopies(int star) => star switch
     {

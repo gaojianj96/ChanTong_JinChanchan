@@ -125,8 +125,9 @@ public sealed class LiveViewModelTests
             Exp: 0,
             Hp: hp,
             Streak: 0,
-            BoardUnits: Enumerable.Range(0, 28).Select(i => new BoardUnitState(i, i == 0 ? "盖伦" : null, i == 0 ? 1 : 0, i == 0 ? 1 : 0)).ToArray(),
-            BenchUnits: Enumerable.Range(0, 9).Select(i => new BoardUnitState(i, null, 0, 0)).ToArray(),
+            PlayerName: null,
+            BoardUnits: Enumerable.Range(0, 28).Select(i => new BoardUnitState(i, i == 0 ? "盖伦" : null, i == 0 ? 1 : 0, i == 0 ? 1 : 0, Array.Empty<string>())).ToArray(),
+            BenchUnits: Enumerable.Range(0, 9).Select(i => new BoardUnitState(i, null, 0, 0, Array.Empty<string>())).ToArray(),
             ShopCards: Enumerable.Range(0, 5).Select(i => new ShopCardState(i, null, 0)).ToArray(),
             Opponents: Array.Empty<OpponentSnapshot>(),
             Version: 1);

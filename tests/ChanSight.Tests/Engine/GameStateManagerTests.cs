@@ -23,6 +23,49 @@ public sealed class GameStateManagerTests
     }
 
     [Fact]
+    public void Current_InitialSnapshot_SchemaDefaultsArePopulated()
+    {
+        var manager = new GameStateManager();
+
+        var current = manager.Current;
+
+        current.PlayerName.Should().BeNull();
+        current.BoardUnits.Should().BeEmpty();
+        current.BenchUnits.Should().BeEmpty();
+
+        current.Opponents.Should().OnlyContain(o =>
+            o.PlayerName == null &&
+            o.GoldEstimate == 0 &&
+            o.BenchUnits.Count == 0);
+    }
+
+    [Fact]
+    public void BoardUnitState_DefaultItems_IsEmpty()
+    {
+        var unit = new BoardUnitState(0, "Garen", 2, 1, Array.Empty<string>());
+
+        unit.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void OpponentSnapshot_Defaults_GoldEstimateZeroBenchEmptyPlayerNameNull()
+    {
+        var snap = new OpponentSnapshot(
+            0,
+            PlayerName: null,
+            Hp: null,
+            Level: null,
+            GoldEstimate: 0,
+            BoardUnits: Array.Empty<BoardUnitState>(),
+            BenchUnits: Array.Empty<BoardUnitState>(),
+            Version: 0);
+
+        snap.PlayerName.Should().BeNull();
+        snap.GoldEstimate.Should().Be(0);
+        snap.BenchUnits.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Transition_LegalChain_PlanningCombatCarouselCombat_Succeeds()
     {
         var manager = new GameStateManager();
@@ -106,16 +149,19 @@ public sealed class GameStateManagerTests
         manager.Update(manager.Current with
         {
             Opponents = Enumerable.Range(0, GameStateManager.OpponentCount)
-                .Select(i => new OpponentSnapshot(i, Hp: 100 - i, Level: i + 1, Array.Empty<BoardUnitState>(), Version: i))
+                .Select(i => new OpponentSnapshot(i, PlayerName: null, Hp: 100 - i, Level: i + 1, GoldEstimate: 0, Array.Empty<BoardUnitState>(), BenchUnits: Array.Empty<BoardUnitState>(), Version: i))
                 .ToArray(),
         });
 
         var before = manager.Current;
         var replacement = new OpponentSnapshot(
             3,
+            PlayerName: null,
             Hp: 7,
             Level: 2,
-            new[] { new BoardUnitState(0, "Yasuo", 1, 1) },
+            GoldEstimate: 0,
+            new[] { new BoardUnitState(0, "Yasuo", 1, 1, Array.Empty<string>()) },
+            BenchUnits: Array.Empty<BoardUnitState>(),
             Version: 99);
 
         manager.UpdateOpponent(3, replacement);
@@ -145,7 +191,7 @@ public sealed class GameStateManagerTests
     public void UpdateOpponent_OutOfRangeIndex_Throws()
     {
         var manager = new GameStateManager();
-        var snap = new OpponentSnapshot(7, null, null, Array.Empty<BoardUnitState>(), Version: 0);
+        var snap = new OpponentSnapshot(7, PlayerName: null, Hp: null, Level: null, GoldEstimate: 0, Array.Empty<BoardUnitState>(), BenchUnits: Array.Empty<BoardUnitState>(), Version: 0);
 
         var act = () => manager.UpdateOpponent(7, snap);
 

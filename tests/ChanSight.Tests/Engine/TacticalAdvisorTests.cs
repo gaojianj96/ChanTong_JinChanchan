@@ -76,8 +76,9 @@ public sealed class TacticalAdvisorTests
             board: new[] { Unit(0, "盖伦", 1) },
             opponents: new[]
             {
-                new OpponentSnapshot(0, Hp: 100, Level: 6,
-                    Enumerable.Range(0, 4).Select(i => new BoardUnitState(i, "盖伦", 1, 1)).ToArray(),
+                new OpponentSnapshot(0, PlayerName: null, Hp: 100, Level: 6, GoldEstimate: 0,
+                    Enumerable.Range(0, 4).Select(i => new BoardUnitState(i, "盖伦", 1, 1, Array.Empty<string>())).ToArray(),
+                    BenchUnits: Array.Empty<BoardUnitState>(),
                     Version: 0),
             }));
 
@@ -209,7 +210,7 @@ public sealed class TacticalAdvisorTests
         var advisor = CreateAdvisor();
         var state = Snapshot(
             gold: 30,
-            board: new[] { new BoardUnitState(0, null, 0, 0) });
+            board: new[] { new BoardUnitState(0, null, 0, 0, Array.Empty<string>()) });
 
         var act = () => advisor.Evaluate(state);
 
@@ -288,6 +289,7 @@ public sealed class TacticalAdvisorTests
             Exp: 0,
             Hp: 100,
             Streak: 0,
+            PlayerName: null,
             BoardUnits: board ?? Array.Empty<BoardUnitState>(),
             BenchUnits: bench ?? Array.Empty<BoardUnitState>(),
             ShopCards: shop ?? Array.Empty<ShopCardState>(),
@@ -295,7 +297,7 @@ public sealed class TacticalAdvisorTests
             Version: 0);
 
     private static BoardUnitState Unit(int slot, string name, int star) =>
-        new(slot, name, star, StarCopies(star));
+        new(slot, name, star, StarCopies(star), Array.Empty<string>());
 
     private static int StarCopies(int star) => star switch
     {

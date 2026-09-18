@@ -56,9 +56,12 @@ public sealed class OpponentScoutTracker
 
         var snap = new OpponentSnapshot(
             playerIndex,
+            PlayerName: null,
             Hp: hp,
             Level: level,
+            GoldEstimate: 0,
             BoardUnits: board,
+            BenchUnits: Array.Empty<BoardUnitState>(),
             Version: _manager.Current.Version + 1);
 
         _manager.UpdateOpponent(playerIndex, snap);

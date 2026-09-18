@@ -65,8 +65,8 @@ public sealed class FrameArchiveTests : IDisposable
     [Fact]
     public void ShouldPersist_WhenBoardUnitsChange_ReturnsTrue()
     {
-        var prev = CreateSnapshot(boardUnits: new[] { new BoardUnitState(0, "Garen", 2, 1) });
-        var next = CreateSnapshot(boardUnits: new[] { new BoardUnitState(0, "Garen", 2, 2) });
+        var prev = CreateSnapshot(boardUnits: new[] { new BoardUnitState(0, "Garen", 2, 1, Array.Empty<string>()) });
+        var next = CreateSnapshot(boardUnits: new[] { new BoardUnitState(0, "Garen", 2, 2, Array.Empty<string>()) });
 
         _archive.ShouldPersist(prev, next).Should().BeTrue();
     }
@@ -194,6 +194,7 @@ public sealed class FrameArchiveTests : IDisposable
             Exp: 42,
             Hp: 100,
             Streak: 3,
+            PlayerName: null,
             BoardUnits: boardUnits ?? Array.Empty<BoardUnitState>(),
             BenchUnits: benchUnits ?? Array.Empty<BoardUnitState>(),
             ShopCards: shopCards ?? Array.Empty<ShopCardState>(),

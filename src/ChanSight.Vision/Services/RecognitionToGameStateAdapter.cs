@@ -32,6 +32,7 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
             Exp: frame.Exp,
             Hp: frame.Hp,
             Streak: current.Streak,
+            PlayerName: null,
             BoardUnits: frame.BoardCells.Select((cell, index) => ToBoardUnit(index, cell)).ToArray(),
             BenchUnits: frame.BenchCells.Select((cell, index) => ToBoardUnit(index, cell)).ToArray(),
             ShopCards: frame.ShopCards.Select((card, index) => ToShopCard(index, card)).ToArray(),
@@ -70,7 +71,8 @@ public sealed class RecognitionToGameStateAdapter : IGameStateInputAdapter
             SlotIndex: slotIndex,
             Name: occupied ? cell.Name : null,
             Star: occupied ? cell.Star : 0,
-            CopyCount: occupied ? CopiesFor(cell.Star) : 0);
+            CopyCount: occupied ? CopiesFor(cell.Star) : 0,
+            Items: Array.Empty<string>());
     }
 
     private static ShopCardState ToShopCard(int slotIndex, ShopCard card)

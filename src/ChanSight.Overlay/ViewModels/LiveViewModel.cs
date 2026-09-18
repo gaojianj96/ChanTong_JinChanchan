@@ -556,6 +556,7 @@ public partial class LiveViewModel : ObservableObject
         Exp: 0,
         Hp: 100,
         Streak: 0,
+        PlayerName: null,
         BoardUnits: Array.Empty<BoardUnitState>(),
         BenchUnits: Array.Empty<BoardUnitState>(),
         ShopCards: Array.Empty<ShopCardState>(),

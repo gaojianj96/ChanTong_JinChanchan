@@ -73,11 +73,12 @@ public sealed class GameStateManager
         Exp: 0,
         Hp: 100,
         Streak: 0,
+        PlayerName: null,
         BoardUnits: Array.Empty<BoardUnitState>(),
         BenchUnits: Array.Empty<BoardUnitState>(),
         ShopCards: Array.Empty<ShopCardState>(),
         Opponents: Enumerable.Range(0, OpponentCount)
-            .Select(i => new OpponentSnapshot(i, Hp: null, Level: null, Array.Empty<BoardUnitState>(), Version: 0))
+            .Select(i => new OpponentSnapshot(i, PlayerName: null, Hp: null, Level: null, GoldEstimate: 0, Array.Empty<BoardUnitState>(), BenchUnits: Array.Empty<BoardUnitState>(), Version: 0))
             .ToArray(),
         Version: 0);
 }
