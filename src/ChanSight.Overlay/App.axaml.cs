@@ -78,6 +78,13 @@ public partial class App : Application
             return decision.EvaluateAlgorithm;
         });
 
+        // LLM 建议闭包: 手动 LLM 建议按钮 → DecisionPanelService.EvaluateWithAdvisorAsync。
+        services.AddSingleton<Func<GameStateSnapshot, AdvisorEvent, CancellationToken, Task<DecisionPanelResult>>>(static sp =>
+        {
+            var decision = sp.GetRequiredService<DecisionPanelService>();
+            return decision.EvaluateWithAdvisorAsync;
+        });
+
         services.AddSingleton<LiveRecognitionService>();
         services.AddSingleton<LiveViewModel>();
 

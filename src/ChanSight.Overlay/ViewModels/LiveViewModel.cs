@@ -70,8 +70,11 @@ public partial class SlotDisplay : ObservableObject
     public bool IsEmpty => string.IsNullOrEmpty(Name);
 }
 
-/// <summary>推荐列表展示项。</summary>
-public sealed record RecommendationDisplay(string Verdict, string Reason, int Priority);
+/// <summary>推荐列表展示项。SourceTag 标注来源("算法"/"LLM"), 时间戳便于回溯。</summary>
+public sealed record RecommendationDisplay(string SourceTag, string Verdict, string Reason, int Priority, DateTimeOffset GeneratedAt);
+
+/// <summary>LLM 单条建议展示项(来源恒为 "LLM")。</summary>
+public sealed record AdvisorDisplay(string SourceTag, string Suggestion, string Reason, double Confidence, DateTimeOffset GeneratedAt);
 
 /// <summary>数据健康度: 自动识别产物为“未校准”, 手动 VLM 识别为“已校准”。</summary>
 public enum DataHealth
@@ -90,8 +93,15 @@ public delegate Task<RecognitionFrame> ManualRecognizeFunc(bool isSelf, Cancella
 /// </summary>
 public partial class LiveViewModel : ObservableObject
 {
+    /// <summary>算法推荐自动重跑去抖时长(毫秒)。</summary>
+    private const int AlgorithmRefreshDebounceMs = 300;
+
+    private const string SourceTagAlgorithm = "算法";
+    private const string SourceTagLlm = "LLM";
+
     private readonly AnnotationStore _annotationStore;
     private readonly Func<GameStateSnapshot, DecisionPanelResult> _evaluate;
+    private readonly Func<GameStateSnapshot, AdvisorEvent, CancellationToken, Task<DecisionPanelResult>>? _evaluateWithAdvisor;
     private readonly StickyCorrections _sticky = new();
     private readonly IReadOnlyList<string> _heroCandidates;
     private readonly IReadOnlyList<string> _itemCandidates;
@@ -102,6 +112,7 @@ public partial class LiveViewModel : ObservableObject
     private RecognitionFrame? _latestFrame;
     private string? _latestFrameId;
     private RecognitionFrame? _pendingOpponentFrame;
+    private CancellationTokenSource? _algorithmRefreshCts;
 
     [ObservableProperty]
     private int _gold;
@@ -144,6 +155,9 @@ public partial class LiveViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HealthLabel))]
     [NotifyPropertyChangedFor(nameof(IsUncalibrated))]
+    [NotifyPropertyChangedFor(nameof(IsStale))]
+    [NotifyPropertyChangedFor(nameof(StaleWarning))]
+    [NotifyPropertyChangedFor(nameof(RecommendationOpacity))]
     private DataHealth _dataHealth = DataHealth.Uncalibrated;
 
     /// <summary>对手识别后的展示信息(玩家名 + 经济档)。</summary>
@@ -161,7 +175,32 @@ public partial class LiveViewModel : ObservableObject
 
     public ObservableCollection<SlotDisplay> ShopCards { get; } = new();
 
-    public ObservableCollection<RecommendationDisplay> Recommendations { get; } = new();
+    /// <summary>算法推荐展示清单(来源标签为「算法」)。</summary>
+    public ObservableCollection<RecommendationDisplay> AlgorithmRecommendations { get; } = new();
+
+    /// <summary>算法推荐清单(兼容旧名, 与 <see cref="AlgorithmRecommendations"/> 同源)。</summary>
+    public ObservableCollection<RecommendationDisplay> Recommendations => AlgorithmRecommendations;
+
+    /// <summary>LLM 最近一条建议(仅手动触发, 缓存最近 1 条)。</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLlmAdvice))]
+    [NotifyPropertyChangedFor(nameof(HasNoLlmAdvice))]
+    private AdvisorDisplay? _llmAdvice;
+
+    /// <summary>推荐区是否因数据"未校准"而置灰弱化。</summary>
+    public bool IsStale => DataHealth == DataHealth.Uncalibrated;
+
+    /// <summary>推荐区展示透明度(未校准时视觉弱化, 但保留内容)。</summary>
+    public double RecommendationOpacity => IsStale ? 0.45 : 1.0;
+
+    /// <summary>健康度未校准时推荐区顶部警告文案。</summary>
+    public string StaleWarning => IsStale ? "⚠ 数据未校准, 推荐可能不准" : string.Empty;
+
+    /// <summary>是否已有 LLM 建议可展示。</summary>
+    public bool HasLlmAdvice => LlmAdvice is not null;
+
+    /// <summary>是否尚未有 LLM 建议(控制占位提示)。</summary>
+    public bool HasNoLlmAdvice => LlmAdvice is null;
 
     /// <summary>对手确认后的棋盘展示格。</summary>
     public ObservableCollection<SlotDisplay> OpponentBoardCells { get; } = new();
@@ -207,12 +246,14 @@ public partial class LiveViewModel : ObservableObject
         Func<GameStateSnapshot, DecisionPanelResult> evaluate,
         LiveRecognitionService? service = null,
         ManualRecognizeFunc? manualRecognize = null,
-        RecognitionToGameStateAdapter? adapter = null)
+        RecognitionToGameStateAdapter? adapter = null,
+        Func<GameStateSnapshot, AdvisorEvent, CancellationToken, Task<DecisionPanelResult>>? evaluateWithAdvisor = null)
     {
         _annotationStore = annotationStore ?? throw new ArgumentNullException(nameof(annotationStore));
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
         _manualRecognize = manualRecognize;
         _adapter = adapter;
+        _evaluateWithAdvisor = evaluateWithAdvisor;
         _heroCandidates = GameSeasonDictionary.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
         _itemCandidates = GameSeasonDictionary.Items.OrderBy(static name => name, StringComparer.Ordinal).ToList();
 
@@ -248,6 +289,30 @@ public partial class LiveViewModel : ObservableObject
         RebuildCells(update.State);
         ValidateSticky();
         Status = $"帧 {update.FrameId ?? "(未持久化)"} · {update.State.Phase} · 阶段 {update.State.Stage}";
+
+        // 数据更新后算法推荐自动重跑(去抖); LLM 推荐不自动重跑。
+        ScheduleAlgorithmRefresh();
+    }
+
+    /// <summary>数据更新后按去抖时长调度算法推荐自动重跑。</summary>
+    private void ScheduleAlgorithmRefresh()
+    {
+        _algorithmRefreshCts?.Cancel();
+        _algorithmRefreshCts?.Dispose();
+        _algorithmRefreshCts = new CancellationTokenSource();
+        var token = _algorithmRefreshCts.Token;
+
+        _ = Task.Delay(AlgorithmRefreshDebounceMs, token).ContinueWith(
+            _ =>
+            {
+                if (!token.IsCancellationRequested)
+                {
+                    RefreshAlgorithmRecommendations();
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.None,
+            TaskScheduler.Default);
     }
 
     /// <summary>进入钉帧态: 冻结展示, 记录当前用户看到的 frameId。</summary>
@@ -379,19 +444,88 @@ public partial class LiveViewModel : ObservableObject
         RebuildStickyMarkers();
     }
 
-    /// <summary>手动重算: 用粘滞修正后的状态刷新推荐列表。仅按钮触发, 不自动调用。</summary>
-    public void RecalculateRecommendations()
+    /// <summary>手动重算: 用粘滞修正后的状态刷新算法推荐列表。仅按钮触发, 不自动调用。</summary>
+    public void RecalculateRecommendations() => RefreshAlgorithmRecommendations();
+
+    /// <summary>用当前(粘滞修正后)状态刷新算法推荐列表, 来源标签标「算法」。自动/手动共用。</summary>
+    public void RefreshAlgorithmRecommendations()
     {
         var state = BuildCorrectedSnapshot();
         var result = _evaluate(state);
+        var generatedAt = DateTimeOffset.Now;
 
-        Recommendations.Clear();
+        AlgorithmRecommendations.Clear();
         foreach (var advice in result.AlgorithmAdvice.OrderByDescending(static r => r.Priority))
         {
-            Recommendations.Add(new RecommendationDisplay(advice.Verdict.ToString(), advice.Reason, advice.Priority));
+            AlgorithmRecommendations.Add(new RecommendationDisplay(
+                SourceTagAlgorithm,
+                advice.Verdict.ToString(),
+                advice.Reason,
+                advice.Priority,
+                generatedAt));
         }
 
-        Status = $"已重算 · 推荐 {Recommendations.Count} 条";
+        Status = $"已重算 · 算法推荐 {AlgorithmRecommendations.Count} 条";
+    }
+
+    /// <summary>手动触发 LLM 全局建议(ManualRequest), 缓存最近 1 条, 来源标签标「LLM」。</summary>
+    public async Task RequestLlmAdviceAsync()
+    {
+        if (_evaluateWithAdvisor is null)
+        {
+            Status = "LLM 建议不可用(未注入建议闭包)。";
+            return;
+        }
+
+        var state = BuildCorrectedSnapshot();
+        var context = BuildSnapshotSummary(state);
+        Status = "正在请求 LLM 建议…";
+
+        try
+        {
+            var result = await _evaluateWithAdvisor(
+                state,
+                new AdvisorEvent(AdvisorEventType.ManualRequest, context),
+                CancellationToken.None).ConfigureAwait(true);
+
+            if (result.AdvisorAdvice is null)
+            {
+                Status = "LLM 未返回建议。";
+                return;
+            }
+
+            LlmAdvice = new AdvisorDisplay(
+                SourceTagLlm,
+                result.AdvisorAdvice.Suggestion,
+                result.AdvisorAdvice.Reason,
+                result.AdvisorAdvice.Confidence,
+                DateTimeOffset.Now);
+            Status = "已更新 LLM 建议(缓存最近 1 条)。";
+        }
+        catch (Exception ex)
+        {
+            Status = $"请求 LLM 建议失败: {ex.Message}";
+        }
+    }
+
+    /// <summary>构造手动 LLM 建议的事件上下文快照摘要(阶段/金币/等级/己方阵容/对手摘要)。</summary>
+    private static string BuildSnapshotSummary(GameStateSnapshot state)
+    {
+        var selfUnits = string.Join("、", state.BoardUnits
+            .Where(u => !string.IsNullOrEmpty(u.Name))
+            .Select(u => u.Name + (u.Star > 0 ? $"★{u.Star}" : string.Empty)));
+        if (string.IsNullOrEmpty(selfUnits))
+        {
+            selfUnits = "(空棋盘)";
+        }
+
+        var opponents = state.Opponents.Count == 0
+            ? "无已确认对手"
+            : string.Join("; ", state.Opponents.Select(o =>
+                $"{o.PlayerName ?? $"对手{o.PlayerIndex}"} 金币~{o.GoldEstimate} 等级{o.Level?.ToString() ?? "?"}"));
+
+        return $"阶段 {state.Stage} · 金币 {state.Gold} · 等级 {state.Level} · HP {state.Hp} · " +
+               $"己方阵容: {selfUnits} · 对手: {opponents}";
     }
 
     /// <summary>当前最新帧 Id(用于钉帧选择被钉帧; 钉帧态下仍返回被钉帧)。</summary>
@@ -446,6 +580,12 @@ public partial class LiveViewModel : ObservableObject
 
     [RelayCommand]
     private void Recalculate() => RecalculateRecommendations();
+
+    [RelayCommand]
+    private void RefreshAlgorithm() => RefreshAlgorithmRecommendations();
+
+    [RelayCommand]
+    private Task RequestLlmAdvice() => RequestLlmAdviceAsync();
 
     private void OnFrameUpdated(LiveFrameUpdate update) => ApplyUpdate(update);
 

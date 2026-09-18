@@ -328,34 +328,72 @@
                 </StackPanel>
             </Border>
 
-            <!-- ================= 推荐卡 ================= -->
+            <!-- ================= 双轨推荐卡 ================= -->
             <Border Classes="card">
                 <StackPanel Spacing="10">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
                         <StackPanel Spacing="1">
-                            <TextBlock Text="阵容推荐" Classes="cardTitle" />
-                            <TextBlock Text="平铺列表 · 信息密度不减" Classes="muted" />
+                            <TextBlock Text="双轨推荐" Classes="cardTitle" />
+                            <TextBlock Text="算法(数据更新自动) + LLM(手动触发) · 来源明确标注" Classes="muted" />
                         </StackPanel>
                     </StackPanel>
 
-                    <Button Content="↻ 手动重算" Classes="accent" Command="{Binding RecalculateCommand}" HorizontalAlignment="Left" />
+                    <!-- 健康度未校准警告条 -->
+                    <Border Classes="cardRaised" IsVisible="{Binding IsStale}"
+                            Background="#3A2A0A" Padding="10,6">
+                        <TextBlock Text="{Binding StaleWarning}" FontWeight="Bold" Foreground="#FFD34D" TextWrapping="Wrap" />
+                    </Border>
 
-                    <ListBox ItemsSource="{Binding Recommendations}" MinHeight="140" Background="Transparent" BorderThickness="0">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="vm:RecommendationDisplay">
-                                <Border Classes="cardRaised" Padding="10,6" Margin="0,0,0,6">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <Border Background="{StaticResource AccentGreen}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Verdict}" FontSize="11" FontWeight="Bold" Foreground="#0B1F18" />
-                                        </Border>
-                                        <TextBlock Text="{Binding Reason}" Classes="subtle" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Priority, StringFormat='P{0}'}" Classes="muted" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <WrapPanel>
+                        <Button Content="↻ 刷新算法" Classes="accent" Command="{Binding RefreshAlgorithmCommand}" Margin="0,0,8,0" />
+                        <Button Content="🤖 请求 LLM 建议" Classes="ghost" Command="{Binding RequestLlmAdviceCommand}" />
+                    </WrapPanel>
+
+                    <!-- 算法推荐列表 -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="算法推荐" Classes="subtle" FontWeight="Bold" />
+                        <ListBox ItemsSource="{Binding AlgorithmRecommendations}" MinHeight="100" Background="Transparent" BorderThickness="0"
+                                 Opacity="{Binding RecommendationOpacity}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:RecommendationDisplay">
+                                    <Border Classes="cardRaised" Padding="10,6" Margin="0,0,0,6">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Border Background="{StaticResource AccentBlue}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding SourceTag}" FontSize="10" FontWeight="Bold" Foreground="#0B1F18" />
+                                            </Border>
+                                            <Border Background="{StaticResource AccentGreen}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Verdict}" FontSize="11" FontWeight="Bold" Foreground="#0B1F18" />
+                                            </Border>
+                                            <TextBlock Text="{Binding Reason}" Classes="subtle" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Priority, StringFormat='P{0}'}" Classes="muted" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding GeneratedAt, StringFormat='{}{0:HH:mm:ss}'}" Classes="muted" VerticalAlignment="Center" FontSize="10" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+
+                    <!-- LLM 推荐单条 -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="LLM 推荐(手动, 缓存最近 1 条)" Classes="subtle" FontWeight="Bold" />
+                        <Border Classes="cardRaised" Padding="10,6"
+                                IsVisible="{Binding HasLlmAdvice}">
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Border Background="{StaticResource AccentPurple}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding LlmAdvice.SourceTag}" FontSize="10" FontWeight="Bold" Foreground="#0B1F18" />
+                                    </Border>
+                                    <TextBlock Text="{Binding LlmAdvice.Confidence, StringFormat='置信度 {0:P0}'}" Classes="muted" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding LlmAdvice.GeneratedAt, StringFormat='{}{0:HH:mm:ss}'}" Classes="muted" VerticalAlignment="Center" FontSize="10" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding LlmAdvice.Suggestion}" FontWeight="Bold" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding LlmAdvice.Reason}" Classes="subtle" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="尚未请求 LLM 建议。" Classes="muted" IsVisible="{Binding HasNoLlmAdvice}" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

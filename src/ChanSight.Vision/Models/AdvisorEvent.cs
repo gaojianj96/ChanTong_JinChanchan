@@ -8,7 +8,8 @@ public enum AdvisorEventType
     HexAugment,
     ThreeStar,
     PlayerEliminated,
-    MajorTransition
+    MajorTransition,
+    ManualRequest
 }
 
 /// <summary>
