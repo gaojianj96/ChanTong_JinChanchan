@@ -125,6 +125,11 @@ public partial class App : Application
         services.AddSingleton<ReviewViewModel>();
         services.AddSingleton<ReviewView>();
 
+        // 回放重模拟链路: ReplaySimService 读回关键帧 + 直读识别缓存 + 手动触发 VLM 重识别。
+        services.AddSingleton<ReplaySimService>();
+        services.AddSingleton<ReplayViewModel>();
+        services.AddSingleton<ReplayView>();
+
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 

@@ -1,0 +1,125 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChanSight.Overlay.ViewModels"
+             xmlns:core="using:ChanSight.Core.FrameStorage"
+             x:Class="ChanSight.Overlay.Views.ReplayView"
+             x:DataType="vm:ReplayViewModel">
+    <ScrollViewer Background="{StaticResource PageBackground}"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" Spacing="12">
+
+            <!-- ================= 回放状态卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
+                        <TextBlock Text="回放重模拟" Classes="cardTitle" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Status}" Classes="subtle" TextWrapping="Wrap" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="对局 ID" Classes="subtle" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding MatchId}" Width="140" Watermark="match id" />
+                        <Button Content="加载关键帧" Classes="accent" Command="{Binding LoadFramesCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 关键帧时间轴卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentPurple}" />
+                        <TextBlock Text="关键帧时间轴" Classes="cardTitle" />
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding KeyFrames}" SelectedItem="{Binding SelectedFrame}" MinHeight="60" MaxHeight="150">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="core:FrameKey">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding FrameId}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding SnapshotVersion, StringFormat='v{0}'}" Classes="muted" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 原图 + 棋盘格叠加卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
+                        <TextBlock Text="帧图 + 棋盘格叠加" Classes="cardTitle" />
+                    </StackPanel>
+                    <Border Classes="cardRaised" HorizontalAlignment="Left">
+                        <Panel Width="{Binding RenderWidth}" Height="{Binding RenderHeight}">
+                            <Image Source="{Binding FrameBitmap}" Stretch="Fill" />
+                            <ItemsControl ItemsSource="{Binding Boxes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReviewBoxDisplay">
+                                        <Border Canvas.Left="{Binding X}"
+                                                Canvas.Top="{Binding Y}"
+                                                Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                BorderBrush="{StaticResource AccentRed}"
+                                                BorderThickness="1.5"
+                                                CornerRadius="3"
+                                                Background="#22F26D6D">
+                                            <TextBlock Text="{Binding Label}" FontSize="8" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Top" HorizontalAlignment="Left" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Panel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 识别结果详情卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentBlue}" />
+                        <TextBlock Text="识别结果" Classes="cardTitle" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="视角:" Classes="subtle" VerticalAlignment="Center" />
+                        <ComboBox ItemsSource="{Binding PerspectiveOptions}" SelectedIndex="{Binding PerspectiveIndex}" Width="120" />
+                        <Button Content="重新识别此帧" Classes="accent" Command="{Binding ReRecognizeSelectedCommand}"
+                                IsEnabled="{Binding !IsBusy}" />
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding RecognitionSummary}" Classes="subtle" TextWrapping="Wrap"
+                               IsVisible="{Binding HasRecognition}" />
+                    <TextBlock Text="未识别 — 该帧尚无识别缓存, 点击「重新识别此帧」触发 VLM。"
+                               Classes="muted" TextWrapping="Wrap"
+                               IsVisible="{Binding !HasRecognition}" />
+
+                    <ListBox ItemsSource="{Binding Cells}" MaxHeight="260">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ReviewCellDisplay">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Border Background="{StaticResource AccentBlueDim}" CornerRadius="4" Padding="5,1">
+                                        <TextBlock Text="{Binding KindLabel}" Classes="muted" />
+                                    </Border>
+                                    <TextBlock Text="{Binding DisplayText}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding SourceTier}" Foreground="{StaticResource AccentBlue}" />
+                                    <TextBlock Text="{Binding Star, StringFormat='★{0}'}" FontSize="11" Foreground="{StaticResource AccentGold}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
