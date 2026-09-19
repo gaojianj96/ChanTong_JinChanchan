@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ChanSight.Overlay.ViewModels"
              xmlns:core="using:ChanSight.Core.FrameStorage"
+             xmlns:prim="using:Avalonia.Controls.Primitives"
              x:Class="ChanSight.Overlay.Views.ReviewView"
              x:DataType="vm:ReviewViewModel">
     <ScrollViewer Background="{StaticResource PageBackground}"
@@ -20,7 +21,12 @@
 
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Text="对局 ID" Classes="subtle" VerticalAlignment="Center" />
-                        <TextBox Text="{Binding MatchId}" Width="140" Watermark="match id" />
+                        <ComboBox ItemsSource="{Binding MatchIdOptions}"
+                                  SelectedItem="{Binding MatchId}"
+                                  Text="{Binding MatchId}"
+                                  IsEditable="True"
+                                  Width="160" />
+                        <Button Content="刷新" Classes="ghost" Command="{Binding RefreshMatchesCommand}" />
                         <Button Content="加载关键帧" Classes="accent" Command="{Binding LoadFramesCommand}" />
                     </StackPanel>
                 </StackPanel>
@@ -46,50 +52,93 @@
                 </StackPanel>
             </Border>
 
-            <!-- ================= 原图 + 格框叠加卡 ================= -->
+            <!-- ================= 原图 + 格框叠加卡(可缩放/平移) ================= -->
             <Border Classes="card">
                 <StackPanel Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
                         <TextBlock Text="原图 + 格框叠加" Classes="cardTitle" />
+                        <Button Content="−" Classes="ghost" Command="{Binding ZoomOutCommand}" />
+                        <Button Content="+" Classes="ghost" Command="{Binding ZoomInCommand}" />
+                        <Button Content="重置" Classes="ghost" Command="{Binding ResetZoomCommand}" />
+                        <TextBlock Text="{Binding Zoom, StringFormat='{}{0:P0}'}" Classes="muted" VerticalAlignment="Center" />
+                        <TextBlock Text="滚轮缩放 · 拖拽平移" Classes="muted" VerticalAlignment="Center" />
                     </StackPanel>
-                    <Border Classes="cardRaised" HorizontalAlignment="Left">
-                        <Panel Width="{Binding RenderWidth}" Height="{Binding RenderHeight}">
-                            <Image Source="{Binding FrameBitmap}" Stretch="Fill" />
-                            <ItemsControl ItemsSource="{Binding Boxes}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:ReviewBoxDisplay">
-                                        <Border Canvas.Left="{Binding X}"
-                                                Canvas.Top="{Binding Y}"
-                                                Width="{Binding Width}"
-                                                Height="{Binding Height}"
-                                                BorderBrush="{StaticResource AccentRed}"
-                                                BorderThickness="1.5"
-                                                CornerRadius="3"
-                                                Background="#22F26D6D">
-                                            <TextBlock Text="{Binding Label}" FontSize="8" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Top" HorizontalAlignment="Left" />
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Panel>
-                    </Border>
+
+                    <ScrollViewer Name="ImageScroll"
+                                  Classes="cardRaised"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  MaxHeight="520"
+                                  PointerPressed="OnImagePointerPressed"
+                                  PointerMoved="OnImagePointerMoved"
+                                  PointerReleased="OnImagePointerReleased"
+                                  PointerCaptureLost="OnImagePointerCaptureLost">
+                        <Border Width="{Binding DisplayWidth}" Height="{Binding DisplayHeight}">
+                            <Panel Width="{Binding RenderWidth}" Height="{Binding RenderHeight}"
+                                   HorizontalAlignment="Left" VerticalAlignment="Top"
+                                   RenderTransformOrigin="0,0"
+                                   PointerWheelChanged="OnImagePointerWheelChanged">
+                                <Panel.RenderTransform>
+                                    <ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}" />
+                                </Panel.RenderTransform>
+                                <Image Source="{Binding FrameBitmap}" Stretch="Fill" />
+                                <ItemsControl ItemsSource="{Binding Boxes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ReviewBoxDisplay">
+                                            <Border Canvas.Left="{Binding X}"
+                                                    Canvas.Top="{Binding Y}"
+                                                    Width="{Binding Width}"
+                                                    Height="{Binding Height}"
+                                                    BorderBrush="{StaticResource AccentRed}"
+                                                    BorderThickness="1.5"
+                                                    CornerRadius="3"
+                                                    Background="#22F26D6D">
+                                                <TextBlock Text="{Binding Label}" FontSize="8" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Top" HorizontalAlignment="Left" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Panel>
+                        </Border>
+                    </ScrollViewer>
                 </StackPanel>
             </Border>
 
-            <!-- ================= 格数据列表卡 ================= -->
+            <!-- ================= 棋盘 4×7 + 悬停 tooltip 卡 ================= -->
             <Border Classes="card">
                 <StackPanel Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
-                        <TextBlock Text="格数据 · 逐格校验" Classes="cardTitle" />
+                        <TextBlock Text="棋盘 · 4×7" Classes="cardTitle" />
+                        <TextBlock Text="悬停查看详情 · 点击选中修正" Classes="muted" />
                     </StackPanel>
-                    <ListBox ItemsSource="{Binding Cells}" SelectedItem="{Binding SelectedCell}" MaxHeight="260">
+
+                    <ListBox ItemsSource="{Binding BoardCells}" SelectedItem="{Binding SelectedCell}">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <prim:UniformGrid Columns="7" Rows="4" ColumnSpacing="4" RowSpacing="4" />
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ReviewCellDisplay">
+                                <Border Classes="cardRaised" Padding="4" CornerRadius="4"
+                                        BorderBrush="{StaticResource AccentBlue}" BorderThickness="1"
+                                        ToolTip.Tip="{Binding ToolTipText}">
+                                    <TextBlock Text="{Binding ShortLabel}" FontSize="11"
+                                               TextAlignment="Center" TextWrapping="Wrap" />
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Text="备战席 / 商店" Classes="subtle" />
+                    <ListBox ItemsSource="{Binding SideCells}" SelectedItem="{Binding SelectedCell}" MaxHeight="180">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:ReviewCellDisplay">
                                 <StackPanel Orientation="Horizontal" Spacing="6">

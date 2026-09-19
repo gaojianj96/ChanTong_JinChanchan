@@ -23,6 +23,9 @@ public sealed class ReviewService
     private const int BenchCellCount = 9;
     private const int ShopCellCount = 5;
 
+    /// <summary><see cref="FrameArchive"/> 内部关键帧目录名(根目录下 frames 子目录)。</summary>
+    private const string FramesDirectoryName = "frames";
+
     public delegate Task<RecognitionFrame> FrameRecognitionFunc(Mat frame, CancellationToken ct);
 
     private static readonly IReadOnlyList<string> HeroRegions = new[]
@@ -45,6 +48,24 @@ public sealed class ReviewService
 
     /// <summary>该局已持久化的关键帧列表(按 SnapshotVersion 升序)。</summary>
     public IReadOnlyList<FrameKey> ListKeyFrames(string matchId) => _archive.ListKeyFrames(matchId);
+
+    /// <summary>
+    /// 归档中已存在的对局 ID 列表: 枚举 FrameArchive 根目录 frames 子目录下的 matchId 目录名。
+    /// </summary>
+    public IReadOnlyList<string> ListMatchIds()
+    {
+        var framesDirectory = Path.Combine(_archive.RootDirectory, FramesDirectoryName);
+        if (!Directory.Exists(framesDirectory))
+        {
+            return Array.Empty<string>();
+        }
+
+        return Directory.EnumerateDirectories(framesDirectory)
+            .Select(static path => Path.GetFileName(path) ?? string.Empty)
+            .Where(static name => name.Length > 0)
+            .OrderBy(static name => name, StringComparer.Ordinal)
+            .ToList();
+    }
 
     /// <summary>
     /// 读回关键帧图 + 布局元数据 + 该帧识别结果。识别结果未随帧存档, 一律经

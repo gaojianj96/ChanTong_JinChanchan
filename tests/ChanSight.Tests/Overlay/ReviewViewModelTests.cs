@@ -70,6 +70,98 @@ public sealed class ReviewViewModelTests
         }
     }
 
+    [Fact]
+    public void MatchIdOptions_EnumeratesExistingMatchDirectories()
+    {
+        using var fx = new Fixture();
+        using (var mat = CreateMat())
+        {
+            fx.Archive.StoreKeyFrame(mat, "match-a", snapshotVersion: 1);
+        }
+
+        using (var mat = CreateMat())
+        {
+            fx.Archive.StoreKeyFrame(mat, "match-b", snapshotVersion: 1);
+        }
+
+        fx.Vm.RefreshMatchesCommand.Execute(null);
+
+        fx.Vm.MatchIdOptions.Should().Equal("match-a", "match-b");
+    }
+
+    [Fact]
+    public void ZoomBy_ClampsBetweenHalfAndFourX()
+    {
+        using var fx = new Fixture();
+
+        fx.Vm.ZoomBy(1000.0);
+        fx.Vm.Zoom.Should().Be(4.0);
+
+        fx.Vm.ZoomBy(0.000001);
+        fx.Vm.Zoom.Should().Be(0.5);
+    }
+
+    [Fact]
+    public async Task CorrectionTypeOptions_UseChineseLabels_AndMapBackToEnum()
+    {
+        using var fx = new Fixture(Recognition(board0: "盖伦"));
+        fx.StoreFrame();
+        fx.Vm.MatchId = "match-1";
+        fx.Vm.LoadFramesCommand.Execute(null);
+        fx.Vm.SelectedFrame = fx.Vm.KeyFrames[0];
+
+        fx.Vm.CorrectionTypeOptions.Should().Equal("分类错", "定位错", "漏检", "误检");
+
+        fx.Vm.SelectedCell = fx.Vm.BoardCells[0];
+        fx.Vm.SelectedHero = "厄斐琉斯";
+        fx.Vm.SelectedCorrectionTypeIndex = 2;
+        await fx.Vm.ApplyCorrectionCommand.ExecuteAsync(null);
+
+        fx.Vm.BoardCells[0].CorrectionType.Should().Be(CorrectionTypes.Missed);
+    }
+
+    [Fact]
+    public void LoadFrame_PopulatesBoardAndSideCells_WithTooltipDetails()
+    {
+        using var fx = new Fixture(Recognition(board0: "盖伦"));
+        fx.StoreFrame();
+        fx.Vm.MatchId = "match-1";
+        fx.Vm.LoadFramesCommand.Execute(null);
+        fx.Vm.SelectedFrame = fx.Vm.KeyFrames[0];
+
+        fx.Vm.BoardCells.Should().HaveCount(28);
+        fx.Vm.SideCells.Should().HaveCount(14);
+
+        var board0 = fx.Vm.BoardCells[0];
+        board0.ShortLabel.Should().Be("盖伦★1");
+        board0.ToolTipText.Should().Contain("英雄: 盖伦");
+        board0.ToolTipText.Should().Contain("来源 tier: T2");
+        board0.ToolTipText.Should().Contain("置信度: 90%");
+    }
+
+    [Fact]
+    public void LoadFrame_BoardCellTooltip_ContainsNameStarItemsTierConfidence()
+    {
+        var board = Enumerable.Range(0, 28).Select(_ => EmptyCell()).ToList();
+        board[0] = new UnitCell("盖伦", 2, new[] { new ItemStack("无尽之刃", 2) }, 0.95, SourceTier.T1);
+        var bench = Enumerable.Range(0, 9).Select(_ => EmptyCell()).ToList();
+        var shop = Enumerable.Range(0, 5).Select(_ => new ShopCard(string.Empty, 0, 0.0, SourceTier.T0)).ToList();
+
+        using var fx = new Fixture(new RecognitionFrame { BoardCells = board, BenchCells = bench, ShopCards = shop });
+        fx.StoreFrame();
+        fx.Vm.MatchId = "match-1";
+        fx.Vm.LoadFramesCommand.Execute(null);
+        fx.Vm.SelectedFrame = fx.Vm.KeyFrames[0];
+
+        var tip = fx.Vm.BoardCells[0].ToolTipText;
+        tip.Should().Contain("英雄: 盖伦");
+        tip.Should().Contain("星级: 2");
+        tip.Should().Contain("装备: 无尽之刃×2");
+        tip.Should().Contain("来源 tier: T1");
+        tip.Should().Contain("置信度: 95%");
+        fx.Vm.BoardCells[0].ShortLabel.Should().Be("盖伦★2");
+    }
+
     private static RecognitionFrame Recognition(string? board0 = null)
     {
         var board = Enumerable.Range(0, 28).Select(_ => EmptyCell()).ToList();
@@ -98,5 +190,38 @@ public sealed class ReviewViewModelTests
 
         public Task<RecognitionFrame> RecognizeAsync(Mat frame, CancellationToken ct) =>
             Task.FromResult(NextFrame);
+    }
+
+    private sealed class Fixture : IDisposable
+    {
+        public string Root { get; } = Path.Combine(Path.GetTempPath(), $"ChanSight_ReviewVM_{Guid.NewGuid():N}");
+        public FrameArchive Archive { get; }
+        public AnnotationStore Store { get; }
+        public FakeRecognizer Recognizer { get; } = new();
+        public ReviewService Service { get; }
+        public ReviewViewModel Vm { get; }
+
+        public Fixture(RecognitionFrame? next = null)
+        {
+            Recognizer.NextFrame = next ?? Recognition();
+            Archive = new FrameArchive(Root);
+            Store = new AnnotationStore(Path.Combine(Root, "corrections"));
+            Service = new ReviewService(Archive, Store, Recognizer.RecognizeAsync);
+            Vm = new ReviewViewModel(Service, Store, new RoiMapperService());
+        }
+
+        public void StoreFrame(long snapshotVersion = 1)
+        {
+            using var mat = CreateMat();
+            Archive.StoreKeyFrame(mat, "match-1", snapshotVersion);
+        }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Root))
+            {
+                Directory.Delete(Root, recursive: true);
+            }
+        }
     }
 }

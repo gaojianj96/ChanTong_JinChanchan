@@ -23,19 +23,33 @@ public partial class ReviewCellDisplay : ObservableObject
     public string RecognizedName { get; }
     public int Star { get; }
     public string SourceTier { get; }
+    public IReadOnlyList<string> Items { get; }
+    public double Confidence { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayText))]
+    [NotifyPropertyChangedFor(nameof(ShortLabel))]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
     private bool _isCorrected;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayText))]
+    [NotifyPropertyChangedFor(nameof(ShortLabel))]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
     private string _correctedHero = string.Empty;
 
     public string? CorrectionId { get; set; }
     public string? CorrectionType { get; set; }
 
-    public ReviewCellDisplay(string regionType, int cellIndex, string kindLabel, string recognizedName, int star, string sourceTier)
+    public ReviewCellDisplay(
+        string regionType,
+        int cellIndex,
+        string kindLabel,
+        string recognizedName,
+        int star,
+        string sourceTier,
+        IReadOnlyList<string>? items = null,
+        double confidence = 0.0)
     {
         RegionType = regionType;
         CellIndex = cellIndex;
@@ -43,7 +57,55 @@ public partial class ReviewCellDisplay : ObservableObject
         RecognizedName = recognizedName;
         Star = star;
         SourceTier = sourceTier;
+        Items = items ?? Array.Empty<string>();
+        Confidence = confidence;
     }
+
+    public string EffectiveName => IsCorrected
+        ? (string.IsNullOrEmpty(CorrectedHero) ? "空" : CorrectedHero)
+        : RecognizedName;
+
+    /// <summary>棋盘格简写: 英雄名 + 星级(空位显示「空」)。</summary>
+    public string ShortLabel
+    {
+        get
+        {
+            string name = EffectiveName;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return "空";
+            }
+
+            return Star > 0 ? $"{name}★{Star}" : name;
+        }
+    }
+
+    /// <summary>悬停 tooltip 具体文字: 英雄全名 / 星级 / 装备 / 来源 tier / 置信度。</summary>
+    public string ToolTipText
+    {
+        get
+        {
+            string name = string.IsNullOrWhiteSpace(EffectiveName) ? "空" : EffectiveName;
+            string items = Items.Count > 0 ? string.Join("、", Items) : "无";
+            string correction = IsCorrected ? $"\n修正类型: {CorrectionTypeLabel}" : string.Empty;
+
+            return $"英雄: {name}\n"
+                 + $"星级: {Math.Max(0, Star)}\n"
+                 + $"装备: {items}\n"
+                 + $"来源 tier: {SourceTier}\n"
+                 + $"置信度: {Confidence:P0}{correction}";
+        }
+    }
+
+    private string CorrectionTypeLabel => CorrectionType switch
+    {
+        CorrectionTypes.Missed => "漏检",
+        CorrectionTypes.FalsePositive => "误检",
+        CorrectionTypes.Localization => "定位错",
+        CorrectionTypes.Classification => "分类错",
+        CorrectionTypes.ConfirmCorrect => "确认正确",
+        _ => CorrectionType ?? string.Empty,
+    };
 
     public string DisplayText => IsCorrected
         ? $"[{CellIndex}] {RecognizedName} → {(string.IsNullOrEmpty(CorrectedHero) ? "空" : CorrectedHero)}"
@@ -67,6 +129,9 @@ public sealed record ReviewBoxDisplay(
 public partial class ReviewViewModel : ObservableObject
 {
     private const double MaxRenderWidth = 440.0;
+    private const double MinZoom = 0.5;
+    private const double MaxZoom = 4.0;
+    private const double ZoomStep = 1.25;
 
     private readonly ReviewService _service;
     private readonly AnnotationStore _store;
@@ -91,10 +156,23 @@ public partial class ReviewViewModel : ObservableObject
     private Bitmap? _frameBitmap;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayWidth))]
     private double _renderWidth;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayHeight))]
     private double _renderHeight;
+
+    /// <summary>原图按缩放因子的实际显示尺寸(供 ScrollViewer 计算滚动范围)。</summary>
+    public double DisplayWidth => RenderWidth * Zoom;
+
+    /// <summary>原图按缩放因子的实际显示高度。</summary>
+    public double DisplayHeight => RenderHeight * Zoom;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayWidth))]
+    [NotifyPropertyChangedFor(nameof(DisplayHeight))]
+    private double _zoom = 1.0;
 
     [ObservableProperty]
     private ReviewCellDisplay? _selectedCell;
@@ -107,12 +185,30 @@ public partial class ReviewViewModel : ObservableObject
 
     public ObservableCollection<ReviewCellDisplay> Cells { get; } = new();
 
+    /// <summary>4×7 虚拟棋盘格(28 个棋盘格, 与 <see cref="Cells"/> 共享同一批对象)。</summary>
+    public ObservableCollection<ReviewCellDisplay> BoardCells { get; } = new();
+
+    /// <summary>备战席(9)+ 商店(5)格, 保留逐格修正能力。</summary>
+    public ObservableCollection<ReviewCellDisplay> SideCells { get; } = new();
+
+    /// <summary>可用对局 ID 列表(下拉选项; 允许手动输入未列出的 ID)。</summary>
+    public ObservableCollection<string> MatchIdOptions { get; } = new();
+
     [ObservableProperty]
     private IReadOnlyList<ReviewBoxDisplay> _boxes = Array.Empty<ReviewBoxDisplay>();
 
     public IReadOnlyList<string> HeroCandidates => _heroCandidates;
 
+    /// <summary>修正类型中文标签(与 <see cref="CorrectionTypeCodes"/> 下标一一对应)。</summary>
     public IReadOnlyList<string> CorrectionTypeOptions { get; } =
+    [
+        "分类错",
+        "定位错",
+        "漏检",
+        "误检",
+    ];
+
+    private static readonly IReadOnlyList<string> CorrectionTypeCodes =
     [
         CorrectionTypes.Classification,
         CorrectionTypes.Localization,
@@ -126,7 +222,34 @@ public partial class ReviewViewModel : ObservableObject
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _roiMapper = roiMapper ?? new RoiMapperService();
         _heroCandidates = GameSeasonDictionary.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        RefreshMatches();
     }
+
+    /// <summary>重新枚举归档下已存在的对局 ID, 刷新下拉选项。</summary>
+    [RelayCommand]
+    private void RefreshMatches()
+    {
+        MatchIdOptions.Clear();
+        foreach (var id in _service.ListMatchIds())
+        {
+            MatchIdOptions.Add(id);
+        }
+    }
+
+    /// <summary>按倍率缩放原图(内部钳制到 0.5x~4x)。</summary>
+    public void ZoomBy(double factor)
+    {
+        Zoom = Math.Clamp(Zoom * factor, MinZoom, MaxZoom);
+    }
+
+    [RelayCommand]
+    private void ZoomIn() => ZoomBy(ZoomStep);
+
+    [RelayCommand]
+    private void ZoomOut() => ZoomBy(1.0 / ZoomStep);
+
+    [RelayCommand]
+    private void ResetZoom() => Zoom = 1.0;
 
     [RelayCommand]
     private void LoadFrames()
@@ -140,6 +263,8 @@ public partial class ReviewViewModel : ObservableObject
         KeyFrames = _service.ListKeyFrames(MatchId);
         SelectedFrame = null;
         Cells.Clear();
+        BoardCells.Clear();
+        SideCells.Clear();
         Boxes = Array.Empty<ReviewBoxDisplay>();
         FrameBitmap = null;
         Status = $"对局 {MatchId}: {KeyFrames.Count} 个关键帧";
@@ -223,7 +348,7 @@ public partial class ReviewViewModel : ObservableObject
 
     private async Task ApplyCellCorrectionAsync(ReviewCellDisplay cell, string correctedValue, string correctedHero)
     {
-        var type = CorrectionTypeOptions[SelectedCorrectionTypeIndex];
+        string type = CorrectionTypeCodes[ClampCorrectionTypeIndex()];
         string? recognized = string.IsNullOrWhiteSpace(cell.RecognizedName) ? null : cell.RecognizedName;
 
         var record = CorrectionFactory.Create(
@@ -266,6 +391,8 @@ public partial class ReviewViewModel : ObservableObject
     private void RebuildCells(RecognitionFrame? recognition)
     {
         Cells.Clear();
+        BoardCells.Clear();
+        SideCells.Clear();
         if (recognition is null)
         {
             return;
@@ -274,13 +401,23 @@ public partial class ReviewViewModel : ObservableObject
         for (var i = 0; i < 28; i++)
         {
             var unit = i < recognition.BoardCells.Count ? recognition.BoardCells[i] : null;
-            Cells.Add(new ReviewCellDisplay(RegionTypes.BoardHero, i, "棋盘", unit?.Name ?? string.Empty, unit?.Star ?? 0, UnitTier(unit)));
+            var cell = new ReviewCellDisplay(
+                RegionTypes.BoardHero, i, "棋盘",
+                unit?.Name ?? string.Empty, unit?.Star ?? 0, UnitTier(unit),
+                FormatItems(unit), unit?.Confidence ?? 0.0);
+            Cells.Add(cell);
+            BoardCells.Add(cell);
         }
 
         for (var i = 0; i < 9; i++)
         {
             var unit = i < recognition.BenchCells.Count ? recognition.BenchCells[i] : null;
-            Cells.Add(new ReviewCellDisplay(RegionTypes.BenchHero, i, "备战席", unit?.Name ?? string.Empty, unit?.Star ?? 0, UnitTier(unit)));
+            var cell = new ReviewCellDisplay(
+                RegionTypes.BenchHero, i, "备战席",
+                unit?.Name ?? string.Empty, unit?.Star ?? 0, UnitTier(unit),
+                FormatItems(unit), unit?.Confidence ?? 0.0);
+            Cells.Add(cell);
+            SideCells.Add(cell);
         }
 
         for (var i = 0; i < 5; i++)
@@ -288,7 +425,12 @@ public partial class ReviewViewModel : ObservableObject
             var card = i < recognition.ShopCards.Count ? recognition.ShopCards[i] : null;
             string name = card?.Name ?? string.Empty;
             string label = card is { Cost: > 0 } ? $"{name} ({card.Cost}费)" : name;
-            Cells.Add(new ReviewCellDisplay(RegionTypes.ShopHero, i, "商店", label, 0, card?.SourceTier.ToString() ?? string.Empty));
+            var cell = new ReviewCellDisplay(
+                RegionTypes.ShopHero, i, "商店", label, 0,
+                card?.SourceTier.ToString() ?? string.Empty,
+                null, card?.Confidence ?? 0.0);
+            Cells.Add(cell);
+            SideCells.Add(cell);
         }
     }
 
@@ -339,6 +481,26 @@ public partial class ReviewViewModel : ObservableObject
     }
 
     private static string UnitTier(UnitCell? unit) => unit?.SourceTier.ToString() ?? string.Empty;
+
+    /// <summary>把修正类型下拉索引钳制到有效范围(越界时回退分类错)。</summary>
+    private int ClampCorrectionTypeIndex()
+        => SelectedCorrectionTypeIndex >= 0 && SelectedCorrectionTypeIndex < CorrectionTypeCodes.Count
+            ? SelectedCorrectionTypeIndex
+            : 0;
+
+    /// <summary>装备展示: iconId 或 iconId×count(无装备返回空)。</summary>
+    private static IReadOnlyList<string> FormatItems(UnitCell? unit)
+    {
+        if (unit?.Items is null || unit.Items.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        return unit.Items
+            .Where(static item => item is not null && !string.IsNullOrWhiteSpace(item.IconId))
+            .Select(static item => item.Count > 1 ? $"{item.IconId}×{item.Count}" : item.IconId)
+            .ToList();
+    }
 
     private static long SnapshotVersionOf(ReviewFrame? frame)
     {

@@ -146,6 +146,30 @@ public sealed class ReviewServiceTests
         keys.Select(k => k.SnapshotVersion).Should().Equal(10L, 20L);
     }
 
+    [Fact]
+    public void ListMatchIds_ReturnsExistingMatchDirectoriesSorted()
+    {
+        using var fx = new Fixture();
+        using (var m1 = CreateMat(new Scalar(1, 0, 0)))
+        using (var m2 = CreateMat(new Scalar(2, 0, 0)))
+        {
+            fx.Archive.StoreKeyFrame(m1, "match-a", snapshotVersion: 1);
+            fx.Archive.StoreKeyFrame(m2, "match-b", snapshotVersion: 1);
+        }
+
+        var ids = fx.Service.ListMatchIds();
+
+        ids.Should().Equal("match-a", "match-b");
+    }
+
+    [Fact]
+    public void ListMatchIds_EmptyWhenNoMatches()
+    {
+        using var fx = new Fixture();
+
+        fx.Service.ListMatchIds().Should().BeEmpty();
+    }
+
     private static string StoreFrame(Fixture fx)
     {
         using var mat = CreateMat();
