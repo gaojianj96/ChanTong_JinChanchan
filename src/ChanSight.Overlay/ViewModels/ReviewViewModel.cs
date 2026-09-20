@@ -138,6 +138,7 @@ public partial class ReviewViewModel : ObservableObject
     private readonly AnnotationStore _store;
     private readonly IRoiMapperService _roiMapper;
     private readonly IReadOnlyList<string> _heroCandidates;
+    private readonly SeasonRuntime _runtime;
 
     private ReviewFrame? _currentFrame;
 
@@ -200,6 +201,16 @@ public partial class ReviewViewModel : ObservableObject
 
     public IReadOnlyList<string> HeroCandidates => _heroCandidates;
 
+    /// <summary>选中格修正值是否为当前字典外的新英雄(确认后正式收录)。</summary>
+    public bool IsNewHeroCandidate =>
+        SelectedCell is not null
+        && SelectedCell.IsCorrected
+        && !string.IsNullOrWhiteSpace(SelectedCell.CorrectedHero)
+        && !_runtime.TryGetHero(SelectedCell.CorrectedHero);
+
+    /// <summary>候选提示文案: 选中格为字典外新英雄时显示, 否则为空。</summary>
+    public string CandidateHint => IsNewHeroCandidate ? "新英雄, 确认后收录" : string.Empty;
+
     /// <summary>修正类型中文标签(与 <see cref="CorrectionTypeCodes"/> 下标一一对应)。</summary>
     public IReadOnlyList<string> CorrectionTypeOptions { get; } =
     [
@@ -222,8 +233,8 @@ public partial class ReviewViewModel : ObservableObject
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _roiMapper = roiMapper ?? new RoiMapperService();
-        var season = runtime ?? SeasonRuntime.CreateDefault();
-        _heroCandidates = season.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
+        _heroCandidates = _runtime.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
         RefreshMatches();
     }
 
@@ -282,6 +293,12 @@ public partial class ReviewViewModel : ObservableObject
         LoadSelectedFrame(value);
     }
 
+    partial void OnSelectedCellChanged(ReviewCellDisplay? value)
+    {
+        OnPropertyChanged(nameof(IsNewHeroCandidate));
+        OnPropertyChanged(nameof(CandidateHint));
+    }
+
     /// <summary>确认本帧: 只提交用户修正过的格; 未修正格由 <see cref="ReviewService"/> 自动补 confirm-correct。</summary>
     [RelayCommand]
     private async Task ConfirmFrameAsync()
@@ -295,7 +312,42 @@ public partial class ReviewViewModel : ObservableObject
         var decisions = BuildDecisions();
         var labels = await _service.CommitReviewAsync(MatchId, SelectedFrame.FrameId, decisions).ConfigureAwait(true);
 
+        await ConfirmCandidatesAsync().ConfigureAwait(true);
+
         Status = $"已确认帧 {SelectedFrame.FrameId}: {labels.Count} 条金标(修正 {decisions.Count} 格, 其余自动 confirm-correct)";
+    }
+
+    /// <summary>回顾确认三选一: 修正为字典外新英雄 → New; 已有英雄 → MapExisting; 标记为空 → Ignore。</summary>
+    private async Task ConfirmCandidatesAsync()
+    {
+        var seasonId = _runtime.Context.SeasonId;
+        foreach (var cell in Cells)
+        {
+            if (!cell.IsCorrected)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(cell.CorrectedHero))
+            {
+                if (!string.IsNullOrWhiteSpace(cell.RecognizedName))
+                {
+                    await _service.ConfirmCandidateAsync(seasonId, cell.RecognizedName, ConfirmKind.Ignore).ConfigureAwait(true);
+                }
+
+                continue;
+            }
+
+            if (_runtime.TryGetHero(cell.CorrectedHero))
+            {
+                string entity = string.IsNullOrWhiteSpace(cell.RecognizedName) ? cell.CorrectedHero : cell.RecognizedName;
+                await _service.ConfirmCandidateAsync(seasonId, entity, ConfirmKind.MapExisting).ConfigureAwait(true);
+            }
+            else
+            {
+                await _service.ConfirmCandidateAsync(seasonId, cell.CorrectedHero, ConfirmKind.New).ConfigureAwait(true);
+            }
+        }
     }
 
     /// <summary>把当前选中格的英雄修正落为实时 CorrectionRecord 并标记为已修正。</summary>
@@ -369,6 +421,9 @@ public partial class ReviewViewModel : ObservableObject
         cell.CorrectionType = type;
         cell.CorrectedHero = correctedHero;
         cell.IsCorrected = true;
+
+        OnPropertyChanged(nameof(IsNewHeroCandidate));
+        OnPropertyChanged(nameof(CandidateHint));
     }
 
     private void LoadSelectedFrame(FrameKey key)

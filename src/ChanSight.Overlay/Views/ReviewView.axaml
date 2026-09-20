@@ -169,6 +169,7 @@
                             <ComboBox ItemsSource="{Binding CorrectionTypeOptions}" SelectedIndex="{Binding SelectedCorrectionTypeIndex}" />
                             <TextBlock Text="英雄候选" Classes="subtle" />
                             <ComboBox ItemsSource="{Binding HeroCandidates}" SelectedItem="{Binding SelectedHero}" />
+                            <TextBlock Text="{Binding CandidateHint}" Classes="accent" FontWeight="SemiBold" IsVisible="{Binding IsNewHeroCandidate}" />
                             <WrapPanel>
                                 <Button Content="确认英雄" Classes="accent" Command="{Binding ApplyCorrectionCommand}" Margin="0,0,8,0" />
                                 <Button Content="标记为空" Classes="danger" Command="{Binding MarkEmptyCommand}" />

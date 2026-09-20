@@ -19,16 +19,23 @@ public sealed class ManualFrameVlmService
     private const int MaxLevenshteinDistance = 2;
     private const int BoardCellCount = 28;
     private const int BenchCellCount = 9;
+    private const string CandidateSource = "vlm-recognition";
 
     private readonly IVlmClient _client;
     private readonly IRoiMapperService _roiMapper;
     private readonly SeasonRuntime _runtime;
+    private readonly ISeasonDictionaryWriter? _writer;
 
-    public ManualFrameVlmService(IVlmClient client, IRoiMapperService roiMapper, SeasonRuntime? runtime = null)
+    public ManualFrameVlmService(
+        IVlmClient client,
+        IRoiMapperService roiMapper,
+        SeasonRuntime? runtime = null,
+        ISeasonDictionaryWriter? writer = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _roiMapper = roiMapper ?? throw new ArgumentNullException(nameof(roiMapper));
         _runtime = runtime ?? SeasonRuntime.CreateDefault();
+        _writer = writer;
     }
 
     public async Task<RecognitionFrame> RecognizeAsync(Mat fullFrame, bool isSelf, CancellationToken ct = default)
@@ -194,6 +201,10 @@ public sealed class ManualFrameVlmService
             return EmptyCell();
         }
 
+        double confidence = 0.0;
+        if (element.TryGetProperty("confidence", out var confProp) && confProp.TryGetDouble(out var c))
+            confidence = c;
+
         string? name = null;
         if (element.TryGetProperty("hero", out var heroProp) && heroProp.ValueKind == JsonValueKind.String)
         {
@@ -207,6 +218,7 @@ public sealed class ManualFrameVlmService
                 if (name is null)
                 {
                     issues.Add($"{arrayName} 英雄名 \"{raw}\" 不在字典内, 已置 null。");
+                    AddCandidate(raw!, confidence);
                 }
             }
         }
@@ -223,11 +235,7 @@ public sealed class ManualFrameVlmService
             star = 0;
         }
 
-        var items = ParseItems(element, issues);
-
-        double confidence = 0.0;
-        if (element.TryGetProperty("confidence", out var confProp) && confProp.TryGetDouble(out var c))
-            confidence = c;
+        var items = ParseItems(element, arrayName, issues, confidence);
 
         if (string.IsNullOrWhiteSpace(name) && star == 0 && items.Count == 0)
             return EmptyCell();
@@ -235,7 +243,7 @@ public sealed class ManualFrameVlmService
         return new UnitCell(name, star, items, confidence, SourceTier.T2);
     }
 
-    private IReadOnlyList<ItemStack> ParseItems(JsonElement element, List<string> issues)
+    private IReadOnlyList<ItemStack> ParseItems(JsonElement element, string arrayName, List<string> issues, double confidence)
     {
         if (!element.TryGetProperty("items", out var itemsProp) || itemsProp.ValueKind != JsonValueKind.Array)
             return Array.Empty<ItemStack>();
@@ -250,12 +258,25 @@ public sealed class ManualFrameVlmService
             if (string.IsNullOrWhiteSpace(raw))
                 continue;
 
-            var matched = GameSeasonDictionary.TryFuzzyMatch(raw!, _runtime.Items, MaxLevenshteinDistance)
-                ?? raw;
-            result.Add(new ItemStack(matched!, 1));
+            var matched = GameSeasonDictionary.TryFuzzyMatch(raw!, _runtime.Items, MaxLevenshteinDistance);
+            if (matched is null)
+            {
+                issues.Add($"{arrayName} 装备名 \"{raw}\" 不在字典内。");
+                AddCandidate(raw!, confidence);
+                matched = raw;
+            }
+
+            result.Add(new ItemStack(matched, 1));
         }
 
         return result;
+    }
+
+    private void AddCandidate(string entity, double confidence)
+    {
+        _writer?.AddCandidate(
+            _runtime.Context.SeasonId,
+            new CandidateMeta(entity, CandidateSource, null, confidence, DateTimeOffset.UtcNow));
     }
 
     private static UnitCell EmptyCell() => new(null, 0, Array.Empty<ItemStack>(), 0.0, SourceTier.T3);

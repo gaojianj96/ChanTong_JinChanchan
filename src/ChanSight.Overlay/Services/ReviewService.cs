@@ -1,5 +1,6 @@
 using ChanSight.Core.Annotation;
 using ChanSight.Core.FrameStorage;
+using ChanSight.Core.Season;
 using ChanSight.Overlay.Models;
 using ChanSight.Vision.Models;
 using OpenCvSharp;
@@ -38,12 +39,18 @@ public sealed class ReviewService
     private readonly FrameArchive _archive;
     private readonly AnnotationStore _store;
     private readonly FrameRecognitionFunc _recognize;
+    private readonly ISeasonDictionaryWriter? _writer;
 
-    public ReviewService(FrameArchive archive, AnnotationStore store, FrameRecognitionFunc recognize)
+    public ReviewService(
+        FrameArchive archive,
+        AnnotationStore store,
+        FrameRecognitionFunc recognize,
+        ISeasonDictionaryWriter? writer = null)
     {
         _archive = archive ?? throw new ArgumentNullException(nameof(archive));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _recognize = recognize ?? throw new ArgumentNullException(nameof(recognize));
+        _writer = writer;
     }
 
     /// <summary>该局已持久化的关键帧列表(按 SnapshotVersion 升序)。</summary>
@@ -135,6 +142,19 @@ public sealed class ReviewService
         {
             review.FrameImage.Dispose();
         }
+    }
+
+    /// <summary>
+    /// 三选一确认候选: 用户在回顾侧把某格修正为字典外名字(New) / 映射已有英雄(MapExisting) /
+    /// 标记为空或忽略(Ignore) 时, 由 <see cref="ReviewViewModel"/> 调用, 经写入视图落到赛季字典。
+    /// </summary>
+    public Task ConfirmCandidateAsync(string seasonId, string entity, ConfirmKind kind, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(seasonId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entity);
+
+        _writer?.Confirm(seasonId, entity, kind);
+        return Task.CompletedTask;
     }
 
     /// <summary>补全未修正占用格为 confirm-correct, 保持逐格一条且准确率分母完整。</summary>
