@@ -1,4 +1,5 @@
 using ChanSight.Core.Engine;
+using ChanSight.Core.Season;
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Models;
 using ChanSight.Vision.Services;
@@ -165,6 +166,24 @@ public sealed class ManualFrameVlmServiceTests
     }
 
     [Fact]
+    public async Task RecognizeAsync_PromptUsesInjectedReaderHeroesAndItems()
+    {
+        var fake = new FakeVlmClient().QueueResult("{}");
+        var reader = new FakeReader(new SeasonDictionary(
+            "S16.5",
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "自定义英雄甲" },
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "自定义装备甲" },
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)));
+        var runtime = new SeasonRuntime(reader);
+        var service = new ManualFrameVlmService(fake, new RoiMapperService(), runtime);
+
+        await service.RecognizeAsync(CreateFrame(), isSelf: true);
+
+        fake.LastPrompt.Should().Contain("自定义英雄甲");
+        fake.LastPrompt.Should().Contain("自定义装备甲");
+    }
+
+    [Fact]
     public async Task RecognizeAsync_SelfSendsMultipleCrops()
     {
         var fake = new FakeVlmClient().QueueResult("{}");
@@ -186,6 +205,19 @@ public sealed class ManualFrameVlmServiceTests
 
         fake.LastImages.Should().NotBeNull();
         fake.LastImages!.Count.Should().BeGreaterThanOrEqualTo(3);
+    }
+
+    private sealed class FakeReader : ISeasonDictionaryReader
+    {
+        private readonly SeasonDictionary _dictionary;
+
+        public FakeReader(SeasonDictionary dictionary) => _dictionary = dictionary;
+
+        public SeasonDictionary? Get(string seasonId) => _dictionary;
+
+        public bool TryGetHero(string seasonId, string name) => _dictionary.Heroes.Contains(name);
+
+        public bool TryGetItem(string seasonId, string name) => _dictionary.Items.Contains(name);
     }
 
     private sealed class FakeVlmClient : IVlmClient

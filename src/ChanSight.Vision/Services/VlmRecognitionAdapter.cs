@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ChanSight.Core.Season;
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Models;
 
@@ -16,10 +17,12 @@ public sealed class VlmRecognitionAdapter
     private const int MaxAttempts = 2;
 
     private readonly IVlmClient _client;
+    private readonly SeasonRuntime _runtime;
 
-    public VlmRecognitionAdapter(IVlmClient client)
+    public VlmRecognitionAdapter(IVlmClient client, SeasonRuntime? runtime = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
     }
 
     public async Task<VlmRecognitionResult> RecognizeAsync(
@@ -80,7 +83,7 @@ public sealed class VlmRecognitionAdapter
         }
     }
 
-    private static VlmRecognitionResult ParseVerdicts(string json, IReadOnlyList<VlmCellInput> cells)
+    private VlmRecognitionResult ParseVerdicts(string json, IReadOnlyList<VlmCellInput> cells)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -108,7 +111,7 @@ public sealed class VlmRecognitionAdapter
                 {
                     name = GameSeasonDictionary.TryFuzzyMatch(
                         rawName!,
-                        GameSeasonDictionary.Heroes,
+                        _runtime.Heroes,
                         MaxLevenshteinDistance) ?? rawName;
                 }
             }
@@ -148,9 +151,9 @@ public sealed class VlmRecognitionAdapter
     private static VlmRecognitionResult Degrade(IReadOnlyList<VlmCellInput> cells) =>
         new(cells.Select(c => new VlmCellVerdict(c.CellIndex, null, null, 0.0)).ToList());
 
-    private static string BuildPrompt(IReadOnlyList<VlmCellInput> cells)
+    private string BuildPrompt(IReadOnlyList<VlmCellInput> cells)
     {
-        var heroTable = string.Join("、", GameSeasonDictionary.Heroes);
+        var heroTable = string.Join("、", _runtime.Heroes);
         var cellIndices = string.Join(", ", cells.Select(c => c.CellIndex));
 
         return $$"""

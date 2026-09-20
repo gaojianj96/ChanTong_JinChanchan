@@ -24,11 +24,24 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
 
     private readonly object _gate = new();
     private readonly Dictionary<string, SeasonState> _seasons = new(StringComparer.Ordinal);
+    private readonly IReadOnlyDictionary<string, SeasonDictionary> _builtInSeeds;
     private string _rootDirectory;
 
     public SeasonDictionaryStore(string rootDirectory)
+        : this(rootDirectory, builtInSeeds: null)
+    {
+    }
+
+    /// <summary>
+    /// 可携带内置种子: 当某赛季的 <c>dictionary.json</c> 不存在时, 用种子在内存中填充正式字典,
+    /// 保证默认赛季(如 S16.5)在未落盘前也能读到完整英雄表。
+    /// </summary>
+    public SeasonDictionaryStore(
+        string rootDirectory,
+        IReadOnlyDictionary<string, SeasonDictionary>? builtInSeeds)
     {
         _rootDirectory = rootDirectory ?? throw new ArgumentNullException(nameof(rootDirectory));
+        _builtInSeeds = builtInSeeds ?? new Dictionary<string, SeasonDictionary>(StringComparer.Ordinal);
     }
 
     /// <summary>切换根目录并清空内存缓存(后续按需重新加载)。</summary>
@@ -214,6 +227,7 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
         var path = GetDictionaryPath(seasonId);
         if (!File.Exists(path))
         {
+            SeedFromBuiltIn(state, seasonId);
             return;
         }
 
@@ -249,6 +263,29 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
         }
         catch (UnauthorizedAccessException)
         {
+        }
+    }
+
+    private void SeedFromBuiltIn(SeasonState state, string seasonId)
+    {
+        if (!_builtInSeeds.TryGetValue(seasonId, out var seed))
+        {
+            return;
+        }
+
+        foreach (var hero in seed.Heroes)
+        {
+            state.Heroes.Add(hero);
+        }
+
+        foreach (var item in seed.Items)
+        {
+            state.Items.Add(item);
+        }
+
+        foreach (var trait in seed.Traits)
+        {
+            state.Traits.Add(trait);
         }
     }
 

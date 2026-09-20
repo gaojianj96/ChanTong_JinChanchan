@@ -3,6 +3,7 @@ using System.IO;
 using Avalonia.Media.Imaging;
 using ChanSight.Core.Annotation;
 using ChanSight.Core.FrameStorage;
+using ChanSight.Core.Season;
 using ChanSight.Overlay.Models;
 using ChanSight.Overlay.Services;
 using ChanSight.Vision.Interfaces;
@@ -216,12 +217,13 @@ public partial class ReviewViewModel : ObservableObject
         CorrectionTypes.FalsePositive,
     ];
 
-    public ReviewViewModel(ReviewService service, AnnotationStore store, IRoiMapperService? roiMapper = null)
+    public ReviewViewModel(ReviewService service, AnnotationStore store, IRoiMapperService? roiMapper = null, SeasonRuntime? runtime = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _roiMapper = roiMapper ?? new RoiMapperService();
-        _heroCandidates = GameSeasonDictionary.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        var season = runtime ?? SeasonRuntime.CreateDefault();
+        _heroCandidates = season.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
         RefreshMatches();
     }
 

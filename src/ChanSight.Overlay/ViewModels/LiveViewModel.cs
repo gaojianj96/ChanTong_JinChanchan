@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using ChanSight.Core.Annotation;
 using ChanSight.Core.Engine;
+using ChanSight.Core.Season;
 using ChanSight.Overlay.Models;
 using ChanSight.Overlay.Services;
 using ChanSight.Vision.Models;
@@ -247,15 +248,17 @@ public partial class LiveViewModel : ObservableObject
         LiveRecognitionService? service = null,
         ManualRecognizeFunc? manualRecognize = null,
         RecognitionToGameStateAdapter? adapter = null,
-        Func<GameStateSnapshot, AdvisorEvent, CancellationToken, Task<DecisionPanelResult>>? evaluateWithAdvisor = null)
+        Func<GameStateSnapshot, AdvisorEvent, CancellationToken, Task<DecisionPanelResult>>? evaluateWithAdvisor = null,
+        SeasonRuntime? runtime = null)
     {
         _annotationStore = annotationStore ?? throw new ArgumentNullException(nameof(annotationStore));
         _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
         _manualRecognize = manualRecognize;
         _adapter = adapter;
         _evaluateWithAdvisor = evaluateWithAdvisor;
-        _heroCandidates = GameSeasonDictionary.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
-        _itemCandidates = GameSeasonDictionary.Items.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        var season = runtime ?? SeasonRuntime.CreateDefault();
+        _heroCandidates = season.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        _itemCandidates = season.Items.OrderBy(static name => name, StringComparer.Ordinal).ToList();
 
         if (service is not null)
         {

@@ -1,5 +1,6 @@
 using ChanSight.Core.Data;
 using ChanSight.Core.Engine;
+using ChanSight.Core.Season;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ChanSight.Core.Extensions;
@@ -23,6 +24,22 @@ public static class ServiceCollectionExtensions
             return knowledgeBase;
         });
 
+        services.AddSingleton(SeasonDictionaryStoreFactory);
+        services.AddSingleton<ISeasonDictionaryReader>(static sp => sp.GetRequiredService<SeasonDictionaryStore>());
+        services.AddSingleton<ISeasonDictionaryWriter>(static sp => sp.GetRequiredService<SeasonDictionaryStore>());
+        services.AddSingleton<SeasonRuntime>();
+
         return services;
+    }
+
+    private static SeasonDictionaryStore SeasonDictionaryStoreFactory(IServiceProvider _)
+    {
+        var root = Path.Combine(AppContext.BaseDirectory, "data", "season");
+        var seeds = new Dictionary<string, SeasonDictionary>(StringComparer.Ordinal)
+        {
+            [SeasonDictionarySeed.DefaultSeasonId] = SeasonDictionarySeed.DefaultDictionary,
+        };
+
+        return new SeasonDictionaryStore(root, seeds);
     }
 }

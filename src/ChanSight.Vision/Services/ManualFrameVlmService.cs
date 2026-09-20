@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ChanSight.Core.Season;
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Models;
 using OpenCvSharp;
@@ -21,11 +22,13 @@ public sealed class ManualFrameVlmService
 
     private readonly IVlmClient _client;
     private readonly IRoiMapperService _roiMapper;
+    private readonly SeasonRuntime _runtime;
 
-    public ManualFrameVlmService(IVlmClient client, IRoiMapperService roiMapper)
+    public ManualFrameVlmService(IVlmClient client, IRoiMapperService roiMapper, SeasonRuntime? runtime = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _roiMapper = roiMapper ?? throw new ArgumentNullException(nameof(roiMapper));
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
     }
 
     public async Task<RecognitionFrame> RecognizeAsync(Mat fullFrame, bool isSelf, CancellationToken ct = default)
@@ -70,10 +73,10 @@ public sealed class ManualFrameVlmService
         return crop.ImEncode(".png");
     }
 
-    private static string BuildPrompt()
+    private string BuildPrompt()
     {
-        var heroTable = string.Join("、", GameSeasonDictionary.Heroes);
-        var itemTable = string.Join("、", GameSeasonDictionary.Items);
+        var heroTable = string.Join("、", _runtime.Heroes);
+        var itemTable = string.Join("、", _runtime.Items);
 
         return $$"""
             你是《金铲铲之战》整帧识别助手。下面按顺序给出多张裁剪区域截图:
@@ -107,7 +110,7 @@ public sealed class ManualFrameVlmService
             """;
     }
 
-    private static RecognitionFrame Parse(string json, bool isSelf)
+    private RecognitionFrame Parse(string json, bool isSelf)
     {
         var issues = new List<string>();
 
@@ -166,7 +169,7 @@ public sealed class ManualFrameVlmService
         };
     }
 
-    private static IReadOnlyList<UnitCell> ArrayProp(JsonElement root, string name, List<string> issues, bool isSelf)
+    private IReadOnlyList<UnitCell> ArrayProp(JsonElement root, string name, List<string> issues, bool isSelf)
     {
         if (!root.TryGetProperty(name, out var prop) || prop.ValueKind != JsonValueKind.Array)
         {
@@ -183,7 +186,7 @@ public sealed class ManualFrameVlmService
         return cells;
     }
 
-    private static UnitCell ParseCell(JsonElement element, string arrayName, List<string> issues)
+    private UnitCell ParseCell(JsonElement element, string arrayName, List<string> issues)
     {
         if (element.ValueKind != JsonValueKind.Object)
         {
@@ -199,7 +202,7 @@ public sealed class ManualFrameVlmService
             {
                 name = GameSeasonDictionary.TryFuzzyMatch(
                     raw!,
-                    GameSeasonDictionary.Heroes,
+                    _runtime.Heroes,
                     MaxLevenshteinDistance);
                 if (name is null)
                 {
@@ -232,7 +235,7 @@ public sealed class ManualFrameVlmService
         return new UnitCell(name, star, items, confidence, SourceTier.T2);
     }
 
-    private static IReadOnlyList<ItemStack> ParseItems(JsonElement element, List<string> issues)
+    private IReadOnlyList<ItemStack> ParseItems(JsonElement element, List<string> issues)
     {
         if (!element.TryGetProperty("items", out var itemsProp) || itemsProp.ValueKind != JsonValueKind.Array)
             return Array.Empty<ItemStack>();
@@ -247,7 +250,7 @@ public sealed class ManualFrameVlmService
             if (string.IsNullOrWhiteSpace(raw))
                 continue;
 
-            var matched = GameSeasonDictionary.TryFuzzyMatch(raw!, GameSeasonDictionary.Items, MaxLevenshteinDistance)
+            var matched = GameSeasonDictionary.TryFuzzyMatch(raw!, _runtime.Items, MaxLevenshteinDistance)
                 ?? raw;
             result.Add(new ItemStack(matched!, 1));
         }

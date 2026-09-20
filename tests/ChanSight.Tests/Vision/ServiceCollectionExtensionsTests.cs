@@ -126,4 +126,21 @@ public sealed class ServiceCollectionExtensionsTests
         first.Should().NotBeNull();
         first.Should().BeSameAs(second);
     }
+
+    [Fact]
+    public void AddChanSightVision_ResolvesSeasonDependentServices_WithoutCore()
+    {
+        var services = new ServiceCollection();
+
+        services.AddChanSightVision();
+        var provider = services.BuildServiceProvider();
+
+        // 这些服务依赖 ISeasonDictionaryReader(经 SeasonRuntime 可选参数回退到内置种子),
+        // 即使未注册 AddChanSightCore 也应可解析。
+        provider.GetRequiredService<VlmRecognitionAdapter>().Should().NotBeNull();
+        provider.GetRequiredService<FusionArbitrator>().Should().NotBeNull();
+        provider.GetRequiredService<RecognitionPipeline>().Should().NotBeNull();
+        provider.GetRequiredService<IPaddleOcrService>().Should().NotBeNull();
+        provider.GetRequiredService<ManualFrameVlmService>().Should().NotBeNull();
+    }
 }

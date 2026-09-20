@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using ChanSight.Core.Season;
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Models;
 
@@ -18,12 +19,14 @@ public sealed class FusionArbitrator
 
     private readonly double _confidenceThreshold;
     private readonly VlmRecognitionAdapter _adapter;
+    private readonly SeasonRuntime _runtime;
     private readonly ConcurrentDictionary<int, string> _corrections = new();
 
-    public FusionArbitrator(IVlmClient client, double confidenceThreshold = 0.5)
+    public FusionArbitrator(IVlmClient client, SeasonRuntime? runtime = null, double confidenceThreshold = 0.5)
     {
         ArgumentNullException.ThrowIfNull(client);
-        _adapter = new VlmRecognitionAdapter(client);
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
+        _adapter = new VlmRecognitionAdapter(client, _runtime);
         _confidenceThreshold = confidenceThreshold;
     }
 
@@ -237,8 +240,8 @@ public sealed class FusionArbitrator
         return fallbackName;
     }
 
-    private static bool IsKnownHero(string? name) =>
-        !string.IsNullOrWhiteSpace(name) && GameSeasonDictionary.Heroes.Contains(name!);
+    private bool IsKnownHero(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && _runtime.TryGetHero(name!);
 
     private static bool IsValidCellIndex(int cellIndex) =>
         cellIndex is >= 0 and <= MaxCellIndex;

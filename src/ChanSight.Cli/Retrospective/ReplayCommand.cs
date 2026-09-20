@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ChanSight.Core.Season;
 using ChanSight.Recorder.Services;
-using ChanSight.Vision.Models;
 
 namespace ChanSight.Cli.Retrospective;
 
@@ -26,15 +26,18 @@ public sealed class ReplayCommand
     private readonly ReplayLoader _loader;
     private readonly RetrospectiveScorer _scorer;
     private readonly RetrospectiveReportGenerator _generator;
+    private readonly SeasonRuntime _runtime;
 
     public ReplayCommand(
         ReplayLoader loader,
         RetrospectiveScorer scorer,
-        RetrospectiveReportGenerator generator)
+        RetrospectiveReportGenerator generator,
+        SeasonRuntime? runtime = null)
     {
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
         _scorer = scorer ?? throw new ArgumentNullException(nameof(scorer));
         _generator = generator ?? throw new ArgumentNullException(nameof(generator));
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
     }
 
     public async Task RunAsync(ReplayOptions options, CancellationToken ct = default)
@@ -106,7 +109,7 @@ public sealed class ReplayCommand
         }
     }
 
-    private static RetrospectiveScore RedactScore(RetrospectiveScore score, string gameId)
+    private RetrospectiveScore RedactScore(RetrospectiveScore score, string gameId)
     {
         return new RetrospectiveScore(
             score.Factual,
@@ -119,7 +122,7 @@ public sealed class ReplayCommand
             score.Issues.Select(i => Redact(i, gameId)).ToArray());
     }
 
-    private static RetrospectiveReport RedactReport(RetrospectiveReport report, string gameId)
+    private RetrospectiveReport RedactReport(RetrospectiveReport report, string gameId)
     {
         return new RetrospectiveReport(
             Redact(report.Summary, gameId),
@@ -131,7 +134,7 @@ public sealed class ReplayCommand
             report.Confidence);
     }
 
-    private static string Redact(string text, string gameId)
+    private string Redact(string text, string gameId)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -144,7 +147,7 @@ public sealed class ReplayCommand
             result = result.Replace(gameId, Redacted, StringComparison.Ordinal);
         }
 
-        foreach (var hero in GameSeasonDictionary.Heroes)
+        foreach (var hero in _runtime.Heroes)
         {
             result = result.Replace(hero, Redacted, StringComparison.OrdinalIgnoreCase);
         }

@@ -1,3 +1,4 @@
+using ChanSight.Core.Season;
 using ChanSight.Vision.Interfaces;
 using ChanSight.Vision.Models;
 using OpenCvSharp;
@@ -8,13 +9,15 @@ public sealed class PaddleOcrService : IPaddleOcrService
 {
     private readonly IOnnxInferenceEngine _engine;
     private readonly IRoiMapperService _roiMapper;
+    private readonly SeasonRuntime _runtime;
 
     private const int MaxLevenshteinDistance = 2;
 
-    public PaddleOcrService(IOnnxInferenceEngine engine, IRoiMapperService roiMapper)
+    public PaddleOcrService(IOnnxInferenceEngine engine, IRoiMapperService roiMapper, SeasonRuntime? runtime = null)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _roiMapper = roiMapper ?? throw new ArgumentNullException(nameof(roiMapper));
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
     }
 
     public IReadOnlyList<DetectedShopCard> RecognizeShopCards(Mat frame)
@@ -33,7 +36,7 @@ public sealed class PaddleOcrService : IPaddleOcrService
                 var result = RecognizeTextFromRegion(shopSlots[i]);
                 var heroMatch = GameSeasonDictionary.TryFuzzyMatch(
                     result.CleanedText,
-                    GameSeasonDictionary.Heroes,
+                    _runtime.Heroes,
                     MaxLevenshteinDistance);
 
                 if (heroMatch is not null)
