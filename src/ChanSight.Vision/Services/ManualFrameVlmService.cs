@@ -84,8 +84,9 @@ public sealed class ManualFrameVlmService
     {
         var heroTable = string.Join("、", _runtime.Heroes);
         var itemTable = string.Join("、", _runtime.Items);
+        var modeHint = GetModeHint(_runtime.Context.Mode);
 
-        return $$"""
+        var prompt = $$"""
             你是《金铲铲之战》整帧识别助手。下面按顺序给出多张裁剪区域截图:
             1. 顶部 HUD 条(阶段/回合/血量/等级/金币)
             2. 棋盘区域(28 格, 按 0-27 行列顺序)
@@ -115,7 +116,30 @@ public sealed class ManualFrameVlmService
             }
             3. 空格子 hero 填 null、star 填 0、items 填 []。无法确定 entire 字段时用 null。
             """;
+
+        if (!string.IsNullOrEmpty(modeHint))
+        {
+            prompt += $"""
+
+                模式说明:
+                {modeHint}
+                """;
+        }
+
+        return prompt;
     }
+
+    /// <summary>
+    /// 按 mode 返回追加到 prompt 的模式说明文本(内置默认字典, 可后续外部配置)。
+    /// 未知 mode 返回空字符串(不追加); 只影响 prompt 文本, 不改 JSON schema/字典候选。
+    /// </summary>
+    public static string GetModeHint(string? mode) => (mode ?? string.Empty) switch
+    {
+        "恭喜发财" => "该模式为恭喜发财, 注意可能出现的特殊机制/高费阵容/专属强化, 高经济节奏下可更激进地升人口与搜牌。",
+        "匹配" => "该模式为标准匹配, 按常规经济节奏均衡运营升人口与搜牌。",
+        "狂暴" => "该模式为狂暴, 节奏更快、经济更紧, 升人口与搜牌需更果断, 注意早期定阵。",
+        _ => string.Empty,
+    };
 
     private RecognitionFrame Parse(string json, bool isSelf)
     {

@@ -15,7 +15,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IHypergeometricEngine, HypergeometricEngine>();
         services.AddSingleton<GameStateManager>();
         services.AddSingleton<OpponentScoutTracker>();
-        services.AddSingleton<ITacticalAdvisor, TacticalAdvisor>();
+        services.AddSingleton<ITacticalAdvisor>(static sp =>
+            new TacticalAdvisor(
+                sp.GetRequiredService<IHypergeometricEngine>(),
+                sp.GetRequiredService<CompKnowledgeBase>(),
+                options: null,
+                runtime: sp.GetRequiredService<SeasonRuntime>()));
 
         services.AddSingleton(static _ =>
         {

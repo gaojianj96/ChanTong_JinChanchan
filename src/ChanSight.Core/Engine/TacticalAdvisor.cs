@@ -1,6 +1,7 @@
 namespace ChanSight.Core.Engine;
 
 using ChanSight.Core.Data;
+using ChanSight.Core.Season;
 using System.Globalization;
 
 public sealed record TacticalAdvisorOptions(
@@ -42,28 +43,41 @@ public sealed class TacticalAdvisor : ITacticalAdvisor
 
     private readonly IHypergeometricEngine _engine;
     private readonly CompKnowledgeBase _knowledgeBase;
-    private readonly TacticalAdvisorOptions _options;
+    private readonly TacticalAdvisorOptions? _explicitOptions;
+    private readonly SeasonRuntime? _runtime;
 
     public TacticalAdvisor(
         IHypergeometricEngine engine,
         CompKnowledgeBase knowledgeBase,
-        TacticalAdvisorOptions? options = null)
+        TacticalAdvisorOptions? options = null,
+        SeasonRuntime? runtime = null)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _knowledgeBase = knowledgeBase ?? throw new ArgumentNullException(nameof(knowledgeBase));
-        _options = options ?? new TacticalAdvisorOptions();
+        _explicitOptions = options;
+        _runtime = runtime;
     }
 
     public IReadOnlyList<TacticalRecommendation> Evaluate(GameStateSnapshot state)
     {
         ArgumentNullException.ThrowIfNull(state);
 
+        var options = ResolveOptions();
+
         var results = new List<TacticalRecommendation>();
         results.AddRange(EvaluateComp(state));
-        results.AddRange(EvaluateEconomy(state));
-        results.AddRange(EvaluateRoll(state));
+        results.AddRange(EvaluateEconomy(state, options));
+        results.AddRange(EvaluateRoll(state, options));
         return results;
     }
+
+    /// <summary>
+    /// 每次 Evaluate 读取当前 mode 解析参数(不缓存), 使 SeasonRuntime.Select 切换 mode 后
+    /// 算法参数随之变化; 显式传入的 options 优先, 其次按运行时 mode, 最后回退默认值。
+    /// </summary>
+    private TacticalAdvisorOptions ResolveOptions() =>
+        _explicitOptions
+        ?? (_runtime is null ? new TacticalAdvisorOptions() : ModeStrategy.Resolve(_runtime.Context.Mode));
 
     private IEnumerable<TacticalRecommendation> EvaluateComp(GameStateSnapshot state)
     {
@@ -110,7 +124,7 @@ public sealed class TacticalAdvisor : ITacticalAdvisor
         }
     }
 
-    private IEnumerable<TacticalRecommendation> EvaluateEconomy(GameStateSnapshot state)
+    private IEnumerable<TacticalRecommendation> EvaluateEconomy(GameStateSnapshot state, TacticalAdvisorOptions options)
     {
         if (state.Phase != GamePhase.Planning)
         {
@@ -118,30 +132,30 @@ public sealed class TacticalAdvisor : ITacticalAdvisor
         }
 
         var gold = Math.Max(0, state.Gold);
-        var tier = Math.Min(_options.MaxInterest, gold / _options.InterestStep);
-        var canLevelUp = state.Level < _options.TargetMaxLevel;
+        var tier = Math.Min(options.MaxInterest, gold / options.InterestStep);
+        var canLevelUp = state.Level < options.TargetMaxLevel;
 
-        if (gold >= _options.LevelUpGoldThreshold && canLevelUp)
+        if (gold >= options.LevelUpGoldThreshold && canLevelUp)
         {
             yield return new TacticalRecommendation(
                 AdviceKind.EconomyDecision,
                 Verdict.LevelUp,
                 PriorityLevelUp,
-                $"金币充裕({gold} ≥ {_options.LevelUpGoldThreshold})且未满级, 建议升人口",
+                $"金币充裕({gold} ≥ {options.LevelUpGoldThreshold})且未满级, 建议升人口",
                 0.35,
                 new List<string>
                 {
-                    $"当前利息档 {tier}/{_options.MaxInterest}",
-                    $"等级 {state.Level} < 目标等级 {_options.TargetMaxLevel}",
+                    $"当前利息档 {tier}/{options.MaxInterest}",
+                    $"等级 {state.Level} < 目标等级 {options.TargetMaxLevel}",
                 });
             yield break;
         }
 
-        var reason = gold < _options.InterestStep && canLevelUp
-            ? $"金币 {gold} 不足单档利息({_options.InterestStep}), 建议持息等待"
-            : $"未达升人口条件(金币 {gold} < {_options.LevelUpGoldThreshold}), 保持持息节奏";
+        var reason = gold < options.InterestStep && canLevelUp
+            ? $"金币 {gold} 不足单档利息({options.InterestStep}), 建议持息等待"
+            : $"未达升人口条件(金币 {gold} < {options.LevelUpGoldThreshold}), 保持持息节奏";
 
-        var nextTierTarget = Math.Min(_options.MaxInterest, tier + 1) * _options.InterestStep;
+        var nextTierTarget = Math.Min(options.MaxInterest, tier + 1) * options.InterestStep;
         yield return new TacticalRecommendation(
             AdviceKind.EconomyDecision,
             Verdict.Hold,
@@ -150,12 +164,12 @@ public sealed class TacticalAdvisor : ITacticalAdvisor
             0.1,
             new List<string>
             {
-                $"当前利息档 {tier}/{_options.MaxInterest}",
+                $"当前利息档 {tier}/{options.MaxInterest}",
                 $"下一档目标 {nextTierTarget} 金币",
             });
     }
 
-    private IEnumerable<TacticalRecommendation> EvaluateRoll(GameStateSnapshot state)
+    private IEnumerable<TacticalRecommendation> EvaluateRoll(GameStateSnapshot state, TacticalAdvisorOptions options)
     {
         if (state.Phase != GamePhase.Planning)
         {
@@ -199,7 +213,7 @@ public sealed class TacticalAdvisor : ITacticalAdvisor
             // needed for 3-star are surfaced separately in the evidence for traceability.
             var probability = _engine.ProbabilityAtLeast(state.Level, cost, owned, takenByOthers, needed: 1);
 
-            var (verdict, risk) = DecideRollVerdict(state.Gold, probability);
+            var (verdict, risk) = DecideRollVerdict(state.Gold, probability, options);
 
             var reason = verdict switch
             {
@@ -233,19 +247,19 @@ public sealed class TacticalAdvisor : ITacticalAdvisor
         }
     }
 
-    private (Verdict Verdict, double Risk) DecideRollVerdict(int gold, double probability)
+    private (Verdict Verdict, double Risk) DecideRollVerdict(int gold, double probability, TacticalAdvisorOptions options)
     {
-        if (gold < _options.MinRollGold)
+        if (gold < options.MinRollGold)
         {
             return (Verdict.Stop, 0.15);
         }
 
-        if (probability >= _options.RollThreshold)
+        if (probability >= options.RollThreshold)
         {
             return (Verdict.Roll, Clamp(1.0 - probability));
         }
 
-        if (probability <= _options.StopThreshold)
+        if (probability <= options.StopThreshold)
         {
             return (Verdict.Stop, 0.1);
         }
