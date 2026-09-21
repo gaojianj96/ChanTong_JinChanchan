@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         var seeds = new Dictionary<string, SeasonDictionary>(StringComparer.Ordinal)
         {
             [SeasonDictionarySeed.DefaultSeasonId] = SeasonDictionarySeed.DefaultDictionary,
+            [S18DictionarySeed.SeasonId] = S18DictionarySeed.Seed,
         };
 
         return new SeasonDictionaryStore(root, seeds);
