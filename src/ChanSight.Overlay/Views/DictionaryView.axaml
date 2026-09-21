@@ -1,0 +1,191 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChanSight.Overlay.ViewModels"
+             x:Class="ChanSight.Overlay.Views.DictionaryView"
+             x:DataType="vm:DictionaryViewModel">
+    <ScrollViewer Background="{StaticResource PageBackground}"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16" Spacing="12">
+
+            <!-- ================= 状态 / 刷新卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
+                        <TextBlock Text="字典查看" Classes="cardTitle" />
+                        <Button Content="↻ 刷新" Classes="ghost" Command="{Binding RefreshCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Status}" Classes="subtle" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 奕子名列表卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentBlue}" />
+                        <TextBlock Text="奕子名 · 全部" Classes="cardTitle" />
+                        <TextBlock Text="{Binding Heroes.Count, StringFormat='({0})'}" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Heroes}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Classes="cardRaised" Padding="8,4" Margin="0,0,6,6">
+                                    <TextBlock Text="{Binding}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 装备列表卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGreen}" />
+                        <TextBlock Text="装备 · 全部" Classes="cardTitle" />
+                        <TextBlock Text="{Binding Items.Count, StringFormat='({0})'}" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Classes="cardRaised" Padding="8,4" Margin="0,0,6,6">
+                                    <TextBlock Text="{Binding}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 羁绊列表卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentPurple}" />
+                        <TextBlock Text="羁绊 · 全部" Classes="cardTitle" />
+                        <TextBlock Text="{Binding Traits.Count, StringFormat='({0})'}" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Traits}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Classes="cardRaised" Padding="8,4" Margin="0,0,6,6">
+                                    <TextBlock Text="{Binding}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= VLM 识别 prompt 卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
+                        <TextBlock Text="VLM 识别 prompt(当前赛季 + 模式)" Classes="cardTitle" />
+                    </StackPanel>
+                    <TextBox Text="{Binding VlmPrompt}"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             MinHeight="220"
+                             MaxHeight="420"
+                             Classes="cardRaised" />
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 自学习候选卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
+                        <TextBlock Text="自学习候选(待确认)" Classes="cardTitle" />
+                        <TextBlock Text="{Binding PendingCandidates.Count, StringFormat='({0})'}" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding PendingCandidates}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Classes="cardRaised" Padding="8,4" Margin="0,0,6,6">
+                                    <TextBlock Text="{Binding}" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 推荐阵容卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentBlue}" />
+                        <TextBlock Text="推荐阵容" Classes="cardTitle" />
+                        <TextBlock Text="{Binding Comps.Count, StringFormat='({0})'}" Classes="muted" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="暂无阵容数据(待导入)"
+                               Classes="muted"
+                               IsVisible="{Binding HasNoComps}" />
+                    <ItemsControl ItemsSource="{Binding Comps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CompDisplay">
+                                <Border Classes="cardRaised" Margin="0,0,0,8">
+                                    <StackPanel Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Border Background="{StaticResource AccentGold}" CornerRadius="4" Padding="6,1">
+                                                <TextBlock Text="{Binding TierLabel}" FontWeight="Bold" Foreground="#201703" />
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding CompCode}" Classes="muted" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Requirements, StringFormat='前置: {0}'}" Classes="subtle" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Conditionals, StringFormat='升降档: {0}'}" Classes="subtle" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ================= 范例识别头像占位卡 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentPurple}" />
+                        <TextBlock Text="范例识别头像" Classes="cardTitle" />
+                    </StackPanel>
+                    <Border Classes="cardRaised" Background="{StaticResource CardSurfaceSunken}" Padding="16">
+                        <TextBlock Text="未来本地 OCR 商店识别, 未实现"
+                                   Classes="muted"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </Border>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

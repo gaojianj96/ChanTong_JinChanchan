@@ -153,6 +153,22 @@ public partial class App : Application
         services.AddSingleton<ReplayViewModel>();
         services.AddSingleton<ReplayView>();
 
+        // 字典查看: 读 SeasonRuntime 字典 + 候选 + VLM prompt + MetaInfoStore 推荐阵容。
+        // meta 数据目录与 season/frames 同根, 落 %LOCALAPPDATA%/ChanSight/meta(如 {root}/meta/S18)。
+        services.AddSingleton<DictionaryViewModel>(static sp =>
+        {
+            var runtime = sp.GetRequiredService<SeasonRuntime>();
+            var writer = sp.GetRequiredService<ISeasonDictionaryWriter>();
+            var manual = sp.GetRequiredService<ManualFrameVlmService>();
+            var registry = sp.GetRequiredService<SeasonRegistry>();
+            var metaRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChanSight",
+                "meta");
+            return new DictionaryViewModel(runtime, writer, manual.BuildPromptForDisplay, registry, metaRoot);
+        });
+        services.AddSingleton<DictionaryView>();
+
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 

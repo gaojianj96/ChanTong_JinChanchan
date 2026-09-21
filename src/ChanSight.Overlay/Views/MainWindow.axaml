@@ -21,6 +21,7 @@
                         <TextBlock Text="ChanSight" FontWeight="Bold" FontSize="14" Foreground="#201703" />
                     </Border>
                     <Button Content="{Binding ToggleLabel}" Classes="accent" Command="{Binding ToggleModeCommand}" />
+                    <Button Content="{Binding DictionaryLabel}" Classes="ghost" Command="{Binding ToggleDictionaryCommand}" />
                     <TextBlock Text="{Binding Status}" Classes="subtle" VerticalAlignment="Center" />
                 </StackPanel>
 

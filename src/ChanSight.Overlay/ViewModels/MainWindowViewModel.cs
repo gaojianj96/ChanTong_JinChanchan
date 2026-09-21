@@ -17,6 +17,10 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _isReviewMode;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DictionaryLabel))]
+    private bool _isDictionaryMode;
+
+    [ObservableProperty]
     private string _toggleLabel = "切换到回顾窗口";
 
     [ObservableProperty]
@@ -51,12 +55,33 @@ public partial class MainWindowViewModel : ObservableObject
 
     partial void OnIsReviewModeChanged(bool value)
     {
+        if (value)
+        {
+            IsDictionaryMode = false;
+        }
+
         ToggleLabel = value ? "切换到实时识别" : "切换到回顾窗口";
         Status = value ? "回顾窗口(帧回放 + 原图叠框 + 金标)" : "等待识别…";
     }
 
+    /// <summary>词典视图入口按钮文案。</summary>
+    public string DictionaryLabel => IsDictionaryMode ? "退出词典" : "打开词典";
+
+    partial void OnIsDictionaryModeChanged(bool value)
+    {
+        if (value)
+        {
+            IsReviewMode = false;
+        }
+
+        Status = value ? "字典查看(奕子/装备/羁绊/prompt/候选/阵容)" : "等待识别…";
+    }
+
     [RelayCommand]
     private void ToggleMode() => IsReviewMode = !IsReviewMode;
+
+    [RelayCommand]
+    private void ToggleDictionary() => IsDictionaryMode = !IsDictionaryMode;
 
     /// <summary>
     /// 重新扫描匹配窗口并填充 <see cref="WindowOptions"/>. 仅 1 个匹配时自动选中; 多个时置为未选等待用户选择。
