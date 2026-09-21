@@ -1,0 +1,405 @@
+{
+  "patch": "S18",
+  "source": {
+    "type": "ThirdParty",
+    "provider": "小鱼一图流",
+    "patch": "S18",
+    "url": null,
+    "confidence": 0.9
+  },
+  "tiers": [
+    {
+      "compId": "diyu-huo-lunzi",
+      "tier": "T0",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "如修还是有问题"
+    },
+    {
+      "compId": "qi-ye-flex",
+      "tier": "T0",
+      "conditionals": [
+        {
+          "condition": "天使/帽子专",
+          "shiftedTier": "T0",
+          "effect": "升S+"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "lie-long-95",
+      "tier": "T0",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "有转更强"
+    },
+    {
+      "compId": "heian-yishi-zhizhu",
+      "tier": "T0",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "shenyu-dazui-flex",
+      "tier": "T1",
+      "conditionals": [
+        {
+          "condition": "有战刃/神谕转",
+          "shiftedTier": "T0",
+          "effect": "升S+"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "6d-zhuzai-nvjing",
+      "tier": "T1",
+      "conditionals": [
+        {
+          "condition": "有战刃",
+          "shiftedTier": "T0",
+          "effect": "升S+"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "caijue-tanglang",
+      "tier": "T1",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "有优化"
+    },
+    {
+      "compId": "5-xunshe-yuenan",
+      "tier": "T1",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补已削"
+    },
+    {
+      "compId": "zhongzhuang-yuenan-flex",
+      "tier": "T1",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "收250更强"
+    },
+    {
+      "compId": "6-zhuzai-flex",
+      "tier": "T1",
+      "conditionals": [
+        {
+          "condition": "主宰转",
+          "shiftedTier": "T0",
+          "effect": "升S+"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "huayao-jiela-84",
+      "tier": "T1",
+      "conditionals": [
+        {
+          "condition": "有裁决转/丽花",
+          "shiftedTier": "T0",
+          "effect": "升S+"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "有转更强"
+    },
+    {
+      "compId": "dalong-95-flex",
+      "tier": "T1",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补已削"
+    },
+    {
+      "compId": "5ge-3xing-yaoji",
+      "tier": "T1",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补加强"
+    },
+    {
+      "compId": "pinpan-tianti",
+      "tier": "T1",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "zhongzhuang-nvjing",
+      "tier": "T1",
+      "conditionals": [
+        {
+          "condition": "有战刃",
+          "shiftedTier": "T0",
+          "effect": "升S+"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "senlin-tianshi",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补加强"
+    },
+    {
+      "compId": "xianji-liu-shahuang",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "新增献祭螳螂流沙皇(详见附录)"
+    },
+    {
+      "compId": "gunala-95",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "senlin-yuenan",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "baobao-kamier",
+      "tier": "T2",
+      "conditionals": [
+        {
+          "condition": "宝宝/暗爪+胡牌",
+          "shiftedTier": "T1",
+          "effect": "升S"
+        }
+      ],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "tese-jiansheng",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "5ge-3xing-weilusi",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补变傻"
+    },
+    {
+      "compId": "dengdai-tianhu-xiaolan",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "详见附录"
+    },
+    {
+      "compId": "yeguai-shenyu-ali",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补加强"
+    },
+    {
+      "compId": "yeshou-ali",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "热补加强"
+    },
+    {
+      "compId": "zhuzai-lie",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      },
+      "note": "火转=低配火艾希"
+    },
+    {
+      "compId": "yeguai-shitou-lie",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    },
+    {
+      "compId": "bihuan-yeshou-shuangc",
+      "tier": "T2",
+      "conditionals": [],
+      "source": {
+        "type": "ThirdParty",
+        "provider": "小鱼一图流",
+        "patch": "S18",
+        "url": null,
+        "confidence": 0.9
+      }
+    }
+  ]
+}

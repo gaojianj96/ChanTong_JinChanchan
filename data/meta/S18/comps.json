@@ -1,0 +1,610 @@
+[
+  {
+    "id": "diyu-huo-lunzi",
+    "name": "地狱火轮子",
+    "compCode": "#地狱火轮子-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5Nzk3NzM3OTUy",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [
+        "地狱火转"
+      ],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/azSZx2TEDLLlmITi98HHRA",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "qi-ye-flex",
+    "name": "7野Flex",
+    "compCode": "#7野Flex-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5NzAzMTM4MDQ5",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [
+        {
+          "unitName": "小蓝",
+          "minCount": 2
+        }
+      ],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/jMPxYs_CdGEf_kDK5kybdw",
+      "confidence": 0.9
+    },
+    "settleNote": "2-5前5野"
+  },
+  {
+    "id": "lie-long-95",
+    "name": "猎龙95",
+    "compCode": "#猎龙95-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5MzE0MjE1NjMx",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/S9ASGEe0gTK6VSuvH0lQcQ",
+      "confidence": 0.9
+    },
+    "settleNote": "可硬玩"
+  },
+  {
+    "id": "heian-yishi-zhizhu",
+    "name": "黑暗仪式蜘蛛",
+    "compCode": "#黑暗仪式蜘蛛-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5OTA2MjQ1MTc4",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [
+        "黑暗仪式"
+      ],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": null,
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "shenyu-dazui-flex",
+    "name": "神谕大嘴Flex",
+    "compCode": "#神谕大嘴-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5Nzc1NDE1NjUy",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "大剑"
+      ],
+      "requiredAugments": [],
+      "minUnitCounts": [
+        {
+          "unitName": "大嘴",
+          "minCount": 1
+        }
+      ]
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/nWx9u2h4fMaKGSvMvZnauQ",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "6d-zhuzai-nvjing",
+    "name": "6D主宰女警",
+    "compCode": "#6D主宰女警-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5NTIyODUzMzMx",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/GnHLBhIKU7CSrY9fASU9eg",
+      "confidence": 0.9
+    },
+    "settleNote": "可硬玩、猪/河蟹多"
+  },
+  {
+    "id": "caijue-tanglang",
+    "name": "裁决螳螂",
+    "compCode": "#裁决螳螂-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5OTMwMTYxMTE3",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": [
+        {
+          "unitName": "螳螂",
+          "minCount": 1
+        }
+      ]
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/4A0eiWAVdMo3z3a0bh0juw",
+      "confidence": 0.9
+    },
+    "settleNote": "螳螂装备"
+  },
+  {
+    "id": "5-xunshe-yuenan",
+    "name": "5迅射月男",
+    "compCode": "#5迅射月男(需转)-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5MzE2NzY2NjE0",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [
+        "迅射转"
+      ],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/EWfYMyfUYsdmioMhoG5-cQ",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "zhongzhuang-yuenan-flex",
+    "name": "重装月男Flex",
+    "compCode": "#月男Flex-小鱼和木木尼#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4MDQ3NzQ3NzYw",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/U-BJsCHx0RdKqp_3AlCeMw",
+      "confidence": 0.9
+    },
+    "settleNote": "可硬玩"
+  },
+  {
+    "id": "6-zhuzai-flex",
+    "name": "6主宰Flex",
+    "compCode": "#6主宰Flex-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5MzA3MTQ4ODM5",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/vd2tdyM2Ldf8N_Pi0xNtFQ",
+      "confidence": 0.9
+    },
+    "settleNote": "硬玩吃分"
+  },
+  {
+    "id": "huayao-jiela-84",
+    "name": "花妖婕拉84",
+    "compCode": "#花妖84-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4Mzg3NTE5NTY3",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/nIVaYrnCpeWdz8wmrGn0tg",
+      "confidence": 0.9
+    },
+    "settleNote": "可硬玩"
+  },
+  {
+    "id": "dalong-95-flex",
+    "name": "大龙95Flex",
+    "compCode": "#大龙95Flex-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5MjcwMjAzMDAz",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [
+        "大经济"
+      ],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/BFSXajAOxL-l6iDSgadxlw",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "5ge-3xing-yaoji",
+    "name": "5个3星妖姬",
+    "compCode": "#5个3妖姬-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5OTgzNzYwODY5",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [
+        {
+          "unitName": "奥恩",
+          "minCount": 2
+        }
+      ],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "青龙刀"
+      ],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": null,
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "pinpan-tianti",
+    "name": "拼盘天梯",
+    "compCode": "#拼盘天梯-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4NjUyNDU5NjIy",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [
+        "拼盘天梯"
+      ],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/EjI21goL_oglQcMBOaUR5g",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "zhongzhuang-nvjing",
+    "name": "重装女警",
+    "compCode": "#40层女警-小鱼一图流#MjE5OTE0MDkxODI4MDc2MDkxNzg3Mzc0OTg0NTk2",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/L5CY4r3uFyxuc3MZXR8cRg",
+      "confidence": 0.9
+    },
+    "settleNote": "可硬玩、蜘蛛多"
+  },
+  {
+    "id": "senlin-tianshi",
+    "name": "森林天使",
+    "compCode": "#森林天使-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg3MTc5ODkzNzAy",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [
+        {
+          "unitName": "奥恩",
+          "minCount": 2
+        }
+      ],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "羊刀"
+      ],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/yZLPmcItRIEm7xiLOAAhGg",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "xianji-liu-shahuang",
+    "name": "献祭流沙皇",
+    "compCode": "#献祭流沙皇-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5OTI1OTMwMTYz",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": null,
+      "confidence": 0.9
+    },
+    "settleNote": "螳螂多、3莲开局。玩法(附录): 思路来源B站小古云顶之弈; 3莲华+螳螂早来+散件多大棒; 献祭2/3星螳螂(进化裁决); 7级追3沙皇/蔚/螳螂; 沙皇装备: 3星螳螂→科技枪+法爆, 螳螂不3→羊刀。"
+  },
+  {
+    "id": "gunala-95",
+    "name": "古纳拉95",
+    "compCode": "#古纳拉95-小鱼X桃子别烦我#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5MDc5MDE1Njc3",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [
+        "大经济"
+      ],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/a-j6Gsrc2zguFa9ZnAWyyA",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "senlin-yuenan",
+    "name": "森林月男",
+    "compCode": "#森林月男-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg3OTA5Mjk1Njc2",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [
+        "森林转"
+      ],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/03CdP_2UutdektyQ3c05Uw",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "baobao-kamier",
+    "name": "宝宝卡蜜尔",
+    "compCode": "#51卡蜜尔-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5MjIxMjEyNDE3",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "神器"
+      ],
+      "requiredAugments": [
+        "宝宝",
+        "不侦查"
+      ],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/7EhcywCnMtu8gvsnNz4iqw",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "tese-jiansheng",
+    "name": "特色剑圣",
+    "compCode": "#特色剑圣-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg3MjAzNTAwOTUw",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/Z7A9WMx_fm8b5YUZGyP3Ow",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "5ge-3xing-weilusi",
+    "name": "5个3星韦鲁斯",
+    "compCode": "#5个3星韦鲁斯-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4MDg3ODg5MzM3",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/APs2mD89rvlUFsbnyqe74A",
+      "confidence": 0.9
+    },
+    "settleNote": "≤1同行、很吃对位"
+  },
+  {
+    "id": "dengdai-tianhu-xiaolan",
+    "name": "等待/天胡小蓝",
+    "compCode": "#等待小蓝-小鱼一图流#MjE5OTE0MDkxODI4MDc2MDkxNzg3NDA4NDkwOTI5",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [
+        {
+          "unitName": "小蓝",
+          "minCount": 2
+        }
+      ],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": null,
+      "confidence": 0.9
+    },
+    "settleNote": "刚需开局2星小蓝+装备偏水滴大棒。附录: 有等待得值则2阶段内D; 妖姬提莫2选1或挂3野怪; 双复制器直接捏3; 升人口找5神谕; 无等待得值则2阶不D等3-1抽3; 神谕转给拉露恩换提莫。"
+  },
+  {
+    "id": "yeguai-shenyu-ali",
+    "name": "野怪神谕阿狸",
+    "compCode": "#野怪神谕阿狸-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg5NTU1MDg1NjE1",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/ZzN3ZXtKU7UV-50TFCQ_Gw",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "yeshou-ali",
+    "name": "野兽阿狸",
+    "compCode": "#5莲阿狸小偷+Flex-小鱼一图流#MjE5OTE0MDkxODI4MDc2MDkxNzg3MzI5NTA0NjU2",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/cL4ahjjWJ3hHkV4DOhhb_A",
+      "confidence": 0.9
+    },
+    "settleNote": "奔着偷3星4费玩"
+  },
+  {
+    "id": "zhuzai-lie",
+    "name": "主宰猎",
+    "compCode": "#主宰猎人-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4NjA1MjY1MTk2",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "青龙刀",
+        "战刃"
+      ],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/8DWoYboJneKspSSP4GLuig",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "yeguai-shitou-lie",
+    "name": "野怪石头猎",
+    "compCode": "#野怪石头猎-思路来源听雨#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4NDg2NjAwMjEz",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "青龙刀",
+        "战刃"
+      ],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/GGCyBr_MNdB1_gfuOTtcvw",
+      "confidence": 0.9
+    }
+  },
+  {
+    "id": "bihuan-yeshou-shuangc",
+    "name": "闭环野兽双C",
+    "compCode": "#闭环野兽双C-小鱼一图流#MTA5OTYyOTQ3OTcyMzgyNTIxNzg4MzIxMzgwNTU0",
+    "intrinsicRequirements": {
+      "requiredTwoStarUnits": [],
+      "requiredEmblems": [],
+      "requiredItems": [
+        "青龙刀",
+        "战刃"
+      ],
+      "requiredAugments": [],
+      "minUnitCounts": []
+    },
+    "source": {
+      "type": "ThirdParty",
+      "provider": "小鱼一图流",
+      "patch": "S18",
+      "url": "https://mp.weixin.qq.com/s/3RbTjCL8f_ADYdd0697nrg",
+      "confidence": 0.9
+    }
+  }
+]
