@@ -10,7 +10,7 @@ namespace ChanSight.Vision.Services;
 /// and the star hue window is calibrated against reference colors only. On-device
 /// accuracy is tracked as a receipt follow-up.
 /// </summary>
-public sealed class LocalDeterministicRecognizer
+public class LocalDeterministicRecognizer
 {
     // Template rendering parameters. Note: these use the Hershey stroke font as a
     // deterministic stand-in for the real game font (a "Segoe UI" render would need
@@ -56,10 +56,19 @@ public sealed class LocalDeterministicRecognizer
     /// template matching against runtime-rendered 0-9 glyphs. Returns <c>null</c>
     /// when no digits are found or the best match falls below the confidence threshold.
     /// </summary>
-    public string? RecognizeDigits(Mat roi)
+    public virtual string? RecognizeDigits(Mat roi)
+        => RecognizeDigitsWithConfidence(roi).Digits;
+
+    /// <summary>
+    /// Same as <see cref="RecognizeDigits"/> but also reports the template-match
+    /// confidence. <c>Digits</c> is <c>null</c> when no digits are found or the best
+    /// match falls below the confidence threshold; <c>Confidence</c> is the lowest
+    /// per-glyph match confidence across all recognized digits (0 when unrecognized).
+    /// </summary>
+    public virtual (string? Digits, double Confidence) RecognizeDigitsWithConfidence(Mat roi)
     {
         ArgumentNullException.ThrowIfNull(roi);
-        if (roi.Empty()) return null;
+        if (roi.Empty()) return (null, 0.0);
 
         using var gray = new Mat();
         if (roi.Channels() == 1)
@@ -79,22 +88,24 @@ public sealed class LocalDeterministicRecognizer
 
         var digitSlots = SegmentDigitSlots(binary);
         if (digitSlots.Count == 0 || digitSlots.Count > MaxDigits)
-            return null;
+            return (null, 0.0);
 
         var templates = BuildTemplates();
         var digits = new StringBuilder(digitSlots.Count);
+        double minConfidence = double.MaxValue;
         foreach (var slot in digitSlots)
         {
             using var canonical = CanonicalizeGlyph(binary, slot);
             var classified = ClassifyGlyph(canonical, templates);
 
             if (classified.Confidence < _digitConfidenceThreshold)
-                return null;
+                return (null, 0.0);
 
+            minConfidence = Math.Min(minConfidence, classified.Confidence);
             digits.Append(classified.Digit);
         }
 
-        return digits.ToString();
+        return (digits.ToString(), minConfidence);
     }
 
     /// <summary>

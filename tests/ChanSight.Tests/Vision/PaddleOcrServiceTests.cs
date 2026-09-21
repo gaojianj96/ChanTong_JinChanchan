@@ -32,15 +32,6 @@ public sealed class PaddleOcrServiceTests
 
     private sealed class FakeRoiMapper : IRoiMapperService
     {
-        private readonly int _frameWidth;
-        private readonly int _frameHeight;
-
-        public FakeRoiMapper(int frameWidth, int frameHeight)
-        {
-            _frameWidth = frameWidth;
-            _frameHeight = frameHeight;
-        }
-
         public Rect MapToPhysical(Rect canonicalRect, int frameWidth, int frameHeight)
         {
             return canonicalRect;
@@ -53,9 +44,7 @@ public sealed class PaddleOcrServiceTests
 
         public Mat CropRoi(Mat frame, RoiRegionType regionType)
         {
-            var w = Math.Min(200, frame.Width);
-            var h = Math.Min(50, frame.Height);
-            return new Mat(frame, new Rect(0, 0, w, h));
+            return frame.Clone();
         }
 
         public IReadOnlyList<Mat> CropShopSlots(Mat frame)
@@ -71,28 +60,48 @@ public sealed class PaddleOcrServiceTests
         }
     }
 
+    private sealed class FakeLocalRecognizer : LocalDeterministicRecognizer
+    {
+        public string? FixedDigits { get; init; } = "35";
+        public double FixedConfidence { get; init; } = 0.99;
+
+        public override (string? Digits, double Confidence) RecognizeDigitsWithConfidence(Mat roi)
+        {
+            if (roi is null || roi.Empty())
+                return (null, 0.0);
+            return (FixedDigits, FixedConfidence);
+        }
+    }
+
     private readonly PaddleOcrService _service;
 
     public PaddleOcrServiceTests()
     {
         _service = new PaddleOcrService(
             new FakeOnnxInferenceEngine(),
-            new FakeRoiMapper(1920, 1080));
+            new FakeRoiMapper(),
+            new LocalDeterministicRecognizer());
     }
 
     [Fact]
     public void Constructor_NullEngine_ThrowsArgumentNull()
     {
-        var roiMapper = new FakeRoiMapper(1920, 1080);
-        var act = () => new PaddleOcrService(null!, roiMapper);
+        var act = () => new PaddleOcrService(null!, new FakeRoiMapper(), new LocalDeterministicRecognizer());
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("engine");
     }
 
     [Fact]
     public void Constructor_NullRoiMapper_ThrowsArgumentNull()
     {
-        var act = () => new PaddleOcrService(new FakeOnnxInferenceEngine(), null!);
+        var act = () => new PaddleOcrService(new FakeOnnxInferenceEngine(), null!, new LocalDeterministicRecognizer());
         act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("roiMapper");
+    }
+
+    [Fact]
+    public void Constructor_NullLocalRecognizer_ThrowsArgumentNull()
+    {
+        var act = () => new PaddleOcrService(new FakeOnnxInferenceEngine(), new FakeRoiMapper(), null!);
+        act.Should().Throw<ArgumentNullException>().Which.ParamName.Should().Be("localRecognizer");
     }
 
     [Fact]
@@ -176,6 +185,24 @@ public sealed class PaddleOcrServiceTests
     }
 
     [Fact]
+    public void RecognizeGold_FakeRecognizer_ReturnsFixedNumber()
+    {
+        var service = new PaddleOcrService(
+            new FakeOnnxInferenceEngine(),
+            new FakeRoiMapper(),
+            new FakeLocalRecognizer { FixedDigits = "35", FixedConfidence = 0.99 });
+
+        using var frame = new Mat(1080, 1920, MatType.CV_8UC3);
+
+        var result = service.RecognizeGold(frame);
+
+        result.RawText.Should().Be("35");
+        result.CleanedText.Should().Be("35");
+        result.MatchedDictKey.Should().Be("35");
+        result.Confidence.Should().Be(0.99f);
+    }
+
+    [Fact]
     public void RecognizeGold_SmallFrame_HandlesGracefully()
     {
         using var frame = new Mat(50, 50, MatType.CV_8UC3);
@@ -216,6 +243,29 @@ public sealed class PaddleOcrServiceTests
     }
 
     [Fact]
+    public void RecognizeStage_SynthesizedStage_ReturnsThreeDashTwo()
+    {
+        using var frame = RenderText("3-2");
+
+        var result = _service.RecognizeStage(frame);
+
+        result.RawText.Should().Be("3-2");
+        result.MatchedDictKey.Should().Be("3-2");
+        result.Confidence.Should().BeGreaterThan(0f);
+    }
+
+    [Fact]
+    public void RecognizeStage_NoDigits_ReturnsEmptyResult()
+    {
+        using var frame = CreateNoiseImage();
+
+        var result = _service.RecognizeStage(frame);
+
+        result.MatchedDictKey.Should().BeNull();
+        result.Confidence.Should().Be(0f);
+    }
+
+    [Fact]
     public void RecognizeStage_SmallFrame_HandlesGracefully()
     {
         using var frame = new Mat(50, 50, MatType.CV_8UC3);
@@ -228,7 +278,7 @@ public sealed class PaddleOcrServiceTests
     [Fact]
     public void RecognizeTextFromRegion_NullRegion_ReturnsEmptyResult()
     {
-        var result = PaddleOcrService.RecognizeTextFromRegion(null!);
+        var result = _service.RecognizeTextFromRegion(null!);
 
         result.RawText.Should().Be(string.Empty);
         result.CleanedText.Should().Be(string.Empty);
@@ -241,7 +291,7 @@ public sealed class PaddleOcrServiceTests
     {
         using var region = new Mat();
 
-        var result = PaddleOcrService.RecognizeTextFromRegion(region);
+        var result = _service.RecognizeTextFromRegion(region);
 
         result.RawText.Should().Be(string.Empty);
         result.CleanedText.Should().Be(string.Empty);
@@ -250,15 +300,60 @@ public sealed class PaddleOcrServiceTests
     }
 
     [Fact]
-    public void RecognizeTextFromRegion_ValidRegion_ReturnsEmptyResult()
+    public void RecognizeTextFromRegion_BlankRegion_ReturnsEmptyResult()
     {
         using var region = new Mat(50, 100, MatType.CV_8UC3);
 
-        var result = PaddleOcrService.RecognizeTextFromRegion(region);
+        var result = _service.RecognizeTextFromRegion(region);
 
         result.RawText.Should().Be(string.Empty);
         result.CleanedText.Should().Be(string.Empty);
         result.MatchedDictKey.Should().BeNull();
         result.Confidence.Should().Be(0f);
+    }
+
+    [Fact]
+    public void RecognizeTextFromRegion_RenderedDigits_ReturnsDigits()
+    {
+        using var region = RenderText("42");
+
+        var result = _service.RecognizeTextFromRegion(region);
+
+        result.RawText.Should().Be("42");
+        result.CleanedText.Should().Be("42");
+        result.MatchedDictKey.Should().Be("42");
+        result.Confidence.Should().BeGreaterThan(0f);
+    }
+
+    private static Mat RenderText(string text)
+    {
+        const int width = 256;
+        const int height = 160;
+        var canvas = new Mat(height, width, MatType.CV_8UC1);
+        canvas.SetTo(Scalar.Black);
+        var size = Cv2.GetTextSize(
+            text,
+            LocalDeterministicRecognizer.TemplateFontFace,
+            LocalDeterministicRecognizer.TemplateFontScale,
+            LocalDeterministicRecognizer.TemplateThickness,
+            out _);
+        var org = new Point((width - size.Width) / 2, (height + size.Height) / 2);
+        Cv2.PutText(
+            canvas,
+            text,
+            org,
+            LocalDeterministicRecognizer.TemplateFontFace,
+            LocalDeterministicRecognizer.TemplateFontScale,
+            Scalar.White,
+            LocalDeterministicRecognizer.TemplateThickness,
+            LineTypes.AntiAlias);
+        return canvas;
+    }
+
+    private static Mat CreateNoiseImage()
+    {
+        var canvas = new Mat(160, 256, MatType.CV_8UC1);
+        Cv2.Randu(canvas, 0, 255);
+        return canvas;
     }
 }

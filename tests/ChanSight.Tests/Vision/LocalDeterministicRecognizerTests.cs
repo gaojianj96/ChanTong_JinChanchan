@@ -39,6 +39,28 @@ public sealed class LocalDeterministicRecognizerTests
     }
 
     [Fact]
+    public void RecognizeDigitsWithConfidence_RenderedDigits_ReportsConfidence()
+    {
+        using var roi = RenderText("42");
+
+        var (digits, confidence) = _recognizer.RecognizeDigitsWithConfidence(roi);
+
+        digits.Should().Be("42");
+        confidence.Should().BeInRange(0.0, 1.0);
+    }
+
+    [Fact]
+    public void RecognizeDigitsWithConfidence_NoDigits_ReturnsNullAndZero()
+    {
+        using var roi = CreateNoiseImage();
+
+        var (digits, confidence) = _recognizer.RecognizeDigitsWithConfidence(roi);
+
+        digits.Should().BeNull();
+        confidence.Should().Be(0.0);
+    }
+
+    [Fact]
     public void CountStars_TwoYellowBlobs_ReturnsTwo()
     {
         using var roi = CreateBgrBlobImage(new Scalar(0, 255, 255), 2);
