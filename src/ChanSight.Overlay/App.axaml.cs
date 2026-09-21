@@ -8,6 +8,7 @@ using ChanSight.Core.Engine;
 using ChanSight.Core.Extensions;
 using ChanSight.Core.FrameStorage;
 using ChanSight.Core.Interfaces;
+using ChanSight.Core.Season;
 using ChanSight.Overlay.Services;
 using ChanSight.Overlay.ViewModels;
 using ChanSight.Overlay.Views;
@@ -63,6 +64,28 @@ public partial class App : Application
         services.AddSingleton<IFrameArchive>(static sp => sp.GetRequiredService<FrameArchive>());
 
         services.AddSingleton<AnnotationStore>();
+
+        // 赛季字典: 覆盖 Core 中 AppContext.BaseDirectory/data/season 的默认路径, 落 %LOCALAPPDATA%/ChanSight/season,
+        // 使 seeder/自学习/回顾确认在同一份持久化数据上读写。last-registered-wins, 三个依赖均指向同一 store。
+        services.AddSingleton(static _ =>
+        {
+            var root = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChanSight",
+                "season");
+            var seeds = new Dictionary<string, SeasonDictionary>(StringComparer.Ordinal)
+            {
+                [SeasonDictionarySeed.DefaultSeasonId] = SeasonDictionarySeed.DefaultDictionary,
+            };
+            return new SeasonDictionaryStore(root, seeds);
+        });
+        services.AddSingleton<ISeasonDictionaryReader>(static sp => sp.GetRequiredService<SeasonDictionaryStore>());
+        services.AddSingleton<ISeasonDictionaryWriter>(static sp => sp.GetRequiredService<SeasonDictionaryStore>());
+        services.AddSingleton<SeasonRuntime>();
+        services.AddSingleton<SeasonRegistry>();
+
+        // 网络搜索字典 seeder: 产候选, 供人工审核后合并(不直接进正式字典)。
+        services.AddSingleton<DictionarySeederService>();
 
         // 识别闭包: 把 Vision 的 RecognitionPipeline 适配为可注入/可测的委托 seam。
         services.AddSingleton<LiveRecognitionService.FrameRecognitionFunc>(static sp =>

@@ -104,8 +104,7 @@ public partial class LiveViewModel : ObservableObject
     private readonly Func<GameStateSnapshot, DecisionPanelResult> _evaluate;
     private readonly Func<GameStateSnapshot, AdvisorEvent, CancellationToken, Task<DecisionPanelResult>>? _evaluateWithAdvisor;
     private readonly StickyCorrections _sticky = new();
-    private readonly IReadOnlyList<string> _heroCandidates;
-    private readonly IReadOnlyList<string> _itemCandidates;
+    private readonly SeasonRuntime _runtime;
     private readonly ManualRecognizeFunc? _manualRecognize;
     private readonly RecognitionToGameStateAdapter? _adapter;
 
@@ -209,10 +208,11 @@ public partial class LiveViewModel : ObservableObject
     /// <summary>对手确认后的备战席展示格。</summary>
     public ObservableCollection<SlotDisplay> OpponentBenchCells { get; } = new();
 
-    public IReadOnlyList<string> HeroCandidates => _heroCandidates;
+    /// <summary>英雄候选(切换赛季时重建)。用 ObservableCollection 以便 ComboBox 实时刷新。</summary>
+    public ObservableCollection<string> HeroCandidates { get; } = new();
 
-    /// <summary>装备候选(用于点格装备修正下拉)。</summary>
-    public IReadOnlyList<string> ItemCandidates => _itemCandidates;
+    /// <summary>装备候选(切换赛季时重建)。</summary>
+    public ObservableCollection<string> ItemCandidates { get; } = new();
 
     /// <summary>对手序号可选项(0-7), 7 表示“未知”。</summary>
     public IReadOnlyList<string> OpponentIndexOptions { get; } =
@@ -226,6 +226,18 @@ public partial class LiveViewModel : ObservableObject
         "6",
         "未知",
     ];
+
+    /// <summary>可选赛季清单(内置清单, 供 SeasonRegistry 映射后续接入)。</summary>
+    public ObservableCollection<string> SeasonOptions { get; } = new();
+
+    /// <summary>可选模式清单。</summary>
+    public ObservableCollection<string> ModeOptions { get; } = new();
+
+    [ObservableProperty]
+    private string _selectedSeason = SeasonDictionarySeed.DefaultSeasonId;
+
+    [ObservableProperty]
+    private string _selectedMode = SeasonDictionarySeed.DefaultMode;
 
     /// <summary>手动识别是否可用(已注入手动识别闭包)。</summary>
     public bool ManualAvailable => _manualRecognize is not null;
@@ -256,14 +268,81 @@ public partial class LiveViewModel : ObservableObject
         _manualRecognize = manualRecognize;
         _adapter = adapter;
         _evaluateWithAdvisor = evaluateWithAdvisor;
-        var season = runtime ?? SeasonRuntime.CreateDefault();
-        _heroCandidates = season.Heroes.OrderBy(static name => name, StringComparer.Ordinal).ToList();
-        _itemCandidates = season.Items.OrderBy(static name => name, StringComparer.Ordinal).ToList();
+        _runtime = runtime ?? SeasonRuntime.CreateDefault();
+
+        foreach (var id in BuiltInSeasonOptions)
+        {
+            SeasonOptions.Add(id);
+        }
+
+        foreach (var mode in BuiltInModeOptions)
+        {
+            ModeOptions.Add(mode);
+        }
+
+        _selectedSeason = _runtime.Context.SeasonId;
+        _selectedMode = _runtime.Context.Mode;
+        RebuildCandidates();
 
         if (service is not null)
         {
             service.FrameUpdated += OnFrameUpdated;
         }
+    }
+
+    private static readonly IReadOnlyList<string> BuiltInSeasonOptions =
+    [
+        "S16.5",
+        "S18",
+    ];
+
+    private static readonly IReadOnlyList<string> BuiltInModeOptions =
+    [
+        "恭喜发财",
+        "匹配",
+        "狂暴",
+    ];
+
+    /// <summary>切换赛季 → 调 <see cref="SeasonRuntime.Select"/> 并按新赛季重建候选。</summary>
+    partial void OnSelectedSeasonChanged(string value)
+    {
+        SwitchSeason(value, SelectedMode);
+    }
+
+    /// <summary>切换模式 → 调 <see cref="SeasonRuntime.Select"/> 并按新模式生效(字典按 season, prompt/算法按 mode)。</summary>
+    partial void OnSelectedModeChanged(string value)
+    {
+        SwitchSeason(SelectedSeason, value);
+    }
+
+    private void SwitchSeason(string seasonId, string mode)
+    {
+        if (string.IsNullOrWhiteSpace(seasonId) || string.IsNullOrWhiteSpace(mode))
+        {
+            return;
+        }
+
+        _runtime.Select(seasonId, mode);
+        RebuildCandidates();
+        Status = $"已切换赛季 {seasonId} · 模式 {mode}";
+    }
+
+    /// <summary>重读 runtime.Heroes/Items 重建候选列表(切换即生效, 无重启)。</summary>
+    private void RebuildCandidates()
+    {
+        HeroCandidates.Clear();
+        foreach (var hero in _runtime.Heroes.OrderBy(static name => name, StringComparer.Ordinal))
+        {
+            HeroCandidates.Add(hero);
+        }
+
+        ItemCandidates.Clear();
+        foreach (var item in _runtime.Items.OrderBy(static name => name, StringComparer.Ordinal))
+        {
+            ItemCandidates.Add(item);
+        }
+
+        SelectedHero = null;
     }
 
     /// <summary>把后台链路的一次产出应用到展示字段与粘滞校验。可在任意线程调用; 绑定由 Avalonia 处理。</summary>

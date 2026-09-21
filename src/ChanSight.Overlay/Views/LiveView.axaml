@@ -9,6 +9,35 @@
                   VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16" Spacing="12">
 
+            <!-- ================= 赛季 / 模式选择器 ================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentGold}" />
+                        <StackPanel Spacing="1">
+                            <TextBlock Text="赛季 / 模式" Classes="cardTitle" />
+                            <TextBlock Text="切换即时生效 · 字典按赛季、prompt/算法按模式变化" Classes="muted" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="赛季" Classes="subtle" />
+                            <ComboBox ItemsSource="{Binding SeasonOptions}"
+                                      SelectedItem="{Binding SelectedSeason}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="模式" Classes="subtle" />
+                            <ComboBox ItemsSource="{Binding ModeOptions}"
+                                      SelectedItem="{Binding SelectedMode}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Bottom">
+                            <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- ================= 状态卡 ================= -->
             <Border Classes="card">
                 <StackPanel Spacing="10">
