@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel? _viewModel;
     private readonly LiveView? _liveView;
     private readonly ReviewView? _reviewView;
+    private readonly DictionaryView? _dictionaryView;
     private readonly LiveRecognitionService? _recognition;
     private readonly IScreenCaptureService? _capture;
 
@@ -27,6 +28,7 @@ public partial class MainWindow : Window
         MainWindowViewModel viewModel,
         LiveView liveView,
         ReviewView reviewView,
+        DictionaryView dictionaryView,
         LiveRecognitionService recognition,
         IScreenCaptureService capture) : this()
     {
@@ -34,6 +36,7 @@ public partial class MainWindow : Window
         _viewModel = viewModel;
         _liveView = liveView;
         _reviewView = reviewView;
+        _dictionaryView = dictionaryView;
         _recognition = recognition;
         _capture = capture;
 
@@ -45,6 +48,21 @@ public partial class MainWindow : Window
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainWindowViewModel.IsDictionaryMode))
+        {
+            if (_viewModel?.IsDictionaryMode ?? false)
+            {
+                _dictionaryView?.Refresh();
+                Host.Content = _dictionaryView;
+            }
+            else
+            {
+                Host.Content = (_viewModel?.IsReviewMode ?? false) ? _reviewView : _liveView;
+            }
+
+            return;
+        }
+
         if (e.PropertyName == nameof(MainWindowViewModel.IsReviewMode))
         {
             Host.Content = (_viewModel?.IsReviewMode ?? false) ? _reviewView : _liveView;
@@ -151,7 +169,7 @@ public partial class MainWindow : Window
 
         _frameCount++;
 
-        if (_viewModel.IsReviewMode)
+        if (_viewModel.IsReviewMode || _viewModel.IsDictionaryMode)
         {
             return;
         }

@@ -130,6 +130,12 @@ public sealed class ManualFrameVlmService
     }
 
     /// <summary>
+    /// 供字典查看界面只读展示当前 season + mode 的完整 prompt 文本。
+    /// 仅暴露读取入口, 不改动任何识别/解析逻辑。
+    /// </summary>
+    public string BuildPromptForDisplay() => BuildPrompt();
+
+    /// <summary>
     /// 按 mode 返回追加到 prompt 的模式说明文本(内置默认字典, 可后续外部配置)。
     /// 未知 mode 返回空字符串(不追加); 只影响 prompt 文本, 不改 JSON schema/字典候选。
     /// </summary>
