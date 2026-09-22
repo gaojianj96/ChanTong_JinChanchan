@@ -51,3 +51,8 @@ docs/qa_runs/**/*.png
 docs/reviews/_*.json.out
 
 .opencode_runs/
+
+# Runtime artifacts & scratch
+RawData/
+corrections/
+
