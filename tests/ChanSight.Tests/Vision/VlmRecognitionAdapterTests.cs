@@ -118,6 +118,24 @@ public sealed class VlmRecognitionAdapterTests
         result.Verdicts.Should().OnlyContain(v => v.Name == null && v.Confidence == 0.0);
     }
 
+    [Fact]
+    public async Task RecognizeAsync_HungClient_BoundedTimeout_DegradesWithoutBlockingOrThrowing()
+    {
+        var hung = new HangingVlmClient();
+        var adapter = new VlmRecognitionAdapter(hung, timeout: TimeSpan.FromMilliseconds(50));
+        var cells = CreateCells(0, 5, 9);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var result = await adapter.RecognizeAsync(cells, CancellationToken.None);
+        sw.Stop();
+
+        // A hung VLM (e.g. an upstream 60s timeout) must degrade promptly instead of
+        // stalling the live frame loop or propagating a cancellation.
+        result.Verdicts.Should().HaveCount(3);
+        result.Verdicts.Should().OnlyContain(v => v.Name == null && v.Confidence == 0.0);
+        sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
+    }
+
     private static IReadOnlyList<VlmCellInput> CreateCells(params int[] indices) =>
         indices.Select(i => new VlmCellInput(i, new byte[] { 1, 2, 3 }, "image/png")).ToArray();
 
@@ -136,6 +154,24 @@ public sealed class VlmRecognitionAdapterTests
         {
             CallCount++;
             throw new VlmUnavailableException("endpoint down");
+        }
+    }
+
+    /// <summary>
+    /// <see cref="IVlmClient"/> that never completes, used to prove the auto-path
+    /// budget degrades instead of stalling on a hung/upstream-timeout VLM. Honour the
+    /// cancellation token so a budget expiry releases the awaited call.
+    /// </summary>
+    private sealed class HangingVlmClient : IVlmClient
+    {
+        public Task<string> CompleteAsync(
+            string prompt,
+            IReadOnlyList<(string mime, byte[] data)> images,
+            CancellationToken ct)
+        {
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            ct.Register(() => tcs.TrySetCanceled(ct));
+            return tcs.Task;
         }
     }
 

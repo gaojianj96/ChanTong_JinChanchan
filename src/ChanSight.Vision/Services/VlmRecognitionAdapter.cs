@@ -10,19 +10,34 @@ namespace ChanSight.Vision.Services;
 /// an <see cref="IVlmClient"/>, then parses and fuzzy-corrects the returned JSON
 /// into per-cell verdicts. Any unrecoverable failure degrades every cell to a
 /// low-confidence verdict instead of throwing.
+///
+/// This adapter runs on the automatic (live) recognition path only — the manual
+/// whole-frame VLM button uses <see cref="IVlmClient"/> directly — so its calls
+/// are bounded by a short budget. A hang or timeout degrades softly instead of
+/// stalling the live frame loop (the upstream <see cref="OpenRouterVlmClient"/>
+/// defaults to a 60s request timeout, which would otherwise stretch a single
+/// frame's cadence out to a minute).
 /// </summary>
 public sealed class VlmRecognitionAdapter
 {
     private const int MaxLevenshteinDistance = 2;
     private const int MaxAttempts = 2;
 
+    /// <summary>
+    /// Upper bound for one auto-path VLM round (including the single retry). Kept
+    /// small so a slow/hung VLM cannot drag the live loop below ~2fps.
+    /// </summary>
+    public static readonly TimeSpan DefaultAutoTimeout = TimeSpan.FromSeconds(5);
+
     private readonly IVlmClient _client;
     private readonly SeasonRuntime _runtime;
+    private readonly TimeSpan _timeout;
 
-    public VlmRecognitionAdapter(IVlmClient client, SeasonRuntime? runtime = null)
+    public VlmRecognitionAdapter(IVlmClient client, SeasonRuntime? runtime = null, TimeSpan? timeout = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _runtime = runtime ?? SeasonRuntime.CreateDefault();
+        _timeout = timeout ?? DefaultAutoTimeout;
     }
 
     public async Task<VlmRecognitionResult> RecognizeAsync(
@@ -37,14 +52,23 @@ public sealed class VlmRecognitionAdapter
         var prompt = BuildPrompt(cells);
         var images = cells.Select(c => (c.Mime, c.ImageData)).ToList();
 
+        // Bound the whole round (retry included) with a short auto-path budget so a
+        // hung VLM can never stall the frame cadence. The caller's token is linked in
+        // so a genuine stop cancels promptly; the *budget* timeout alone degrades
+        // instead of propagating (it must never cancel the live loop).
+        using var budgetCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        budgetCts.CancelAfter(_timeout);
+
         string json;
         try
         {
-            json = await CompleteWithSingleRetryAsync(prompt, images, ct).ConfigureAwait(false);
+            json = await CompleteWithSingleRetryAsync(prompt, images, budgetCts.Token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            throw;
+            // Auto-path budget expired: degrade rather than letting a 60s upstream
+            // timeout stall the next frame.
+            return Degrade(cells);
         }
         catch (Exception)
         {
