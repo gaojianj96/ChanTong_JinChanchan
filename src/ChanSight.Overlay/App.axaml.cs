@@ -170,7 +170,13 @@ public partial class App : Application
         });
         services.AddSingleton<DictionaryView>();
 
-        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<MainWindowViewModel>(static sp =>
+        {
+            var windowFinder = sp.GetRequiredService<IWindowFinder>();
+            var live = sp.GetRequiredService<LiveViewModel>();
+            // 退出字典视图时刷新实时候选列表(英雄/装备), 使字典修改(确认候选)立即生效。
+            return new MainWindowViewModel(windowFinder, live.RefreshCandidates);
+        });
         services.AddSingleton<MainWindow>();
 
         return services.BuildServiceProvider();
