@@ -1,22 +1,15 @@
 namespace ChanSight.Core.Season;
 
 /// <summary>
-/// S18(自然之力)内置种子字典。
-///
-/// 数据来源(可追溯):
-///   1. <c>docs/meta/comp_code_table.md</c> + <c>data/meta/S18/comps.json</c>(27 个 S18 阵容, 小鱼一图流),
-///      其中阵容名/前置/升降档隐含的英雄名(轮子/韦鲁斯/螳螂/女警/月男/阿狸/沙皇/卡蜜尔/剑圣/小蓝/奥恩/凯南/婕拉/瑟提/蔚…)
-///      与装备名(青龙刀/羊刀/战刃/大剑/帽子/天使/科技枪/法爆/轻语/神器…)为唯一事实来源;
-///   2. 与 S16.5 种子(<see cref="SeasonDictionarySeed"/>)取并集: S18 与 S16.5 英雄大量重叠, 此处继承
-///      S16.5 集合再补 S18 新增英雄与俗称别名, 保证阵容码表出现的全部候选均被覆盖。
-///
-/// 关键语义: 英雄名用中文, 与 <see cref="SeasonDictionarySeed"/> 现有命名一致; 对俗称别名
-/// (轮子/螳螂/月男/女警/沙皇/剑圣/天使/妖姬/大嘴/蜘蛛)同时保留, 因 VLM 识别/校验对 S18
-/// 使用俗称候选。装备以俗称短名(青龙刀/羊刀/战刃/大剑/帽子/天使/科技枪/法爆/轻语)覆盖。
+/// S18(自然之力)内置种子字典, 数据来自 topmeta.gg 权威数据(版本 18.2b):
+/// 65 英雄(含费用)、35 羁绊、装备(主要成型装备 + 纹章, 不含"光明版"变体)。
+/// 只存正式名, 不含俗称; 俗称→正式名的映射见 <see cref="HeroAliases"/>/<see cref="ItemAliases"/>。
 /// </summary>
 public static class S18DictionarySeed
 {
     public const string SeasonId = "S18";
+
+    public static readonly IReadOnlyDictionary<string, int> HeroCosts = CreateHeroCosts();
 
     public static readonly IReadOnlySet<string> Heroes = CreateHeroes();
 
@@ -24,60 +17,164 @@ public static class S18DictionarySeed
 
     public static readonly IReadOnlySet<string> Traits = CreateTraits();
 
-    public static readonly SeasonDictionary Seed = new(SeasonId, Heroes, Items, Traits);
+    /// <summary>俗称英雄名 → 正式英雄名(供识别/回显映射)。</summary>
+    public static readonly IReadOnlyDictionary<string, string> HeroAliases = CreateHeroAliases();
 
-    private static HashSet<string> CreateHeroes()
+    /// <summary>俗称装备名 → 正式装备名(供识别/回显映射)。</summary>
+    public static readonly IReadOnlyDictionary<string, string> ItemAliases = CreateItemAliases();
+
+    public static readonly SeasonDictionary Seed = new(SeasonId, Heroes, Items, Traits)
     {
-        var heroes = new HashSet<string>(SeasonDictionarySeed.Heroes, StringComparer.OrdinalIgnoreCase)
-        {
-            // S18 新增英雄(官方名)。
-            "奥恩", "韦鲁斯", "凯特琳", "伊莉丝", "提莫", "拉露恩",
-            // S18 阵容码表用俗称别名(官方名见括号)。
-            "轮子",   // 希维尔
-            "小蓝",   // 官方身份待确认
-            "蜘蛛",   // 伊莉丝
-            "大嘴",   // 克格莫
-            "女警",   // 凯特琳
-            "螳螂",   // 卡兹克
-            "月男",   // 厄斐琉斯
-            "沙皇",   // 阿兹尔
-            "剑圣",   // 易
-            "天使",   // 凯尔
-            "妖姬",   // 乐芙兰
-        };
+        HeroCosts = HeroCosts,
+    };
 
-        return heroes;
-    }
+    private static HashSet<string> CreateHeroes() =>
+        new(HeroCosts.Keys, StringComparer.OrdinalIgnoreCase);
 
     private static HashSet<string> CreateItems()
     {
-        var items = new HashSet<string>(SeasonDictionarySeed.Items, StringComparer.OrdinalIgnoreCase)
+        var items = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            // S18 阵容码表用俗称装备短名(全称见括号)。
-            "青龙刀", // 朔极之矛
-            "羊刀",   // 鬼索的狂暴之刃
-            "战刃",   // 无尽战刃(俗称)
-            "大剑",   // 暴风大剑
-            "帽子",   // 灭世者的死亡之帽
-            "天使",   // 守护天使(俗称)
-            "科技枪", // 海克斯科技枪刃
-            "法爆",   // 珠光护手
-            "轻语",   // 最后的轻语
-            "神器",   // 神器(通用, 如卡蜜尔阵容 requiredItems)
+            // 主要成型装备(方案 a, 不含"光明版"变体)。
+            "金锅锅冠冕", "智慧末刃", "金铲铲冠冕", "冕卫", "适应性头盔",
+            "斯特拉克的挑战护手", "离子火花", "薄暮法袍", "棘刺背心", "窃贼手套",
+            "坚定之心", "水银", "红霸符", "莫雷洛秘典", "夜之锋刃", "烁刃",
+            "圣盾使的誓约", "强袭者的链枷", "永恒契约", "黎明核心", "虚空之杖",
+            "饮血剑", "巨人杀手", "海克斯科技枪刃", "纳什之牙", "正义之手",
+            "灭世者的死亡之帽", "巨龙之爪", "蓝霸符", "日炎斗篷", "泰坦的坚决",
+            "死亡之刃", "大天使之杖", "最后的轻语", "金币收集者", "朔极之矛",
+            "巫妖之祸", "海妖之怒", "狂徒铠甲", "密银黎明", "无尽之刃",
+            "卢登的激荡", "飞升护符", "枯萎珠宝", "振奋盔甲", "恶火小斧",
+            "探索者的护臂", "珠光护手", "中娅悖论", "虚空护手", "石像鬼石板甲",
+            "顽强不屈", "连指手套", "疾射火炮", "视界专注", "三相之力",
+            "魔蕴", "黎明圣盾", "巨型九头蛇", "斯塔缇克电刃", "黄昏圣盾",
+            "鬼索的狂暴之刃", "鱼骨头",
+            // 纹章类。
+            "主宰纹章", "斗士纹章", "重装战士纹章", "绝命花妖纹章", "神谕纹章",
+            "裁决使纹章", "永恒之森纹章", "迅捷射手纹章", "护卫纹章", "月蚀骑士纹章",
+            "法师纹章", "花仙子纹章", "地狱火纹章", "约德尔人和朋友纹章", "野兽之灵纹章",
+            "狂战士纹章", "猎人纹章",
         };
 
         return items;
     }
 
-    private static HashSet<string> CreateTraits()
-    {
-        var traits = new HashSet<string>(SeasonDictionarySeed.Traits, StringComparer.OrdinalIgnoreCase)
+    private static HashSet<string> CreateTraits() =>
+        new(StringComparer.OrdinalIgnoreCase)
         {
-            // S18 阵容码表出现的羁绊(来自阵容名/转职/升档条件)。
-            "地狱火", "迅射", "森林", "主宰", "神谕", "裁决",
-            "丽花", "莲华", "野兽", "野", "猎人", "重装",
+            "自然之力！大元素使", "月蚀骑士", "法师", "月华神女", "斗士",
+            "永恒之森", "约德尔人和朋友", "重装战士", "宝石骑士", "翠神",
+            "灵魂莲华", "猎人", "裁决使", "地狱火", "顶级掠食者",
+            "峡谷野怪", "远古树精", "主宰", "赏金猎人", "魔战士",
+            "野兽之灵", "绝命花妖", "迅捷射手", "帝王斑蝶", "神谕",
+            "狂战士", "护卫", "花仙子", "召唤师", "荆棘之兴",
+            "宿敌", "魔岩巨兽", "黑荆棘", "魔女", "日蚀骑士",
         };
 
-        return traits;
-    }
+    private static Dictionary<string, int> CreateHeroCosts() =>
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            // 1 费。
+            ["卡尔玛"] = 1,
+            ["卡蜜尔"] = 1,
+            ["可酷伯"] = 1,
+            ["奥恩"] = 1,
+            ["洛"] = 1,
+            ["约里克"] = 1,
+            ["维迦"] = 1,
+            ["蕾欧娜"] = 1,
+            ["阿卡丽"] = 1,
+            ["雷克塞"] = 1,
+            ["霞"] = 1,
+            ["韦鲁斯"] = 1,
+            ["绯红树怪"] = 1,
+            ["苍蓝哨戒"] = 1,
+            // 2 费。
+            ["乐芙兰"] = 2,
+            ["伊莉丝"] = 2,
+            ["凯尔"] = 2,
+            ["凯特琳"] = 2,
+            ["慎"] = 2,
+            ["提莫"] = 2,
+            ["沃里克"] = 2,
+            ["瑟庄妮"] = 2,
+            ["芸阿娜"] = 2,
+            ["阿利斯塔"] = 2,
+            ["峡谷迅捷蟹"] = 2,
+            ["暗影狼"] = 2,
+            ["魔沼蛙"] = 2,
+            // 3 费。
+            ["克格莫"] = 3,
+            ["卡兹克"] = 3,
+            ["卡西奥佩娅"] = 3,
+            ["崔丝塔娜"] = 3,
+            ["拉莫斯"] = 3,
+            ["易"] = 3,
+            ["蔚"] = 3,
+            ["费德提克"] = 3,
+            ["赫卡里姆"] = 3,
+            ["阿兹尔"] = 3,
+            ["雷恩加尔"] = 3,
+            ["黛安娜"] = 3,
+            ["深红锋喙鸟"] = 3,
+            ["远古石甲虫"] = 3,
+            // 4 费。
+            ["伊泽瑞尔"] = 4,
+            ["厄斐琉斯"] = 4,
+            ["墨菲特"] = 4,
+            ["奈德丽"] = 4,
+            ["婕拉"] = 4,
+            ["希维尔"] = 4,
+            ["瑟提"] = 4,
+            ["索拉卡"] = 4,
+            ["莉莉娅"] = 4,
+            ["莫甘娜"] = 4,
+            ["阿木木"] = 4,
+            ["阿狸"] = 4,
+            ["绯红印记树怪"] = 4,
+            ["苍蓝雕纹魔像"] = 4,
+            // 5 费。
+            ["凯南"] = 5,
+            ["塔里克"] = 5,
+            ["德莱文"] = 5,
+            ["拉克丝"] = 5,
+            ["拉露恩"] = 5,
+            ["纳尔"] = 5,
+            ["艾希"] = 5,
+            ["艾翁"] = 5,
+            ["茂凯"] = 5,
+            ["远古巨龙"] = 5,
+        };
+
+    private static Dictionary<string, string> CreateHeroAliases() =>
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["轮子"] = "希维尔",
+            ["大嘴"] = "克格莫",
+            ["女警"] = "凯特琳",
+            ["螳螂"] = "卡兹克",
+            ["月男"] = "厄斐琉斯",
+            ["沙皇"] = "阿兹尔",
+            ["妖姬"] = "乐芙兰",
+            ["剑圣"] = "易",
+            ["蜘蛛"] = "伊莉丝",
+            ["天使"] = "凯尔",
+            ["猪妹"] = "瑟庄妮",
+            ["小蓝"] = "苍蓝哨戒",
+        };
+
+    private static Dictionary<string, string> CreateItemAliases() =>
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["羊刀"] = "鬼索的狂暴之刃",
+            ["青龙刀"] = "朔极之矛",
+            ["战刃"] = "锐利之刃",
+            ["大剑"] = "暴风大剑",
+            ["帽子"] = "灭世者的死亡之帽",
+            ["法爆"] = "珠光护手",
+            ["科技枪"] = "海克斯科技枪刃",
+            ["轻语"] = "最后的轻语",
+            ["大棒"] = "无用大棒",
+            ["天使"] = "大天使之杖",
+        };
 }

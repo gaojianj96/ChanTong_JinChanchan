@@ -15,7 +15,14 @@ public sealed record SeasonDictionary(
     string SeasonId,
     IReadOnlySet<string> Heroes,
     IReadOnlySet<string> Items,
-    IReadOnlySet<string> Traits);
+    IReadOnlySet<string> Traits)
+{
+    /// <summary>
+    /// 英雄名→费用(1-5)。用 init 属性 + 默认空字典, 避免破坏既有 4 位置参数的构造点。
+    /// </summary>
+    public IReadOnlyDictionary<string, int> HeroCosts { get; init; } =
+        new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+}
 
 /// <summary>人工确认一条自学习候选时的处置语义。</summary>
 public enum ConfirmKind

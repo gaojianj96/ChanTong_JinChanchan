@@ -37,6 +37,19 @@ public sealed class SeasonRuntime
     /// <summary>装备是否在当前赛季字典(含回退)内。</summary>
     public bool TryGetItem(string name) => Items.Contains(name);
 
+    /// <summary>英雄费用(1-5); 未知英雄返回 0。优先当前字典, 再回退到内置种子。</summary>
+    public int HeroCost(string hero)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(hero);
+
+        if (Current?.HeroCosts.TryGetValue(hero, out var cost) == true)
+        {
+            return cost;
+        }
+
+        return Fallback.HeroCosts.TryGetValue(hero, out var fallbackCost) ? fallbackCost : 0;
+    }
+
     /// <summary>切换当前赛季上下文(后续 UI 切换用; 本任务仅提供方法)。</summary>
     public void Select(string seasonId, string mode)
     {

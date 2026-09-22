@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\data\season\**\*.json" CopyToOutputDirectory="PreserveNewest" LinkBase="data\season" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\ChanSight.Core\ChanSight.Core.csproj" />
     <ProjectReference Include="..\..\src\ChanSight.Capture\ChanSight.Capture.csproj" />
     <ProjectReference Include="..\..\src\ChanSight.Recorder\ChanSight.Recorder.csproj" />

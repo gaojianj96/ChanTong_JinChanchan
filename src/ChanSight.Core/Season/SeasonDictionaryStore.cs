@@ -72,7 +72,10 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
                 seasonId,
                 Copy(state.Heroes),
                 Copy(state.Items),
-                Copy(state.Traits));
+                Copy(state.Traits))
+            {
+                HeroCosts = CopyCosts(state.HeroCosts),
+            };
         }
     }
 
@@ -254,6 +257,11 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
             {
                 state.Traits.Add(trait);
             }
+
+            foreach (var (hero, cost) in dto.HeroCosts)
+            {
+                state.HeroCosts[hero] = cost;
+            }
         }
         catch (JsonException)
         {
@@ -286,6 +294,11 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
         foreach (var trait in seed.Traits)
         {
             state.Traits.Add(trait);
+        }
+
+        foreach (var (hero, cost) in seed.HeroCosts)
+        {
+            state.HeroCosts[hero] = cost;
         }
     }
 
@@ -327,6 +340,7 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
             Heroes = Order(state.Heroes),
             Items = Order(state.Items),
             Traits = Order(state.Traits),
+            HeroCosts = new Dictionary<string, int>(state.HeroCosts, StringComparer.OrdinalIgnoreCase),
         };
 
         WriteJson(GetDictionaryPath(seasonId), dto);
@@ -361,6 +375,9 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
     private static IReadOnlySet<string> Copy(IReadOnlySet<string> values)
         => new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
 
+    private static IReadOnlyDictionary<string, int> CopyCosts(IReadOnlyDictionary<string, int> values)
+        => new Dictionary<string, int>(values, StringComparer.OrdinalIgnoreCase);
+
     private static JsonSerializerOptions CreateJsonOptions()
         => new()
         {
@@ -378,6 +395,8 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
 
         public HashSet<string> Traits { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+        public Dictionary<string, int> HeroCosts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
         public List<CandidateMeta> Candidates { get; } = new();
 
         public bool HasFormalEntries => Heroes.Count > 0 || Items.Count > 0 || Traits.Count > 0;
@@ -392,5 +411,7 @@ public sealed class SeasonDictionaryStore : ISeasonDictionaryReader, ISeasonDict
         public List<string> Items { get; set; } = new();
 
         public List<string> Traits { get; set; } = new();
+
+        public Dictionary<string, int> HeroCosts { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }
