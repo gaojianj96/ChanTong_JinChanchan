@@ -282,7 +282,7 @@ public partial class LiveViewModel : ObservableObject
 
         _selectedSeason = _runtime.Context.SeasonId;
         _selectedMode = _runtime.Context.Mode;
-        RebuildCandidates();
+        RefreshCandidates();
 
         if (service is not null)
         {
@@ -323,12 +323,15 @@ public partial class LiveViewModel : ObservableObject
         }
 
         _runtime.Select(seasonId, mode);
-        RebuildCandidates();
+        RefreshCandidates();
         Status = $"已切换赛季 {seasonId} · 模式 {mode}";
     }
 
-    /// <summary>重读 runtime.Heroes/Items 重建候选列表(切换即生效, 无重启)。</summary>
-    private void RebuildCandidates()
+    /// <summary>
+    /// 重读 runtime.Heroes/Items 重建候选列表。非构造时一次性快照: 每次调用都重新读取
+    /// <see cref="SeasonRuntime"/> 当前字典(切换赛季 / 退出字典视图时触发), 使字典修改立即生效, 无重启/新对局。
+    /// </summary>
+    public void RefreshCandidates()
     {
         HeroCandidates.Clear();
         foreach (var hero in _runtime.Heroes.OrderBy(static name => name, StringComparer.Ordinal))

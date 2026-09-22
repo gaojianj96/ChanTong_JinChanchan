@@ -9,6 +9,7 @@ namespace ChanSight.Overlay.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly IWindowFinder? _windowFinder;
+    private readonly Action? _onExitDictionaryView;
 
     [ObservableProperty]
     private string _status = "等待识别…";
@@ -42,9 +43,10 @@ public partial class MainWindowViewModel : ObservableObject
     {
     }
 
-    public MainWindowViewModel(IWindowFinder windowFinder)
+    public MainWindowViewModel(IWindowFinder windowFinder, Action? onExitDictionaryView = null)
     {
         _windowFinder = windowFinder ?? throw new ArgumentNullException(nameof(windowFinder));
+        _onExitDictionaryView = onExitDictionaryView;
     }
 
     /// <summary>当前下拉框所选窗口; 未选或越界返回 null。</summary>
@@ -72,6 +74,11 @@ public partial class MainWindowViewModel : ObservableObject
         if (value)
         {
             IsReviewMode = false;
+        }
+        else
+        {
+            // 切离字典视图(回到实时/回顾): 通知宿主刷新实时候选/prompt, 使字典修改立即生效。
+            _onExitDictionaryView?.Invoke();
         }
 
         Status = value ? "字典查看(奕子/装备/羁绊/prompt/候选/阵容)" : "等待识别…";
