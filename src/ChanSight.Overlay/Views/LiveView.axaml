@@ -120,63 +120,70 @@
                 </StackPanel>
             </Border>
 
-            <!-- ================= 对手信息展示 ================= -->
-            <Border Classes="card" IsVisible="{Binding HasOpponentInfo}">
-                <StackPanel Spacing="10">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
-                        <StackPanel Spacing="1">
-                            <TextBlock Text="对手信息" Classes="cardTitle" />
-                            <TextBlock Text="{Binding OpponentInfo}" Classes="muted" />
+            <!-- ================= 对手信息(折叠卡, 默认折叠, 避免与己方棋盘/备战席并排成两行) ================= -->
+            <Border Classes="card"
+                    IsVisible="{Binding HasOpponentInfo}"
+                    BorderBrush="{StaticResource AccentRed}"
+                    Background="{StaticResource AccentRedDim}">
+                <Expander IsExpanded="False">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Width="4" CornerRadius="2" Background="{StaticResource AccentRed}" />
+                            <StackPanel Spacing="1">
+                                <TextBlock Text="对手 · 棋盘 / 备战席" Classes="cardTitle" Foreground="{StaticResource AccentRed}" />
+                                <TextBlock Text="{Binding OpponentInfo}" Classes="muted" />
+                            </StackPanel>
                         </StackPanel>
+                    </Expander.Header>
+
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="对手棋盘" Classes="subtle" />
+                        <ItemsControl ItemsSource="{Binding OpponentBoardCells}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SlotDisplay">
+                                    <Border Classes="slot"
+                                            Classes.empty="{Binding IsEmpty}"
+                                            Width="64" Height="40" Padding="2" Margin="0,0,4,4">
+                                        <StackPanel Spacing="0">
+                                            <TextBlock Text="{Binding DisplayText}" Classes="slotName" FontSize="9"
+                                                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="10" />
+                                            <TextBlock Text="{Binding ItemsText}" Classes="muted" FontSize="8"
+                                                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="8" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="对手备战席" Classes="subtle" />
+                        <ItemsControl ItemsSource="{Binding OpponentBenchCells}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SlotDisplay">
+                                    <Border Classes="slot"
+                                            Classes.empty="{Binding IsEmpty}"
+                                            Width="64" Height="40" Padding="2" Margin="0,0,4,4">
+                                        <StackPanel Spacing="0">
+                                            <TextBlock Text="{Binding DisplayText}" Classes="slotName" FontSize="9"
+                                                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="10" />
+                                            <TextBlock Text="{Binding ItemsText}" Classes="muted" FontSize="8"
+                                                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="8" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
-
-                    <TextBlock Text="棋盘 / 装备" Classes="subtle" />
-                    <ItemsControl ItemsSource="{Binding OpponentBoardCells}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SlotDisplay">
-                                <Border Classes="slot"
-                                        Classes.empty="{Binding IsEmpty}"
-                                        Width="64" Height="40" Padding="2" Margin="0,0,4,4">
-                                    <StackPanel Spacing="0">
-                                        <TextBlock Text="{Binding DisplayText}" Classes="slotName" FontSize="9"
-                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="10" />
-                                        <TextBlock Text="{Binding ItemsText}" Classes="muted" FontSize="8"
-                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="8" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <TextBlock Text="备战席" Classes="subtle" />
-                    <ItemsControl ItemsSource="{Binding OpponentBenchCells}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SlotDisplay">
-                                <Border Classes="slot"
-                                        Classes.empty="{Binding IsEmpty}"
-                                        Width="64" Height="40" Padding="2" Margin="0,0,4,4">
-                                    <StackPanel Spacing="0">
-                                        <TextBlock Text="{Binding DisplayText}" Classes="slotName" FontSize="9"
-                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="10" />
-                                        <TextBlock Text="{Binding ItemsText}" Classes="muted" FontSize="8"
-                                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" LineHeight="8" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
+                </Expander>
             </Border>
 
             <!-- ================= 棋盘卡: 4×7 六角网格 ================= -->
