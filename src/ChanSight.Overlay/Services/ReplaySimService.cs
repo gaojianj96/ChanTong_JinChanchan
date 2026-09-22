@@ -52,7 +52,7 @@ public sealed class ReplaySimService
         {
             try
             {
-                var recognition = _vlm.RecognizeAsync(image, isSelf: true).GetAwaiter().GetResult();
+                var recognition = _vlm.RecognizeAsync(image, isSelf: true, matchId: matchId, source: "replay").GetAwaiter().GetResult();
                 WriteRecognition(matchId, frameId, recognition);
                 return new ReplayFrame(key, image, meta, recognition, HasRecognition: true);
             }
@@ -80,7 +80,7 @@ public sealed class ReplaySimService
         var image = _archive.LoadKeyFrame(matchId, frameId);
         try
         {
-            var recognition = await _vlm.RecognizeAsync(image, isSelf, ct).ConfigureAwait(false);
+            var recognition = await _vlm.RecognizeAsync(image, isSelf, ct, matchId, "replay").ConfigureAwait(false);
             WriteRecognition(matchId, frameId, recognition);
             return recognition;
         }

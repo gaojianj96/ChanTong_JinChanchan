@@ -63,6 +63,14 @@ public partial class App : Application
                 "frames")));
         services.AddSingleton<IFrameArchive>(static sp => sp.GetRequiredService<FrameArchive>());
 
+        // 识别日志: 结构化 JSONL 落 %LOCALAPPDATA%/ChanSight/logs/recognition, 供事后 debug。
+        services.AddSingleton<RecognitionLogger>(_ =>
+            new RecognitionLogger(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChanSight",
+                "logs",
+                "recognition")));
+
         services.AddSingleton<AnnotationStore>();
 
         // 赛季字典: 覆盖 Core 中 AppContext.BaseDirectory/data/season 的默认路径, 落 %LOCALAPPDATA%/ChanSight/season,

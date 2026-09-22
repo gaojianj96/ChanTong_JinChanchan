@@ -25,20 +25,28 @@ public sealed class ManualFrameVlmService
     private readonly IRoiMapperService _roiMapper;
     private readonly SeasonRuntime _runtime;
     private readonly ISeasonDictionaryWriter? _writer;
+    private readonly RecognitionLogger? _logger;
 
     public ManualFrameVlmService(
         IVlmClient client,
         IRoiMapperService roiMapper,
         SeasonRuntime? runtime = null,
-        ISeasonDictionaryWriter? writer = null)
+        ISeasonDictionaryWriter? writer = null,
+        RecognitionLogger? logger = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _roiMapper = roiMapper ?? throw new ArgumentNullException(nameof(roiMapper));
         _runtime = runtime ?? SeasonRuntime.CreateDefault();
         _writer = writer;
+        _logger = logger;
     }
 
-    public async Task<RecognitionFrame> RecognizeAsync(Mat fullFrame, bool isSelf, CancellationToken ct = default)
+    public async Task<RecognitionFrame> RecognizeAsync(
+        Mat fullFrame,
+        bool isSelf,
+        CancellationToken ct = default,
+        string? matchId = null,
+        string source = "manual-vlm")
     {
         ArgumentNullException.ThrowIfNull(fullFrame);
 
@@ -47,7 +55,9 @@ public sealed class ManualFrameVlmService
 
         var json = await _client.CompleteAsync(prompt, images, ct).ConfigureAwait(false);
 
-        return Parse(json, isSelf);
+        var frame = Parse(json, isSelf);
+        _logger?.LogVlmRecognition(matchId ?? "unknown", source, frame, frame.Issues);
+        return frame;
     }
 
     // Image order must match the numbered description in BuildPrompt: the VLM

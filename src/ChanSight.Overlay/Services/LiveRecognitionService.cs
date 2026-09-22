@@ -31,6 +31,7 @@ public sealed class LiveRecognitionService : IAsyncDisposable
     private readonly RecognitionToGameStateAdapter _adapter;
     private readonly GameStateManager _manager;
     private readonly LatestFrameStore? _latestFrameStore;
+    private readonly RecognitionLogger? _logger;
     private readonly string _matchId;
 
     private CancellationTokenSource? _cts;
@@ -43,7 +44,8 @@ public sealed class LiveRecognitionService : IAsyncDisposable
         RecognitionToGameStateAdapter adapter,
         GameStateManager manager,
         string? matchId = null,
-        LatestFrameStore? latestFrameStore = null)
+        LatestFrameStore? latestFrameStore = null,
+        RecognitionLogger? logger = null)
     {
         _capture = capture ?? throw new ArgumentNullException(nameof(capture));
         _recognize = recognize ?? throw new ArgumentNullException(nameof(recognize));
@@ -51,6 +53,7 @@ public sealed class LiveRecognitionService : IAsyncDisposable
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         _manager = manager ?? throw new ArgumentNullException(nameof(manager));
         _latestFrameStore = latestFrameStore;
+        _logger = logger;
         _matchId = string.IsNullOrWhiteSpace(matchId) ? DefaultMatchId : matchId;
     }
 
@@ -136,6 +139,8 @@ public sealed class LiveRecognitionService : IAsyncDisposable
         {
             frameId = _archive.StoreKeyFrame(frame, _matchId, snapshot.Version);
         }
+
+        _logger?.LogFrameRecognition(_matchId, frameId ?? string.Empty, snapshot.Version, snapshot, "auto");
 
         return new LiveFrameUpdate(snapshot, recognition, frameId);
     }
