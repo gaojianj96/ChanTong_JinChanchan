@@ -13,7 +13,7 @@ public sealed class ManualFrameVlmServiceTests
     private static Mat CreateFrame() => new(1920, 1080, MatType.CV_8UC3, Scalar.All(128));
 
     private static ManualFrameVlmService CreateService(FakeVlmClient fake) =>
-        new(fake, new RoiMapperService());
+        new(fake);
 
     [Fact]
     public async Task RecognizeAsync_SelfValidJson_MapsFieldsCorrectly()
@@ -175,7 +175,7 @@ public sealed class ManualFrameVlmServiceTests
             new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "自定义装备甲" },
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)));
         var runtime = new SeasonRuntime(reader);
-        var service = new ManualFrameVlmService(fake, new RoiMapperService(), runtime);
+        var service = new ManualFrameVlmService(fake, runtime);
 
         await service.RecognizeAsync(CreateFrame(), isSelf: true);
 
@@ -184,7 +184,7 @@ public sealed class ManualFrameVlmServiceTests
     }
 
     [Fact]
-    public async Task RecognizeAsync_SelfSendsMultipleCrops()
+    public async Task RecognizeAsync_SelfSendsSingleFullFrame_NotMultipleCrops()
     {
         var fake = new FakeVlmClient().QueueResult("{}");
         var service = CreateService(fake);
@@ -192,11 +192,44 @@ public sealed class ManualFrameVlmServiceTests
         await service.RecognizeAsync(CreateFrame(), isSelf: true);
 
         fake.LastImages.Should().NotBeNull();
-        fake.LastImages!.Count.Should().BeGreaterThanOrEqualTo(2);
+        fake.LastImages!.Should().HaveCount(1);
+        fake.LastImages![0].mime.Should().Be("image/jpeg");
     }
 
     [Fact]
-    public async Task RecognizeAsync_OpponentSendsOpponentsSidebarCrop()
+    public async Task RecognizeAsync_LargeFrame_IsDownscaledBeforeSending()
+    {
+        var fake = new FakeVlmClient().QueueResult("{}");
+        var service = CreateService(fake);
+
+        using var large = new Mat(3840, 2160, MatType.CV_8UC3, Scalar.All(128));
+        var originalBytes = large.ImEncode(".jpg").Length;
+
+        await service.RecognizeAsync(large, isSelf: true);
+
+        fake.LastImages.Should().NotBeNull();
+        fake.LastImages!.Should().HaveCount(1);
+        fake.LastImages![0].data.Length.Should().BeLessThan(originalBytes);
+    }
+
+    [Fact]
+    public async Task RecognizeAsync_PromptDescribesWholeFrameAndDictionaries()
+    {
+        var fake = new FakeVlmClient().QueueResult("{}");
+        var service = CreateService(fake);
+
+        await service.RecognizeAsync(CreateFrame(), isSelf: true);
+
+        fake.LastPrompt.Should().NotBeNull();
+        fake.LastPrompt!.Should().Contain("完整游戏截图");
+        fake.LastPrompt.Should().Contain("28 格");
+        fake.LastPrompt.Should().Contain("备战席");
+        fake.LastPrompt.Should().Contain(GameSeasonDictionary.Heroes.First());
+        fake.LastPrompt.Should().Contain(GameSeasonDictionary.Items.First());
+    }
+
+    [Fact]
+    public async Task RecognizeAsync_OpponentStillSendsSingleFullFrame_AndPromptMentionsOpponent()
     {
         var fake = new FakeVlmClient().QueueResult("{}");
         var service = CreateService(fake);
@@ -204,7 +237,8 @@ public sealed class ManualFrameVlmServiceTests
         await service.RecognizeAsync(CreateFrame(), isSelf: false);
 
         fake.LastImages.Should().NotBeNull();
-        fake.LastImages!.Count.Should().BeGreaterThanOrEqualTo(3);
+        fake.LastImages!.Should().HaveCount(1);
+        fake.LastPrompt.Should().Contain("对手");
     }
 
     private sealed class FakeReader : ISeasonDictionaryReader

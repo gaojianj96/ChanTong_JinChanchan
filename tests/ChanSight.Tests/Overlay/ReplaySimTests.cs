@@ -163,7 +163,7 @@ public sealed class ReplaySimTests
         {
             Archive = new FrameArchive(Root);
             Annotations = new AnnotationStore(Path.Combine(Root, "corrections"));
-            var vlm = new ManualFrameVlmService(Vlm, new RoiMapperService());
+            var vlm = new ManualFrameVlmService(Vlm);
             Service = new ReplaySimService(Archive, vlm, Annotations);
         }
 

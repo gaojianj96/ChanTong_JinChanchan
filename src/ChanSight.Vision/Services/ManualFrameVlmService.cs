@@ -7,35 +7,34 @@ using OpenCvSharp;
 namespace ChanSight.Vision.Services;
 
 /// <summary>
-/// Manually triggered whole-frame VLM recognition. Crops a full screenshot into
-/// region images (HUD / board / bench / opponents), sends them as a multi-image
-/// prompt, then parses and validates a strict JSON contract into a
+/// Manually triggered whole-frame VLM recognition. Sends a single (aspect-ratio
+/// preserved, downscaled) full screenshot directly to the VLM — no ROI crops —
+/// then parses and validates a strict JSON contract into a
 /// <see cref="RecognitionFrame"/>. Invalid fields are nulled out and recorded in
 /// <see cref="RecognitionFrame.Issues"/> rather than crashing. The opponent
-/// index is passed through verbatim (confirmed by the UI) rather than guessed.
+/// index is passed through verbatim (confirmed by the UI) rather than guessed;
+/// the perspective is conveyed to the VLM via the prompt, not via extra crops.
 /// </summary>
 public sealed class ManualFrameVlmService
 {
     private const int MaxLevenshteinDistance = 2;
     private const int BoardCellCount = 28;
     private const int BenchCellCount = 9;
+    private const int MaxLongEdge = 1920;
     private const string CandidateSource = "vlm-recognition";
 
     private readonly IVlmClient _client;
-    private readonly IRoiMapperService _roiMapper;
     private readonly SeasonRuntime _runtime;
     private readonly ISeasonDictionaryWriter? _writer;
     private readonly RecognitionLogger? _logger;
 
     public ManualFrameVlmService(
         IVlmClient client,
-        IRoiMapperService roiMapper,
         SeasonRuntime? runtime = null,
         ISeasonDictionaryWriter? writer = null,
         RecognitionLogger? logger = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
-        _roiMapper = roiMapper ?? throw new ArgumentNullException(nameof(roiMapper));
         _runtime = runtime ?? SeasonRuntime.CreateDefault();
         _writer = writer;
         _logger = logger;
@@ -50,8 +49,8 @@ public sealed class ManualFrameVlmService
     {
         ArgumentNullException.ThrowIfNull(fullFrame);
 
-        var prompt = BuildPrompt();
-        var images = BuildImages(fullFrame, isSelf);
+        var prompt = BuildPrompt(isSelf);
+        var images = BuildImages(fullFrame);
 
         var json = await _client.CompleteAsync(prompt, images, ct).ConfigureAwait(false);
 
@@ -60,58 +59,69 @@ public sealed class ManualFrameVlmService
         return frame;
     }
 
-    // Image order must match the numbered description in BuildPrompt: the VLM
-    // relies on the positional ordering to know which crop is which.
-    private IReadOnlyList<(string mime, byte[] data)> BuildImages(Mat fullFrame, bool isSelf)
+    // A single full-frame image is sent: the VLM locates and reads every field
+    // (HUD / board / bench / shop / opponents) itself from the one image.
+    private IReadOnlyList<(string mime, byte[] data)> BuildImages(Mat fullFrame)
     {
-        var images = new List<(string mime, byte[] data)>
-        {
-            ("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.StageRound))),
-            ("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.Hp))),
-            ("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.Level))),
-            ("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.Gold))),
-            ("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.BoardArea))),
-            ("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.PlayerBench))),
-        };
+        var resized = ResizeForVlm(fullFrame);
+        var data = resized.Empty() ? Array.Empty<byte>() : resized.ImEncode(".jpg");
+        return new List<(string mime, byte[] data)> { ("image/jpeg", data) };
+    }
 
-        if (!isSelf)
+    private static Mat ResizeForVlm(Mat fullFrame)
+    {
+        if (fullFrame.Empty())
+            return fullFrame;
+
+        int maxEdge = Math.Max(fullFrame.Width, fullFrame.Height);
+        if (maxEdge <= MaxLongEdge)
         {
-            images.Add(("image/png", Encode(_roiMapper.CropRoi(fullFrame, RoiRegionType.OpponentsSidebar))));
+            var unchanged = new Mat();
+            fullFrame.CopyTo(unchanged);
+            return unchanged;
         }
 
-        return images;
+        double scale = (double)MaxLongEdge / maxEdge;
+        int newWidth = Math.Max(1, (int)Math.Round(fullFrame.Width * scale));
+        int newHeight = Math.Max(1, (int)Math.Round(fullFrame.Height * scale));
+
+        var resized = new Mat();
+        Cv2.Resize(fullFrame, resized, new Size(newWidth, newHeight), 0, 0, InterpolationFlags.Area);
+        return resized;
     }
 
-    private static byte[] Encode(Mat crop)
-    {
-        if (crop.Empty())
-            return Array.Empty<byte>();
-
-        return crop.ImEncode(".png");
-    }
-
-    private string BuildPrompt()
+    private string BuildPrompt(bool isSelf)
     {
         var heroTable = string.Join("、", _runtime.Heroes);
         var itemTable = string.Join("、", _runtime.Items);
         var modeHint = GetModeHint(_runtime.Context.Mode);
+        var perspectiveHint = isSelf
+            ? "这是己方(本人)棋盘视角。"
+            : "这是对手棋盘视角, 请识别画面中该名对手的全部信息(含右侧玩家列表中的对手序号与血量/经济)。";
 
         var prompt = $$"""
-            你是《金铲铲之战》整帧识别助手。下面按顺序给出多张裁剪区域截图:
-            1. 顶部 HUD 条(阶段/回合/血量/等级/金币)
-            2. 棋盘区域(28 格, 按 0-27 行列顺序)
-            3. 备战席(9 格, 0-8 顺序)
-            4. (对手视角时)对手信息条(玩家名/序号/经济/等级)
+            下面是一张《金铲铲之战》的完整游戏截图(可能已适当缩放)。请你识别画面中的全部信息并作答。
+            {{perspectiveHint}}
 
-            请从以下候选英雄全表中选取英雄名(空格子填 null):
+            画面包含:
+            - 顶部 HUD 条(阶段/金币/等级/血量/经验)
+            - 棋盘区域(28 格, 4 列 × 7 行, 含棋子星级与装备)
+            - 备战席(9 格, 0-8 顺序)
+            - 商店(底部 5 张卡, 若有)
+            - 右侧玩家列表(对手序号/血量/经济)
+
+            请从以下候选英雄全表中选取英雄名(空棋盘格填 null):
             {{heroTable}}
 
             装备只能从以下候选装备全表中选取:
             {{itemTable}}
 
-            输出要求:
+            规则:
             1. 只输出一个 JSON 对象, 不要输出任何解释、前缀或 markdown 代码块。
-            2. 严格遵守以下 schema, 缺失字段用 null:
+            2. 空棋盘格 hero 填 null、star 填 0、items 填 []。
+            3. 星级为 0-3; 装备从候选全表选。
+            4. 无法确定的字段填 null 或 0, 并调低整体 confidence 标记低置信。
+            5. 严格遵守以下 schema, 缺失字段用 null:
             {
               "perspective": "self" 或 "opponent",
               "opponentIndex": 0-6 的整数或 null (对手视角时的对手序号, 无法确定填 null),
@@ -124,7 +134,6 @@ public sealed class ManualFrameVlmService
               "bench": [ {"slot":0, "hero":null, "star":0, "items":[]}, ... 共 9 项 ],
               "confidence": 0 到 1 之间的浮点数
             }
-            3. 空格子 hero 填 null、star 填 0、items 填 []。无法确定 entire 字段时用 null。
             """;
 
         if (!string.IsNullOrEmpty(modeHint))
@@ -143,7 +152,7 @@ public sealed class ManualFrameVlmService
     /// 供字典查看界面只读展示当前 season + mode 的完整 prompt 文本。
     /// 仅暴露读取入口, 不改动任何识别/解析逻辑。
     /// </summary>
-    public string BuildPromptForDisplay() => BuildPrompt();
+    public string BuildPromptForDisplay() => BuildPrompt(isSelf: true);
 
     /// <summary>
     /// 按 mode 返回追加到 prompt 的模式说明文本(内置默认字典, 可后续外部配置)。

@@ -131,7 +131,6 @@ public sealed class DictSelfLearnTests : IDisposable
         var writer = new FakeWriter();
         var service = new ManualFrameVlmService(
             new FakeVlmClient(json),
-            new RoiMapperService(),
             SeasonRuntime.CreateDefault(),
             writer);
 
