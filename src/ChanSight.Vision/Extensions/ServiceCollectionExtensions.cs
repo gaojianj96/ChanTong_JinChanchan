@@ -19,6 +19,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPaddleOcrService, PaddleOcrService>();
         services.AddSingleton<LocalDeterministicRecognizer>();
         services.AddSingleton<IAnchorCalibrator, ClassicAnchorCalibrator>();
+        services.AddSingleton<BoardAnchorDetector>();
+        services.AddSingleton(AnchorCalibrationStore.CreateDefault());
         services.AddSingleton<CellChangeDetector>();
         services.AddSingleton<HttpClient>(static _ => new HttpClient());
         services.AddSingleton<IVlmClient, OpenRouterVlmClient>();
